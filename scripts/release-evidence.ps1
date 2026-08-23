@@ -292,6 +292,7 @@ Invoke-EvidenceCommand "gradle-local-gates" (Join-Path $RepoRoot "gradlew.bat") 
     ":app:testDebugUnitTest",
     ":app:lintDebug",
     ":app:assembleRelease",
+    ":app:verifyReleaseDevtoolsIsolation",
     ":addons:dictionary-pack-sample:assembleRelease"
 ))
 

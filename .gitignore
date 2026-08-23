@@ -21,6 +21,8 @@ out/
 .gradle/
 build/
 release/
+!app/src/release/
+!app/src/release/**
 
 # Kotlin compiler daemon scratch
 .kotlin/

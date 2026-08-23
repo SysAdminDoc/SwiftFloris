@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.nlp
 import android.content.Context
 import android.util.LruCache
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.devtools.DevtoolsContentPolicy
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
@@ -36,6 +37,7 @@ import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
 import dev.patrickgold.florisboard.ime.smartcompose.SmartComposeContext
 import dev.patrickgold.florisboard.ime.smartcompose.NlpAddonHub
 import dev.patrickgold.florisboard.ime.smartcompose.SmartComposeResult
+import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
@@ -995,6 +997,24 @@ class NlpManager(
     }
 
     fun addToDebugOverlay(word: String, info: SpellingResult) {
+        val editorInfo = editorInstance.activeInfo
+        val isNoPersonalizedLearningField = editorInfo.imeOptions.flagNoPersonalizedLearning
+        val canExposeRawContent = DevtoolsContentPolicy.canExposeRawContent(
+            isPasswordOrSensitiveField = keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD || (
+                SensitiveFieldGuard.isSensitive(
+                    inputType = editorInfo.inputAttributes.raw,
+                    imeOptions = editorInfo.imeOptions.raw,
+                ) && !isNoPersonalizedLearningField
+            ),
+            isIncognitoMode = keyboardManager.activeState.isIncognitoMode,
+            isNoPersonalizedLearningField = isNoPersonalizedLearningField,
+        )
+        if (!canExposeRawContent) {
+            if (debugOverlaySuggestionsInfos.size() > 0) {
+                clearDebugOverlay()
+            }
+            return
+        }
         debugOverlaySuggestionsInfos.put(System.currentTimeMillis(), word to info)
         debugOverlayVersion.update { it + 1 }
     }

@@ -18,6 +18,8 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.github.takahirom.roborazzi.AnnotationFilter
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import groovy.json.JsonSlurper
+import java.nio.charset.StandardCharsets
+import java.util.zip.ZipFile
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -78,6 +80,22 @@ fun shippedUiLocaleTags(): List<String> {
             }
         }
         .sorted()
+}
+
+fun ByteArray.containsBytes(needle: ByteArray): Boolean {
+    if (needle.isEmpty()) return true
+    if (needle.size > size) return false
+    for (start in 0..size - needle.size) {
+        var matches = true
+        for (offset in needle.indices) {
+            if (this[start + offset] != needle[offset]) {
+                matches = false
+                break
+            }
+        }
+        if (matches) return true
+    }
+    return false
 }
 
 kotlin {
@@ -185,6 +203,14 @@ configure<ApplicationExtension> {
             maybeCreate("main").apply {
                 assets.directories += "src/main/assets"
             }
+        }
+    }
+
+    sourceSets {
+        // Debug owns the developer UI. Every release-like build type reuses the
+        // release no-op bridge so raw-content controls and routes cannot compile in.
+        listOf("beta", "releaseRoborazzi", "benchmark").forEach { buildTypeName ->
+            maybeCreate(buildTypeName).kotlin.directories += "src/release/kotlin"
         }
     }
 
@@ -550,6 +576,101 @@ tasks.register("verifyRoborazziRelease") {
     group = "verification"
     description = "Runs Roborazzi against the non-shipping releaseRoborazzi variant, which mirrors release build flags and carries only the test host overlay (F24)."
     dependsOn("verifyRoborazziReleaseRoborazzi")
+}
+
+tasks.register("verifyReleaseDevtoolsIsolation") {
+    group = "verification"
+    description = "Fails when raw-content developer controls, routes, or overlay strings reach the release APK."
+    dependsOn("assembleRelease")
+
+    doLast {
+        val rawUiFileNames = setOf(
+            "AndroidLocalesScreen.kt",
+            "AndroidSettingsScreen.kt",
+            "DevtoolsOverlay.kt",
+            "DevtoolsScreen.kt",
+            "ExportDebugLogScreen.kt",
+        )
+        val mainDevtoolsDir = file("src/main/kotlin/dev/patrickgold/florisboard/app/devtools")
+        val misplacedFiles = mainDevtoolsDir.listFiles()
+            .orEmpty()
+            .filter { it.name in rawUiFileNames }
+            .map { it.relativeTo(projectDir).invariantSeparatorsPath }
+        if (misplacedFiles.isNotEmpty()) {
+            throw GradleException(
+                "Raw developer UI must live in app/src/debug only: ${misplacedFiles.joinToString()}",
+            )
+        }
+
+        val routesSource = file("src/main/kotlin/dev/patrickgold/florisboard/app/Routes.kt").readText()
+        val otherSource = file(
+            "src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/OtherScreen.kt",
+        ).readText()
+        val debugOverlaySource = file(
+            "src/debug/kotlin/dev/patrickgold/florisboard/app/devtools/DevtoolsOverlay.kt",
+        ).readText()
+        val releaseBridgeSource = file(
+            "src/release/kotlin/dev/patrickgold/florisboard/app/devtools/DevtoolsVariant.kt",
+        ).readText()
+        if ("@Deeplink(\"devtools" in routesSource || "object Devtools" in routesSource) {
+            throw GradleException("Main Routes.kt still declares a release-visible developer route.")
+        }
+        if ("Routes.Devtools" in otherSource || "R.string.devtools__title" in otherSource) {
+            throw GradleException("OtherScreen.kt still owns a release-visible developer control.")
+        }
+        if (
+            "DevtoolsContentPolicy.canExposeRawContent" !in debugOverlaySource ||
+            "clearDebugOverlay()" !in debugOverlaySource
+        ) {
+            throw GradleException("Debug overlay no longer applies and clears on the raw-content privacy policy.")
+        }
+        if (
+            "composableWithDeepLink" in releaseBridgeSource ||
+            "DevtoolsScreen" in releaseBridgeSource ||
+            "DebugDevtoolsRoutes" in releaseBridgeSource
+        ) {
+            throw GradleException("Release developer bridge must remain route-free and control-free.")
+        }
+
+        val releaseApk = layout.buildDirectory.file("outputs/apk/release/app-release.apk").get().asFile
+        if (!releaseApk.isFile) {
+            throw GradleException("Release APK is missing: $releaseApk")
+        }
+        val forbiddenMarkers = listOf(
+            "Clipboard overlay",
+            "Input state overlay",
+            "Spelling overlay",
+            "Inline autofill overlay",
+            "devtools/android/locales",
+            "devtools/android/settings",
+            "export-debug-log",
+            "Show primary clip",
+            "Overlays the current primary clip",
+            "Show input state overlay",
+            "Show spelling overlay",
+            "Raw diagnostic content hidden.",
+        )
+        val hits = mutableListOf<String>()
+        ZipFile(releaseApk).use { apk ->
+            apk.entries().asSequence()
+                .filter { entry -> entry.name.endsWith(".dex") || entry.name == "resources.arsc" }
+                .forEach { entry ->
+                    val bytes = apk.getInputStream(entry).use { it.readBytes() }
+                    forbiddenMarkers.forEach { marker ->
+                        val utf8 = marker.toByteArray(StandardCharsets.UTF_8)
+                        val utf16 = marker.toByteArray(StandardCharsets.UTF_16LE)
+                        if (bytes.containsBytes(utf8) || bytes.containsBytes(utf16)) {
+                            hits += "${entry.name}: $marker"
+                        }
+                    }
+                }
+        }
+        if (hits.isNotEmpty()) {
+            throw GradleException(
+                "Release APK contains raw developer UI marker(s):\n${hits.distinct().joinToString("\n")}",
+            )
+        }
+    }
 }
 
 // The load-bearing excludes in `app/src/main/res/xml/data_extraction_rules.xml`

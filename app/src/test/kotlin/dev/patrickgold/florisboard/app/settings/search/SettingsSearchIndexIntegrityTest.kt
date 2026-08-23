@@ -21,6 +21,7 @@ import android.content.res.Resources
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.app.devtools.devtoolsSearchRoute
 import dev.patrickgold.florisboard.app.ext.ExtensionListScreenType
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
@@ -90,7 +91,7 @@ class SettingsSearchIndexIntegrityTest {
     }
 }
 
-private val expectedRoutes = mapOf<SettingsSearchDestination, Any>(
+private val expectedRoutes = mapOf<SettingsSearchDestination, Any?>(
     SettingsSearchDestination.HOME to Routes.Settings.Home,
     SettingsSearchDestination.LOCALIZATION to Routes.Settings.Localization,
     SettingsSearchDestination.SELECT_LOCALE to Routes.Settings.SelectLocale,
@@ -132,6 +133,6 @@ private val expectedRoutes = mapOf<SettingsSearchDestination, Any>(
     SettingsSearchDestination.AI_FEATURES to Routes.Settings.AiFeatures,
     SettingsSearchDestination.PROJECT_LICENSE to Routes.Settings.ProjectLicense,
     SettingsSearchDestination.THIRD_PARTY_LICENSES to Routes.Settings.ThirdPartyLicenses,
-    SettingsSearchDestination.DEVTOOLS to Routes.Devtools.Home,
+    SettingsSearchDestination.DEVTOOLS to devtoolsSearchRoute(),
     SettingsSearchDestination.SNIPPET_SETTINGS to Routes.Settings.SnippetSettings,
 )

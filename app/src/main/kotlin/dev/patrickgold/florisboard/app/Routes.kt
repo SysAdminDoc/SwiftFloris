@@ -39,10 +39,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import dev.patrickgold.florisboard.lib.compose.rememberReducedMotion
-import dev.patrickgold.florisboard.app.devtools.AndroidLocalesScreen
-import dev.patrickgold.florisboard.app.devtools.AndroidSettingsScreen
-import dev.patrickgold.florisboard.app.devtools.DevtoolsScreen
-import dev.patrickgold.florisboard.app.devtools.ExportDebugLogScreen
+import dev.patrickgold.florisboard.app.devtools.registerDevtoolsRoutes
 import dev.patrickgold.florisboard.app.ext.ExtensionEditScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionExportScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionHomeScreen
@@ -96,7 +93,6 @@ import dev.patrickgold.florisboard.app.settings.voice.VoiceInputScreen
 import dev.patrickgold.florisboard.app.setup.SetupScreen
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.CLASS)
@@ -114,17 +110,6 @@ inline fun <reified T : Any> NavGraphBuilder.composableWithDeepLink(
         deepLinks = listOf(navDeepLink<T>(basePath = "ui://florisboard/${deeplink.path}")),
         content = content,
     )
-}
-
-@Composable
-private fun DevtoolsRouteGate(content: @Composable () -> Unit) {
-    val prefs by FlorisPreferenceStore
-    val devtoolsEnabled by prefs.devtools.enabled.collectAsState()
-    if (devtoolsEnabled) {
-        content()
-    } else {
-        DevtoolsScreen()
-    }
 }
 
 object Routes {
@@ -294,24 +279,6 @@ object Routes {
         object ThirdPartyLicenses
     }
 
-    object Devtools {
-        @Serializable
-        @Deeplink("devtools")
-        object Home
-
-        @Serializable
-        @Deeplink("devtools/android/locales")
-        object AndroidLocales
-
-        @Serializable
-        @Deeplink("devtools/android/settings")
-        data class AndroidSettings(val name: String)
-
-        @Serializable
-        @Deeplink("export-debug-log")
-        object ExportDebugLog
-    }
-
     object Ext {
         @Serializable
         @Deeplink("ext")
@@ -438,19 +405,7 @@ object Routes {
             composableWithDeepLink(Settings.ProjectLicense::class) { ProjectLicenseScreen() }
             composableWithDeepLink(Settings.ThirdPartyLicenses::class) { ThirdPartyLicensesScreen() }
 
-            composableWithDeepLink(Devtools.Home::class) { DevtoolsScreen() }
-            composableWithDeepLink(Devtools.AndroidLocales::class) {
-                DevtoolsRouteGate { AndroidLocalesScreen() }
-            }
-            composableWithDeepLink(Devtools.AndroidSettings::class) { navBackStack ->
-                DevtoolsRouteGate {
-                    val payload = navBackStack.toRoute<Devtools.AndroidSettings>()
-                    AndroidSettingsScreen(payload.name)
-                }
-            }
-            composableWithDeepLink(Devtools.ExportDebugLog::class) {
-                DevtoolsRouteGate { ExportDebugLogScreen() }
-            }
+            registerDevtoolsRoutes()
 
             composableWithDeepLink(Ext.Home::class) { ExtensionHomeScreen() }
             composableWithDeepLink(Ext.List::class) { navBackStack ->

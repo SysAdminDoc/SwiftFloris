@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.devtools.devtoolsSettingsSearchEntries
 import java.text.Normalizer
 
 enum class SettingsSearchDestination {
@@ -235,7 +236,6 @@ object SettingsSearchIndex {
         entry("other.language", R.string.settings__other__title, R.string.pref__other__settings_language__label, destination = SettingsSearchDestination.OTHER),
         entry("other.app-icon", R.string.settings__other__title, R.string.pref__other__show_app_icon__label, destination = SettingsSearchDestination.OTHER),
         entry("physical-keyboard", R.string.physical_keyboard__title, R.string.physical_keyboard__title, R.string.settings__other__physical_keyboard_summary, SettingsSearchDestination.PHYSICAL_KEYBOARD, "hardware keyboard"),
-        entry("devtools", R.string.devtools__title, R.string.devtools__title, R.string.settings__other__devtools_summary, SettingsSearchDestination.DEVTOOLS, "debug logs android settings"),
         entry("backup", R.string.backup_and_restore__back_up__title, R.string.backup_and_restore__back_up__title, R.string.backup_and_restore__back_up__summary, SettingsSearchDestination.BACKUP),
         entry("restore", R.string.backup_and_restore__restore__title, R.string.backup_and_restore__restore__title, R.string.backup_and_restore__restore__summary, SettingsSearchDestination.RESTORE),
 
@@ -473,7 +473,7 @@ object SettingsSearchIndex {
 
         // localization/LocalizationScreen.kt
         entry("localization.cjk-mixed-script-spacing", R.string.settings__localization__title, R.string.settings__localization__cjk_mixed_script_spacing__label, destination = SettingsSearchDestination.LOCALIZATION),
-    )
+    ) + devtoolsSettingsSearchEntries()
 
     fun search(query: String, resolveString: (Int) -> String): List<SettingsSearchResult> {
         val terms = query.normalizeTerms()

@@ -28,6 +28,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -45,6 +46,8 @@ import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.keyboard.CachedLayout
 import dev.patrickgold.florisboard.ime.keyboard.DebugLayoutComputationResult
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
+import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
+import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.theme.ThemeManager
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
@@ -64,7 +67,9 @@ fun DevtoolsOverlay(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val prefs by FlorisPreferenceStore
     val appContext by context.appContext()
+    val editorInstance by context.editorInstance()
     val keyboardManager by context.keyboardManager()
+    val nlpManager by context.nlpManager()
     val themeManager by context.themeManager()
 
     val devtoolsEnabled by prefs.devtools.enabled.collectAsState()
@@ -73,6 +78,26 @@ fun DevtoolsOverlay(modifier: Modifier = Modifier) {
     val showSpellingOverlay by prefs.devtools.showSpellingOverlay.collectAsState()
     val showInlineAutofillOverlay by prefs.devtools.showInlineAutofillOverlay.collectAsState()
     val prefsLoaded by appContext.preferenceStoreLoaded.collectAsState()
+    val activeInfo by editorInstance.activeInfoFlow.collectAsState()
+    val keyboardState by keyboardManager.activeState.collectAsState()
+
+    val isNoPersonalizedLearningField = activeInfo.imeOptions.flagNoPersonalizedLearning
+    val canExposeRawContent = DevtoolsContentPolicy.canExposeRawContent(
+        isPasswordOrSensitiveField = keyboardState.keyVariation == KeyVariation.PASSWORD || (
+            SensitiveFieldGuard.isSensitive(
+                inputType = activeInfo.inputAttributes.raw,
+                imeOptions = activeInfo.imeOptions.raw,
+            ) && !isNoPersonalizedLearningField
+        ),
+        isIncognitoMode = keyboardState.isIncognitoMode,
+        isNoPersonalizedLearningField = isNoPersonalizedLearningField,
+    )
+
+    LaunchedEffect(canExposeRawContent) {
+        if (!canExposeRawContent) {
+            nlpManager.clearDebugOverlay()
+        }
+    }
 
     val debugLayoutResult by keyboardManager.layoutManager.debugLayoutComputationResultFlow.collectAsState()
     val themeInfo by themeManager.activeThemeInfo.collectAsState()
@@ -81,20 +106,28 @@ fun DevtoolsOverlay(modifier: Modifier = Modifier) {
         LocalContentColor provides Color.White,
     ) {
         Column(modifier = modifier.fillMaxSize()) {
-            if (devtoolsEnabled && showPrimaryClip) {
+            if (canExposeRawContent && devtoolsEnabled && showPrimaryClip) {
                 DevtoolsClipboardOverlay()
             }
-            if (devtoolsEnabled && showInputStateOverlay) {
+            if (canExposeRawContent && devtoolsEnabled && showInputStateOverlay) {
                 DevtoolsInputStateOverlay()
             }
             if (debugLayoutResult?.allLayoutsSuccess() == false) {
                 DevtoolsLastLayoutComputationOverlay(debugLayoutResult)
             }
-            if (devtoolsEnabled && showSpellingOverlay) {
+            if (canExposeRawContent && devtoolsEnabled && showSpellingOverlay) {
                 DevtoolsSpellingOverlay()
             }
-            if (devtoolsEnabled && showInlineAutofillOverlay && AndroidVersion.ATLEAST_API30_R) {
+            if (canExposeRawContent && devtoolsEnabled && showInlineAutofillOverlay && AndroidVersion.ATLEAST_API30_R) {
                 DevtoolsInlineAutofillOverlay()
+            }
+            if (
+                !canExposeRawContent && devtoolsEnabled &&
+                (showPrimaryClip || showInputStateOverlay || showSpellingOverlay || showInlineAutofillOverlay)
+            ) {
+                DevtoolsOverlayBox(title = "Sensitive session") {
+                    DevtoolsText(text = "Raw diagnostic content hidden.")
+                }
             }
             val loadFailure = themeInfo.loadFailure
             if (loadFailure != null && prefsLoaded) {

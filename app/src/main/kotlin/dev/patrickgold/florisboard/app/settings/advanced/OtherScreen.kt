@@ -17,7 +17,6 @@
 package dev.patrickgold.florisboard.app.settings.advanced
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Adb
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.FormatColorFill
 import androidx.compose.material.icons.filled.Language
@@ -35,6 +34,7 @@ import dev.patrickgold.florisboard.app.AppTheme
 import dev.patrickgold.florisboard.app.AppUiLocale
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.app.devtools.DevtoolsPreference
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.lib.FlorisLocale
@@ -128,12 +128,7 @@ fun OtherScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__other__physical_keyboard_summary),
                 onClick = { navController.navigate(Routes.Settings.PhysicalKeyboard) },
             )
-            Preference(
-                icon = Icons.Default.Adb,
-                title = stringRes(R.string.devtools__title),
-                summary = stringRes(R.string.settings__other__devtools_summary),
-                onClick = { navController.navigate(Routes.Devtools.Home) },
-            )
+            DevtoolsPreference(navController)
         }
 
         PreferenceGroup(title = stringRes(R.string.backup_and_restore__title)) {

@@ -6,13 +6,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P0
 
-- [ ] P0: Confine raw-content developer tools to debug builds
-  Why: A release user can enable overlays that display clipboard text, surrounding editor text, selections, composition, and spelling words.
-  Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/OtherScreen.kt:131-135; app/src/main/kotlin/dev/patrickgold/florisboard/app/Routes.kt:297-312 and :441-452; app/src/main/kotlin/dev/patrickgold/florisboard/app/devtools/DevtoolsOverlay.kt:70-143 and :177-193.
-  Touches: app source sets, OtherScreen.kt, Routes.kt, DevtoolsOverlay.kt, DevtoolsScreen.kt, DevtoolsPrefs, release-variant tests.
-  Acceptance: The release APK contains no raw-content overlay controls or navigable routes; debug overlays suppress or redact content in password, incognito, and no-learning sessions; variant and policy tests fail if either guarantee regresses.
-  Complexity: M
-
 - [ ] P0: Fail closed across every Android backup transport
   Why: Android 16 QPR2 treats a missing backup-mode section as fully enabled for eligible app data, while SwiftFloris defines cloud and device transfer only and enables cloud backup without an encryption-capability requirement.
   Evidence: https://developer.android.com/identity/data/autobackup; https://developer.android.com/privacy-and-security/risks/backup-best-practices; app/src/main/AndroidManifest.xml:111-113; app/src/main/res/xml/data_extraction_rules.xml; app/src/main/res/xml/backup_rules.xml; app/src/main/res/xml-v31/backup_rules.xml.

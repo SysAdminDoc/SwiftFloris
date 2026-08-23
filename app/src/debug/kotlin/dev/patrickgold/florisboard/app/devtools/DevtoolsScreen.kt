@@ -24,7 +24,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
-import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.FlorisUserDictionaryDatabase
@@ -136,7 +135,7 @@ fun DevtoolsScreen() = FlorisScreen {
             Preference(
                 title = stringRes(R.string.devtools__debug_log__label),
                 summary = stringRes(R.string.devtools__debug_log__summary),
-                onClick = { navController.navigate(Routes.Devtools.ExportDebugLog) },
+                onClick = { navController.navigate(DebugDevtoolsRoutes.ExportDebugLog) },
                 enabledIf = { prefs.devtools.enabled isEqualTo true },
             )
             SwitchPreference(
@@ -182,7 +181,7 @@ fun DevtoolsScreen() = FlorisScreen {
                 title = stringRes(R.string.devtools__android_settings_global__title),
                 onClick = {
                     navController.navigate(
-                        Routes.Devtools.AndroidSettings(AndroidSettings.Global.groupId)
+                        DebugDevtoolsRoutes.AndroidSettings(AndroidSettings.Global.groupId)
                     )
                 },
                 enabledIf = { prefs.devtools.enabled isEqualTo true },
@@ -191,7 +190,7 @@ fun DevtoolsScreen() = FlorisScreen {
                 title = stringRes(R.string.devtools__android_settings_secure__title),
                 onClick = {
                     navController.navigate(
-                        Routes.Devtools.AndroidSettings(AndroidSettings.Secure.groupId)
+                        DebugDevtoolsRoutes.AndroidSettings(AndroidSettings.Secure.groupId)
                     )
                 },
                 enabledIf = { prefs.devtools.enabled isEqualTo true },
@@ -200,14 +199,14 @@ fun DevtoolsScreen() = FlorisScreen {
                 title = stringRes(R.string.devtools__android_settings_system__title),
                 onClick = {
                     navController.navigate(
-                        Routes.Devtools.AndroidSettings(AndroidSettings.System.groupId)
+                        DebugDevtoolsRoutes.AndroidSettings(AndroidSettings.System.groupId)
                     )
                 },
                 enabledIf = { prefs.devtools.enabled isEqualTo true },
             )
             Preference(
                 title = stringRes(R.string.devtools__android_locales__title),
-                onClick = { navController.navigate(Routes.Devtools.AndroidLocales) },
+                onClick = { navController.navigate(DebugDevtoolsRoutes.AndroidLocales) },
                 enabledIf = { prefs.devtools.enabled isEqualTo true },
             )
         }

@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.app.devtools.devtoolsSearchRoute
 import dev.patrickgold.florisboard.app.ext.ExtensionListScreenType
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
@@ -266,7 +267,7 @@ fun SettingsSearchScreen() = FlorisScreen {
     }
 }
 
-internal fun SettingsSearchDestination.toSearchRoute(): Any {
+internal fun SettingsSearchDestination.toSearchRoute(): Any? {
     return when (this) {
         SettingsSearchDestination.HOME -> Routes.Settings.Home
         SettingsSearchDestination.LOCALIZATION -> Routes.Settings.Localization
@@ -310,7 +311,7 @@ internal fun SettingsSearchDestination.toSearchRoute(): Any {
         SettingsSearchDestination.AI_FEATURES -> Routes.Settings.AiFeatures
         SettingsSearchDestination.PROJECT_LICENSE -> Routes.Settings.ProjectLicense
         SettingsSearchDestination.THIRD_PARTY_LICENSES -> Routes.Settings.ThirdPartyLicenses
-        SettingsSearchDestination.DEVTOOLS -> Routes.Devtools.Home
+        SettingsSearchDestination.DEVTOOLS -> devtoolsSearchRoute()
     }
 }
 
@@ -319,5 +320,5 @@ internal fun shouldResetSearchResultsScroll(query: String, resultCount: Int): Bo
 }
 
 private fun androidx.navigation.NavController.navigateSearchDestination(destination: SettingsSearchDestination) {
-    navigate(destination.toSearchRoute())
+    destination.toSearchRoute()?.let(::navigate)
 }

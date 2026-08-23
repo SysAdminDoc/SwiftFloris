@@ -213,7 +213,7 @@ class FlorisSpellCheckerService : SpellCheckerService() {
             flogInfo(LogTopic.SPELL_EVENTS)
 
             super.onCancel()
-            if (prefs.devtools.showSpellingOverlay.get()) {
+            if (BuildConfig.DEBUG && prefs.devtools.showSpellingOverlay.get()) {
                 nlpManager.clearDebugOverlay()
             }
         }
@@ -222,7 +222,7 @@ class FlorisSpellCheckerService : SpellCheckerService() {
             flogInfo(LogTopic.SPELL_EVENTS)
 
             super.onClose()
-            if (prefs.devtools.showSpellingOverlay.get()) {
+            if (BuildConfig.DEBUG && prefs.devtools.showSpellingOverlay.get()) {
                 nlpManager.clearDebugOverlay()
             }
         }
@@ -230,7 +230,7 @@ class FlorisSpellCheckerService : SpellCheckerService() {
         fun SpellingResult.sendToDebugOverlayIfEnabled(
             textInfo: TextInfo,
         ): SpellingResult {
-            if (prefs.devtools.showSpellingOverlay.get()) {
+            if (BuildConfig.DEBUG && prefs.devtools.showSpellingOverlay.get()) {
                 nlpManager.addToDebugOverlay(textInfo.text, this)
             }
             return this
@@ -239,7 +239,7 @@ class FlorisSpellCheckerService : SpellCheckerService() {
         fun Array<SpellingResult>.sendToDebugOverlayIfEnabled(
             textInfos: Array<out TextInfo>,
         ): Array<SpellingResult> {
-            if (prefs.devtools.showSpellingOverlay.get()) {
+            if (BuildConfig.DEBUG && prefs.devtools.showSpellingOverlay.get()) {
                 for ((n, info) in this.withIndex()) {
                     nlpManager.addToDebugOverlay(textInfos[n].text, info)
                 }

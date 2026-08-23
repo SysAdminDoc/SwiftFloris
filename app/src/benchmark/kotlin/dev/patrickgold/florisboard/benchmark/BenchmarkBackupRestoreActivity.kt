@@ -156,13 +156,13 @@ class BenchmarkBackupRestoreActivity : ComponentActivity() {
                 archiveVersion = Backup.CURRENT_ARCHIVE_FORMAT_VERSION,
             )
             workspace.inputDir.subFile(Backup.METADATA_JSON_NAME).writeJson(workspace.metadata)
-            workspace.zipFile = workspace.outputDir.subFile(Backup.defaultFileName(workspace.metadata))
-            ZipUtils.zip(workspace.inputDir, workspace.zipFile)
+            workspace.archiveFile = workspace.outputDir.subFile(Backup.defaultFileName(workspace.metadata))
+            ZipUtils.zip(workspace.inputDir, workspace.archiveFile)
             val durationMs = elapsedMsSince(startedAt)
             return BackupMetrics(
                 workspace = workspace,
-                archive = workspace.zipFile,
-                archiveBytes = workspace.zipFile.length(),
+                archive = workspace.archiveFile,
+                archiveBytes = workspace.archiveFile.length(),
                 createMs = durationMs,
                 selectedSections = RepresentativeSectionCount,
             )
@@ -179,9 +179,9 @@ class BenchmarkBackupRestoreActivity : ComponentActivity() {
         val workspace = cacheManager.backupAndRestore.new()
         try {
             val prepareStartedAt = SystemClock.elapsedRealtimeNanos()
-            workspace.zipFile = workspace.inputDir.subFile(Restore.BACKUP_ARCHIVE_FILE_NAME)
-            archive.copyTo(workspace.zipFile, overwrite = true)
-            ZipUtils.unzip(workspace.zipFile, workspace.outputDir)
+            workspace.archiveFile = workspace.inputDir.subFile(Restore.BACKUP_ARCHIVE_FILE_NAME)
+            archive.copyTo(workspace.archiveFile, overwrite = true)
+            ZipUtils.unzip(workspace.archiveFile, workspace.outputDir)
             val metadata: Backup.Metadata = workspace.outputDir.subFile(Backup.METADATA_JSON_NAME).readJson()
             workspace.metadata = metadata
 
@@ -198,6 +198,7 @@ class BenchmarkBackupRestoreActivity : ComponentActivity() {
                         .exists(),
                     hasImeKeyboard = workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH).exists(),
                     hasImeTheme = workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH).exists(),
+                    hasLocalStickerPacks = false,
                     hasClipboardTextItems = false,
                     hasClipboardImageItems = false,
                     hasClipboardVideoItems = false,
