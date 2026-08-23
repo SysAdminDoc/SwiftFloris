@@ -13,6 +13,20 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: The release APK contains no raw-content overlay controls or navigable routes; debug overlays suppress or redact content in password, incognito, and no-learning sessions; variant and policy tests fail if either guarantee regresses.
   Complexity: M
 
+- [ ] P0: Restore the canonical trust-capability registry
+  Why: Release evidence cannot pass from a clean checkout because the canonical registry disagrees with the live build and storage pins.
+  Evidence: app/src/main/config/trust-capabilities.json:7 and :46; gradle/tools.versions.toml:2; gradle/libs.versions.toml; scripts/check-trust-capabilities.py:340 and :449-451; scripts/release-evidence.ps1:281.
+  Touches: trust-capabilities.json, check-trust-capabilities.py fixtures, release-evidence.ps1, public trust facts derived from the registry.
+  Acceptance: The registry records Build Tools 37.0.0 and SQLCipher 4.18.0 from their live owners; `scripts/check-trust-capabilities.py` and `scripts/test-check-trust-capabilities.py` pass; fixtures changing either live pin without the registry fail with the exact mismatched field; release evidence reaches its next gate from a clean checkout.
+  Complexity: S
+
+- [ ] P0: Fail closed across every Android backup transport
+  Why: Android 16 QPR2 treats a missing backup-mode section as fully enabled for eligible app data, while SwiftFloris defines cloud and device transfer only and enables cloud backup without an encryption-capability requirement.
+  Evidence: https://developer.android.com/identity/data/autobackup; https://developer.android.com/privacy-and-security/risks/backup-best-practices; app/src/main/AndroidManifest.xml:111-113; app/src/main/res/xml/data_extraction_rules.xml; app/src/main/res/xml/backup_rules.xml; app/src/main/res/xml-v31/backup_rules.xml.
+  Touches: AndroidManifest.xml, all backup-rule resource variants, BackupDataInventory.kt, backup parity gates, privacy copy, API 26, 28, 31, and 36.1 transport tests.
+  Acceptance: Cloud, device-to-device, and cross-platform transports each export only inventory entries explicitly classified as portable, or export nothing; no password-derived data, learned text, clipboard data, authentication material, encryption key, or adaptive-touch state crosses a transport unless its classification explicitly changes; cloud backup is disabled when client-side encryption is unavailable on supported APIs, while API 26 and 27 either disable cloud export or limit it to a documented non-sensitive subset; no placeholder iOS identity is declared; tests parse every selected resource variant and fail for a missing mode or unclassified persisted store; Settings and README distinguish no app-owned cloud service from any retained Android-managed backup.
+  Complexity: L
+
 ### P1
 
 - [ ] P1: Route users and Android 16 directly to keyboard language setup
@@ -55,6 +69,20 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Evidence: https://developer.android.com/reference/android/view/inputmethod/EditorInfo; https://developer.android.com/reference/android/app/LocaleManager; https://github.com/futo-org/android-keyboard/pull/1892; app/src/main/kotlin/dev/patrickgold/florisboard/lib/util/DebugSummarizeUtils.kt:47-49; app/src/main/kotlin/dev/patrickgold/florisboard/ime/core/SubtypeManager.kt:191-238.
   Touches: EditorInfo snapshot, SubtypeManager.kt, PerAppSubtypeMemory, localization preferences and UI, locale-resolution tests.
   Acceptance: A current manual choice and saved per-app subtype take precedence; otherwise one unambiguous installed match from hintLocales, then LocaleManager application locales on API 33 and newer, may select a subtype; ambiguous or unavailable hints do nothing; no asset is downloaded; users can disable automatic hint matching; precedence and fallback tests pass.
+  Complexity: M
+
+- [ ] P1: Bring adaptive-touch state under the persisted-data contract
+  Why: AdaptiveTouchModel writes `adaptive_touch_model.xml`, but the canonical inventory, backup omission UI, parity tests, and public privacy description do not classify or accurately describe that store.
+  Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/AdaptiveTouchModel.kt:36-47 and :83-92; app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/BackupDataInventory.kt:89-101; docs/PRIVACY_AND_AI.md:97-106.
+  Touches: AdaptiveTouchModel.kt, BackupDataInventory.kt, Android backup rules, manual archive sections or omission UI, TypingStatsScreen.kt, privacy documentation, persisted-store discovery and parity tests.
+  Acceptance: The inventory classifies `adaptive_touch_model.xml` as portable or sensitive-excluded; Android and manual backup behavior matches that decision; an excluded store is named in omission UI, while an included store has an archive version, migration, and reset path; restored state cannot contain samples from password, incognito, or host-declared no-learning sessions; public text states that only ordinary learning sessions update the model; a fixture introducing an unregistered SharedPreferences file fails the persisted-store gate.
+  Complexity: M
+
+- [ ] P1: Verify manual backup publication before reporting success
+  Why: The interactive path treats a completed SAF write as a valid backup, while the scheduled path reads the destination back and compares its digest before publication.
+  Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/BackupScreen.kt:392-405; app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/ScheduledBackupSaf.kt:74-80 and :164-213; https://bitwarden.com/help/encrypted-export/; https://www.reddit.com/r/Swiftkey/comments/1vp13la/restore_keyboard_layout_languages_settings_and/; https://www.reddit.com/r/Swiftkey/comments/1tylh00/migration_to_onedrive_failed_lost_predictions/.
+  Touches: BackupScreen.kt, BackupArchiveBuilder.kt, ScheduledBackupSaf.kt, PortableBackupEnvelope.kt, restore inspection, backup receipt UI and strings, SAF provider fixtures.
+  Acceptance: One shared verifier reads the destination document back, enforces size limits, compares SHA-256, authenticates and decrypts encrypted envelopes, and validates metadata plus selected archive sections through the same parser limits used by restore; interactive success appears only after verification; truncation, corruption, wrong passphrases, and provider readback failures produce actionable errors without discarding the source workspace or a prior verified archive; the receipt shows format version, encryption state, selected sections, named omissions, byte size, and checksum; fake-provider tests cover short writes and altered reads.
   Complexity: M
 
 ### P2
@@ -113,6 +141,7 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Evidence: gradle/tools.versions.toml; README.md:268-305; CONTRIBUTING.md; docs/REPRODUCIBLE_BUILDS.md; docs/ACCESSIBILITY.md; https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html.
   Touches: CONTRIBUTING.md, docs/REPRODUCIBLE_BUILDS.md, docs/ACCESSIBILITY.md, scripts/check-public-doc-version-pins.py, checker self-tests.
   Acceptance: Docs distinguish host JDK 21 from reproducible and F-Droid JDK 17, derive or verify Build Tools 37.0.0 from the machine-readable pin, cite Android 48 dp and WCAG 44 CSS pixels separately, and fail a fixture containing each stale value or attribution.
+  Research note (2026-08-23): The same gate must derive SQLCipher version and native-library claims from the dependency catalog and built APK. docs/THREAT_MODEL.md still says 4.17.0 and zero native code while SQLCipher 4.18.0 contributes native libraries.
   Complexity: M
 
 ### P3
