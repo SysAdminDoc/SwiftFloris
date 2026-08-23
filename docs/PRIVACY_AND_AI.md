@@ -97,12 +97,16 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
 ### 2.4 Adaptive touch
 
 - **What runs.** Per-subtype Welford-online per-key offset learner
-  (`AdaptiveTouchModel`). Updates after every key press to improve
-  spatial prediction in your specific hand position and posture.
+  (`AdaptiveTouchModel`). It updates only during ordinary learning sessions
+  to improve spatial prediction for your hand position and posture.
 - **Where.** On this device only.
-- **Data seen.** Tap coordinates of every key you press.
-- **Data sent.** Nothing leaves the device. Persisted locally and
-  cleared on Settings → Typing → Reset adaptive touch model.
+- **Data seen.** Tap coordinates from ordinary typing. Password, incognito,
+  and host-declared no-personalized-learning sessions neither consult nor
+  update the model.
+- **Data sent.** Nothing leaves the device. The local
+  `adaptive_touch_model.xml` store is excluded from manual archives and every
+  Android backup or transfer transport. Clear it under Settings → Typing →
+  Reset adaptive touch model.
 - **Off switch.** Settings → Typing → Adaptive touch.
 
 ### 2.5 Voice input
@@ -347,9 +351,16 @@ Every surface above is subject to:
   `learnWord` path writes only to the app-private Room store, leaves the system
   `UserDictionary` DAO absent, and honors the Settings preference, so shared
   provider writes cannot return silently.
-- The **personal-dictionary backup exclusion**: encrypted DB is excluded
-  from both cloud backup and device-to-device transfer (Android Keystore
-  wrap key is non-portable).
+- The **Android-managed backup boundary**: SwiftFloris runs no cloud service,
+  but Android may retain an explicit allowlist of portable preferences and
+  customizations through the device's configured backup provider. Cloud export
+  requires client-side encryption on API 28 and newer; API 26 and 27 export
+  nothing. Device transfer uses the portable allowlist on Android 12 and newer.
+  Cross-platform transfer exports nothing.
+- The **sensitive-store backup exclusion**: the personal dictionary, learned
+  n-grams, correction history, clipboard contents, encryption keys,
+  authentication material, sync identity, typing traces, and adaptive-touch
+  samples are excluded from Android-managed backup and transfer.
 - The **portable clipboard-backup boundary**: selecting any clipboard
   section requires a passphrase-encrypted, versioned AES-GCM `.sfbak`
   envelope. Authentication and archive validation complete before live data

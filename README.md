@@ -363,7 +363,8 @@ access.
 
 ### Posture
 
-- **No `INTERNET` permission**, no cloud sync, no account, no telemetry, no ads.
+- **No app-owned cloud service.** SwiftFloris has no `INTERNET` permission, account, telemetry, ads, cloud processing, or cloud sync.
+- **Android-managed backup is separate.** Android may retain the explicitly portable preferences and customization files through the backup provider configured on the device. API 28 and newer cloud export requires client-side encryption. API 26 and 27 export nothing. Device transfer carries the same portable allowlist on Android 12 and newer, while cross-platform transfer exports nothing. Learned text, clipboard data, encryption keys, authentication secrets, and adaptive-touch samples never enter these transports.
 - **Apache-2.0 only** in the main app. GPL / AGPL / Source-First code cannot be linked into `:app`; it can only ship as a clearly-isolated optional addon under its own license.
 - **No closed-source blobs.** No `libjni_latinimegoogle.so`-style glide binaries. Reproducible builds with toolchain pinning.
 
@@ -379,7 +380,7 @@ access.
 - **Long-press popups:** suppressed on every `KeyVariation.PASSWORD` (Android 17 password-visibility behavior closed on the IME side as of v1.8.44).
 - **Personalized learning:** clipboard write / dictionary learn paths skip password and `IME_FLAG_NO_PERSONALIZED_LEARNING` fields.
 - **Opt-in addon surfaces (smart-compose, translation, MCP):** live smart-compose and translation calls run through the audited `NlpAddonHub` and `SensitiveFieldGuard`; sensitive fields short-circuit to a safe no-result. MCP binding and dispatch are paused until a live audited keyboard action exists, so no MCP invocation can occur from keyboard startup.
-- **Personal dictionary backup:** excluded from both Android cloud backup and device-to-device transfer. The SQLCipher passphrase is wrapped by an Android Keystore key that is non-exportable, so the ciphertext is undecryptable on a new device. Use Settings → Personal dictionary → Export/Import for explicit local migration.
+- **Personal dictionary backup:** excluded from Android cloud backup, device-to-device transfer, and cross-platform transfer. The SQLCipher passphrase is wrapped by an Android Keystore key that is non-exportable, so the ciphertext is undecryptable on a new device. Use Settings → Personal dictionary → Export/Import for explicit local migration.
 
 The public posture is simple: no network permission, no telemetry, no account binding, no cloud learning, and explicit user action before sensitive local data is exported or shared with another app.
 

@@ -1,43 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Auto Backup rules for API 23-30 (pre-data-extraction-rules era).
+    Android 8 and 8.1 (API 26-27).
 
-    Privacy posture: this is the "no cloud, no telemetry" keyboard. The
-    user dictionary table (floris_user_dictionary) records every word the
-    personal-learning pipeline has promoted from the user's typing, which
-    may include names, addresses, codenames, slang, and other PII. Auto
-    Backup on these old API levels uploads to the user's Google Drive
-    without granular cloud-vs-device-transfer control. This pre-31 file is
-    therefore an allowlist: only JetPref state and user-owned customization
-    files are included.
-    Learned typing files such as personal n-grams, correction priors, and
-    SwiftKey trace logs remain outside those included paths. Android 12+
-    cloud and device-transfer rules keep explicit excludes in
-    data_extraction_rules.xml, where the schema accepts them.
+    These releases cannot prove that the selected cloud transport uses client-side encryption.
+    Excluding every eligible domain makes both cloud backup and device transfer export nothing.
+    API 28 adds the encrypted portable allowlist in res/xml-v28/backup_rules.xml.
 -->
 <full-backup-content>
-    <include
-        domain="root"
-        path="jetpref_datastore"/>
-    <include
-        domain="file"
-        path="ime"/>
-    <include
-        domain="file"
-        path="keypress_sounds"/>
-    <include
-        domain="file"
-        path="sticker_packs"/>
-    <include
-        domain="file"
-        path="snippets"/>
-    <include
-        domain="file"
-        path="hardware_keyboard_layouts.json"/>
-    <include
-        domain="file"
-        path="custom_emoji_tags.json"/>
-    <include
-        domain="file"
-        path="emoji_pin_groups.json"/>
+    <exclude domain="root" path="."/>
+    <exclude domain="file" path="."/>
+    <exclude domain="database" path="."/>
+    <exclude domain="sharedpref" path="."/>
+    <exclude domain="external" path="."/>
+    <exclude domain="device_root" path="."/>
+    <exclude domain="device_file" path="."/>
+    <exclude domain="device_database" path="."/>
+    <exclude domain="device_sharedpref" path="."/>
 </full-backup-content>

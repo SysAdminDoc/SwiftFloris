@@ -1787,6 +1787,8 @@
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_video_items">Videos</string>
     <string name="backup_and_restore__back_up__privacy_title">Local archive under your control</string>
     <string name="backup_and_restore__back_up__privacy_summary">SwiftFloris prepares the archive on-device. Clipboard-bearing backups are passphrase encrypted, sensitive items are skipped, and nothing leaves app-private storage until you save or share it.</string>
+    <string name="backup_and_restore__android_managed__title">Android-managed backup</string>
+    <string name="backup_and_restore__android_managed__summary">SwiftFloris runs no cloud service. Android may retain portable preferences and customizations through your device backup provider. Cloud export requires client-side encryption, Android 8 exports nothing, and learned text, clipboard data, keys, authentication secrets, and adaptive touch stay on this device.</string>
     <string name="backup_and_restore__back_up__coverage_title" comment="Card title listing what a manual archive does not contain">What an archive leaves behind</string>
     <string name="backup_and_restore__back_up__coverage_summary" comment="Card summary listing stores excluded from the manual archive. {stores} is a comma-separated list of store names.">An archive never carries {stores}. These are personal to this device and their encryption keys cannot leave it. Use Settings &#8594; Personal dictionary &#8594; Export to move your words to another device.</string>
     <string name="backup_omission__personal_dictionary" comment="Store name in the list of things a backup archive does not carry">your personal dictionary</string>
@@ -1799,6 +1801,7 @@
     <string name="backup_omission__clipboard_keys" comment="Store name in the list of things a backup archive does not carry">clipboard encryption keys</string>
     <string name="backup_omission__clipboard_file_records" comment="Store name in the list of things a backup archive does not carry">clipboard file records</string>
     <string name="backup_omission__scheduled_backup" comment="Store name in the list of things a backup archive does not carry">scheduled backup settings</string>
+    <string name="backup_omission__adaptive_touch_model" comment="Store name in the list of things a backup archive does not carry">adaptive touch samples</string>
     <string name="backup_and_restore__back_up__success">Backup archive exported.</string>
     <string name="backup_and_restore__back_up__share_sheet_opened">Backup archive ready to share</string>
     <string name="backup_and_restore__back_up__share_sheet_opened_summary">Complete the share sheet to copy the archive into another app or storage provider.</string>

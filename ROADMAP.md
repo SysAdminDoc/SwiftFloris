@@ -4,15 +4,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions
 
-### P0
-
-- [ ] P0: Fail closed across every Android backup transport
-  Why: Android 16 QPR2 treats a missing backup-mode section as fully enabled for eligible app data, while SwiftFloris defines cloud and device transfer only and enables cloud backup without an encryption-capability requirement.
-  Evidence: https://developer.android.com/identity/data/autobackup; https://developer.android.com/privacy-and-security/risks/backup-best-practices; app/src/main/AndroidManifest.xml:111-113; app/src/main/res/xml/data_extraction_rules.xml; app/src/main/res/xml/backup_rules.xml; app/src/main/res/xml-v31/backup_rules.xml.
-  Touches: AndroidManifest.xml, all backup-rule resource variants, BackupDataInventory.kt, backup parity gates, privacy copy, API 26, 28, 31, and 36.1 transport tests.
-  Acceptance: Cloud, device-to-device, and cross-platform transports each export only inventory entries explicitly classified as portable, or export nothing; no password-derived data, learned text, clipboard data, authentication material, encryption key, or adaptive-touch state crosses a transport unless its classification explicitly changes; cloud backup is disabled when client-side encryption is unavailable on supported APIs, while API 26 and 27 either disable cloud export or limit it to a documented non-sensitive subset; no placeholder iOS identity is declared; tests parse every selected resource variant and fail for a missing mode or unclassified persisted store; Settings and README distinguish no app-owned cloud service from any retained Android-managed backup.
-  Complexity: L
-
 ### P1
 
 - [ ] P1: Route users and Android 16 directly to keyboard language setup

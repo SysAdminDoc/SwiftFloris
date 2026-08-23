@@ -21,121 +21,241 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
+import org.w3c.dom.Document
+import org.w3c.dom.Element
+
+private const val AndroidXmlNamespace = "http://schemas.android.com/apk/res/android"
+
+private data class AndroidBackupRule(
+    val domain: String,
+    val path: String,
+    val requiredFlags: String? = null,
+)
+
+private fun locateProjectFile(path: String): File {
+    val candidates = listOf(
+        File(path),
+        File(path.removePrefix("app/")),
+    )
+    return candidates.firstOrNull { it.isFile && it.canRead() }
+        ?: error("$path not reachable from ${File(".").absolutePath}")
+}
+
+private fun locateProjectDirectory(path: String): File {
+    val candidates = listOf(
+        File(path),
+        File(path.removePrefix("app/")),
+    )
+    return candidates.firstOrNull { it.isDirectory && it.canRead() }
+        ?: error("$path not reachable from ${File(".").absolutePath}")
+}
+
+private fun parseProjectXml(path: String): Document {
+    val factory = DocumentBuilderFactory.newInstance().apply {
+        isNamespaceAware = true
+        setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+        setFeature("http://xml.org/sax/features/external-general-entities", false)
+        setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+    }
+    return factory.newDocumentBuilder().parse(locateProjectFile(path))
+}
+
+private fun Document.elements(tagName: String): List<Element> {
+    val nodes = getElementsByTagName(tagName)
+    return (0 until nodes.length).map { nodes.item(it) as Element }
+}
+
+private fun Element.directChildren(tagName: String): List<Element> {
+    return (0 until childNodes.length)
+        .mapNotNull { childNodes.item(it) as? Element }
+        .filter { it.tagName == tagName }
+}
+
+private fun Document.singleElement(tagName: String): Element {
+    return elements(tagName).singleOrNull() ?: error("Expected exactly one <$tagName> element")
+}
+
+private fun Document.rulesIn(sectionName: String, ruleName: String): Set<AndroidBackupRule> {
+    return singleElement(sectionName).directChildren(ruleName).map { element ->
+        AndroidBackupRule(
+            domain = element.getAttribute("domain"),
+            path = element.getAttribute("path"),
+            requiredFlags = element.getAttribute("requireFlags").ifBlank { null },
+        )
+    }.toSet()
+}
+
+private fun canonical(rule: AndroidBackupRule): Pair<String, String> {
+    if (rule.domain != "database") return rule.domain to rule.path
+    val base = rule.path.removeSuffix("-wal").removeSuffix("-shm").removeSuffix("-journal")
+    return rule.domain to base
+}
+
+private fun expectedPortableAndroidPaths(): Set<Pair<String, String>> {
+    return BackupDataInventory.entries
+        .filter { it.disposition == BackupDisposition.Included }
+        .map { entry ->
+            val path = if (entry.domain == BackupDomain.File && entry.path.startsWith("ime/")) {
+                "ime"
+            } else {
+                entry.path
+            }
+            entry.domain.xmlName to path
+        }
+        .toSet()
+}
+
+private fun discoveredSharedPreferenceFiles(sources: Map<String, String>): Set<String> {
+    val directCall = Regex(
+        """getSharedPreferences\(\s*(\"[^\"]+\"|[A-Za-z_][A-Za-z0-9_]*)\s*,""",
+    )
+    val cryptoCall = Regex(
+        """TinkStringPreferenceCrypto\.sharedPreferences\(\s*.*?,\s*(\"[^\"]+\"|[A-Za-z_][A-Za-z0-9_]*)\s*,?\s*\)""",
+        RegexOption.DOT_MATCHES_ALL,
+    )
+    val constant = Regex("""const\s+val\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*\"([^\"]+)\"""")
+    val discovered = mutableSetOf<String>()
+
+    sources.forEach { (path, source) ->
+        if (path.endsWith("TinkStringPreferenceCrypto.kt")) return@forEach
+        val constants = constant.findAll(source).associate { it.groupValues[1] to it.groupValues[2] }
+        val expressions = buildList {
+            directCall.findAll(source).forEach { add(it.groupValues[1]) }
+            cryptoCall.findAll(source).forEach { add(it.groupValues[1]) }
+        }
+        expressions.forEach { expression ->
+            val name = if (expression.startsWith('"')) {
+                expression.removeSurrounding("\"")
+            } else {
+                constants[expression]
+                    ?: error("Persisted SharedPreferences name $expression in $path is not a local constant")
+            }
+            discovered += "$name.xml"
+        }
+    }
+    return discovered
+}
+
+private fun mainKotlinSources(): Map<String, String> {
+    val root = locateProjectDirectory("app/src/main/kotlin")
+    return root.walkTopDown()
+        .filter { it.isFile && it.extension == "kt" }
+        .associate { it.relativeTo(root).invariantSeparatorsPath to it.readText() }
+}
 
 /**
- * Backup coverage used to live in three places that could disagree: the archive selector,
- * `backup_rules.xml`, and `data_extraction_rules.xml`. These assertions bind Android's rule files
- * to [BackupDataInventory] in both directions, so a store cannot be added without deciding what
- * happens to it, and a rule cannot linger for a store that no longer exists.
+ * These assertions bind the canonical inventory to every Android backup resource selected from
+ * API 26 through Android 16 QPR2. They also discover SharedPreferences declarations in source so
+ * a newly persisted store cannot inherit Android's permissive default without classification.
  */
 class BackupDataInventoryTest : FunSpec({
-
-    fun readRules(name: String): String {
-        val candidates = listOf(
-            "app/src/main/res/xml/$name",
-            "src/main/res/xml/$name",
-        )
-        val file = candidates.map(::File).firstOrNull { it.isFile && it.canRead() }
-            ?: error("$name not reachable from ${File(".").absolutePath}")
-        return file.readText()
-    }
-
-    fun excludesIn(xml: String, ruleSet: String): Set<Pair<String, String>> {
-        val section = Regex("<$ruleSet>(.*?)</$ruleSet>", RegexOption.DOT_MATCHES_ALL)
-            .find(xml)
-            ?.groupValues
-            ?.get(1)
-            ?: error("<$ruleSet> block missing")
-        return Regex(
-            """<exclude\s+domain="([^"]+)"\s+path="([^"]+)"\s*/>""",
-            RegexOption.DOT_MATCHES_ALL,
-        ).findAll(section.replace(Regex("\\s+"), " "))
-            .map { it.groupValues[1] to it.groupValues[2] }
-            .toSet()
-    }
-
-    fun includesIn(xml: String, ruleSet: String): Set<Pair<String, String>> {
-        val section = Regex("<$ruleSet>(.*?)</$ruleSet>", RegexOption.DOT_MATCHES_ALL)
-            .find(xml)
-            ?.groupValues
-            ?.get(1)
-            ?: error("<$ruleSet> block missing")
-        return Regex(
-            """<include\s+domain="([^"]+)"\s+path="([^"]+)"\s*/>""",
-            RegexOption.DOT_MATCHES_ALL,
-        ).findAll(section.replace(Regex("\\s+"), " "))
-            .map { it.groupValues[1] to it.groupValues[2] }
-            .toSet()
-    }
-
-    /** WAL / SHM / journal companions are rule detail, not separate stores. */
-    fun canonical(domain: String, path: String): Pair<String, String> {
-        if (domain != "database") return domain to path
-        val base = path.removeSuffix("-wal").removeSuffix("-shm").removeSuffix("-journal")
-        return domain to base
-    }
+    val expectedPortable = expectedPortableAndroidPaths()
 
     test("every persisted store has a disposition and a unique id") {
         BackupDataInventory.entries.map { it.id }.toSet().size shouldBe BackupDataInventory.entries.size
         BackupDataInventory.entries.filter { it.path.isBlank() }.shouldBeEmpty()
     }
 
-    test("cloud-backup rules exclude exactly the stores the inventory holds back") {
-        val xml = readRules("data_extraction_rules.xml")
-        val declared = excludesIn(xml, "cloud-backup").map { canonical(it.first, it.second) }.toSet()
-
-        declared shouldContainExactlyInAnyOrder BackupDataInventory.requiredAndroidExcludes()
-    }
-
-    test("device-transfer rules match the cloud-backup rules") {
-        val xml = readRules("data_extraction_rules.xml")
-        val cloud = excludesIn(xml, "cloud-backup").map { canonical(it.first, it.second) }.toSet()
-        val transfer = excludesIn(xml, "device-transfer").map { canonical(it.first, it.second) }.toSet()
-
-        transfer shouldContainExactlyInAnyOrder cloud
-    }
-
-    test("the pre-31 allowlist includes nothing the inventory holds back") {
-        val xml = readRules("backup_rules.xml").replace(Regex("\\s+"), " ")
-        val includes = Regex("""<include domain="([^"]+)" path="([^"]+)"\s*/>""")
-            .findAll(xml)
-            .map { it.groupValues[1] to it.groupValues[2] }
-            .toSet()
-
-        // The old rule file has no <exclude> support worth relying on, so it must be an allowlist
-        // of included stores only.
-        val included = setOf(
-            "root" to "jetpref_datastore",
-            "file" to "ime",
-            "file" to "keypress_sounds",
-            "file" to "sticker_packs",
-            "file" to "snippets",
-            "file" to "hardware_keyboard_layouts.json",
-            "file" to "custom_emoji_tags.json",
-            "file" to "emoji_pin_groups.json",
+    test("API 26 and 27 select an explicit export-nothing rule set") {
+        val rules = parseProjectXml("app/src/main/res/xml/backup_rules.xml")
+        rules.documentElement.tagName shouldBe "full-backup-content"
+        rules.rulesIn("full-backup-content", "include").shouldBeEmpty()
+        rules.rulesIn("full-backup-content", "exclude")
+            .map { it.domain to it.path }
+            .toSet() shouldContainExactlyInAnyOrder setOf(
+            "root" to ".",
+            "file" to ".",
+            "database" to ".",
+            "sharedpref" to ".",
+            "external" to ".",
+            "device_root" to ".",
+            "device_file" to ".",
+            "device_database" to ".",
+            "device_sharedpref" to ".",
         )
-        val heldBack = BackupDataInventory.entries
-            .filter { it.disposition != BackupDisposition.Included }
-            .map { it.domain.xmlName to it.path }
-            .toSet()
-        includes.intersect(heldBack).shouldBeEmpty()
-        includes shouldContainExactlyInAnyOrder included
     }
 
-    test("Android 12+ include rules carry every manual included store") {
-        val expected = setOf(
-            "root" to "jetpref_datastore",
-            "file" to "ime",
-            "file" to "keypress_sounds",
-            "file" to "sticker_packs",
-            "file" to "snippets",
-            "file" to "hardware_keyboard_layouts.json",
-            "file" to "custom_emoji_tags.json",
-            "file" to "emoji_pin_groups.json",
+    test("API 28 through 30 select only portable stores with client-side encryption") {
+        val rules = parseProjectXml("app/src/main/res/xml-v28/backup_rules.xml")
+        rules.documentElement.tagName shouldBe "full-backup-content"
+        val includes = rules.rulesIn("full-backup-content", "include")
+        includes.map { it.domain to it.path }.toSet() shouldContainExactlyInAnyOrder expectedPortable
+        includes.map { it.requiredFlags }.toSet() shouldBe setOf("clientSideEncryption")
+    }
+
+    test("API 31 and newer cloud backup requires encryption and carries only portable stores") {
+        val rules = parseProjectXml("app/src/main/res/xml/data_extraction_rules.xml")
+        rules.documentElement.tagName shouldBe "data-extraction-rules"
+        rules.singleElement("cloud-backup").getAttribute("disableIfNoEncryptionCapabilities") shouldBe "true"
+        rules.rulesIn("cloud-backup", "include")
+            .map { it.domain to it.path }
+            .toSet() shouldContainExactlyInAnyOrder expectedPortable
+        rules.rulesIn("cloud-backup", "exclude")
+            .map(::canonical)
+            .toSet() shouldContainExactlyInAnyOrder BackupDataInventory.requiredAndroidExcludes()
+    }
+
+    test("API 31 and newer device transfer carries only portable stores") {
+        val rules = parseProjectXml("app/src/main/res/xml/data_extraction_rules.xml")
+        rules.rulesIn("device-transfer", "include")
+            .map { it.domain to it.path }
+            .toSet() shouldContainExactlyInAnyOrder expectedPortable
+        rules.rulesIn("device-transfer", "exclude")
+            .map(::canonical)
+            .toSet() shouldContainExactlyInAnyOrder BackupDataInventory.requiredAndroidExcludes()
+    }
+
+    test("cross-platform transfer declares no placeholder iOS identity") {
+        val rules = parseProjectXml("app/src/main/res/xml/data_extraction_rules.xml")
+        rules.elements("cross-platform-transfer").shouldBeEmpty()
+        rules.elements("platform-specific-params").shouldBeEmpty()
+    }
+
+    test("every resource variant selected from API 26 through Android 16 QPR2 is parsed") {
+        val resRoot = locateProjectDirectory("app/src/main/res")
+        val selectedFiles = resRoot.walkTopDown()
+            .filter { it.isFile && it.name in setOf("backup_rules.xml", "data_extraction_rules.xml") }
+            .map { it.relativeTo(resRoot).invariantSeparatorsPath }
+            .toSet()
+        selectedFiles shouldContainExactlyInAnyOrder setOf(
+            "xml/backup_rules.xml",
+            "xml-v28/backup_rules.xml",
+            "xml/data_extraction_rules.xml",
         )
-        val xml = readRules("data_extraction_rules.xml")
-        includesIn(xml, "cloud-backup") shouldContainExactlyInAnyOrder expected
-        includesIn(xml, "device-transfer") shouldContainExactlyInAnyOrder expected
+        selectedFiles.forEach { relativePath ->
+            parseProjectXml("app/src/main/res/$relativePath").documentElement.tagName.isBlank() shouldBe false
+        }
+    }
+
+    test("manifest delegates Android-managed backup to the fail-closed agent") {
+        val manifest = parseProjectXml("app/src/main/AndroidManifest.xml")
+        val application = manifest.singleElement("application")
+        application.getAttributeNS(AndroidXmlNamespace, "allowBackup") shouldBe "true"
+        application.getAttributeNS(AndroidXmlNamespace, "backupAgent") shouldBe
+            "dev.patrickgold.florisboard.backup.SwiftFlorisBackupAgent"
+        application.getAttributeNS(AndroidXmlNamespace, "fullBackupOnly") shouldBe "true"
+    }
+
+    test("every declared SharedPreferences file is classified by the inventory") {
+        val discovered = discoveredSharedPreferenceFiles(mainKotlinSources())
+        val registered = BackupDataInventory.entries
+            .filter { it.domain == BackupDomain.SharedPref }
+            .map { it.path }
+            .toSet()
+        (discovered - registered).shouldBeEmpty()
+    }
+
+    test("persisted-store discovery exposes an unregistered SharedPreferences fixture") {
+        val fixture = mapOf(
+            "Fixture.kt" to
+                """context.getSharedPreferences("unregistered_store", Context.MODE_PRIVATE)""",
+        )
+        val registered = BackupDataInventory.entries
+            .filter { it.domain == BackupDomain.SharedPref }
+            .map { it.path }
+            .toSet()
+        (discoveredSharedPreferenceFiles(fixture) - registered) shouldBe setOf("unregistered_store.xml")
     }
 
     test("every manual archive section maps to at least one inventory entry") {
@@ -147,10 +267,6 @@ class BackupDataInventoryTest : FunSpec({
     }
 
     test("every store an archive omits carries a user-facing label") {
-        // The Backup screen renders its "what an archive leaves behind" card
-        // from these labels. A store added without one would be silently
-        // dropped from that list, which is how the old hand-written sentence
-        // ended up naming four of the thirteen.
         BackupDataInventory.archiveOmissions()
             .filter { it.omissionLabel == null }
             .map { it.id }

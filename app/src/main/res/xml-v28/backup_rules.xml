@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 9 through Android 11 (API 28-30).
+
+    Each include requires Android's client-side-encryption transport flag. Direct device transfer
+    may therefore export nothing on these releases, which is safer than allowing the shared
+    pre-31 rule format to send a portable store through an unencrypted cloud transport.
+-->
+<full-backup-content>
+    <include
+        domain="root"
+        path="jetpref_datastore"
+        requireFlags="clientSideEncryption"/>
+    <include
+        domain="file"
+        path="ime"
+        requireFlags="clientSideEncryption"/>
+    <include
+        domain="file"
+        path="keypress_sounds"
+        requireFlags="clientSideEncryption"/>
+    <include
+        domain="file"
+        path="sticker_packs"
+        requireFlags="clientSideEncryption"/>
+    <include
+        domain="file"
+        path="snippets"
+        requireFlags="clientSideEncryption"/>
+    <include
+        domain="file"
+        path="hardware_keyboard_layouts.json"
+        requireFlags="clientSideEncryption"/>
+    <include
+        domain="file"
+        path="custom_emoji_tags.json"
+        requireFlags="clientSideEncryption"/>
+    <include
+        domain="file"
+        path="emoji_pin_groups.json"
+        requireFlags="clientSideEncryption"/>
+</full-backup-content>

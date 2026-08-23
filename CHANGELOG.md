@@ -2,6 +2,7 @@
 
 ## v1.9.63 (2026-08-22)
 
+- Fail closed across Android backup transports. Android 8 exports nothing, encrypted cloud backup and Android 12 device transfer use the portable inventory, and Android 16 QPR2 cross-platform transfer exports nothing. Persisted-store discovery, selected-resource parsing, and transport-policy tests guard the boundary.
 - Keep raw-content developer tools out of production APKs. Debug overlays now clear and hide clipboard, editor, spelling, and inline-autofill content in password, incognito, and no-learning sessions. Release APK and build-variant gates enforce both boundaries.
 - Repair the backup and restore benchmark harness for the current archive workspace and persisted-content inventory APIs.
 - Keep Android's tracked `src/release` code distinct from generated release output in the repository-hygiene gate. Its fixture preserves both decisions, and the root-crash-log self-test now finds Git Bash directly on Windows instead of falling into an unavailable WSL relay.

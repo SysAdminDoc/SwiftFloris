@@ -220,6 +220,21 @@ object BackupDataInventory {
             omissionLabel = R.string.backup_omission__scheduled_backup,
         ),
         BackupDataEntry(
+            id = "adaptive_touch_model",
+            domain = BackupDomain.SharedPref,
+            path = "adaptive_touch_model.xml",
+            disposition = BackupDisposition.SensitiveExcluded,
+            requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__adaptive_touch_model,
+        ),
+        BackupDataEntry(
+            id = "crash_utility_state",
+            domain = BackupDomain.SharedPref,
+            path = "crash_utility.xml",
+            disposition = BackupDisposition.Ephemeral,
+            requiresAndroidExclude = true,
+        ),
+        BackupDataEntry(
             id = "personal_dictionary",
             domain = BackupDomain.Database,
             path = "floris_user_dictionary",
