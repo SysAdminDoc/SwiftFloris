@@ -3,15 +3,35 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
-from shutil import copy2
 from pathlib import Path
+from shutil import copy2, which
 from tempfile import TemporaryDirectory
-
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "scripts" / "check-no-root-crash-logs.sh"
+
+
+def resolve_bash() -> str:
+    if sys.platform != "win32":
+        return "bash"
+    git_executable = which("git")
+    if git_executable is not None:
+        git_bash = Path(git_executable).resolve().parent.parent / "bin" / "bash.exe"
+        if git_bash.is_file():
+            return str(git_bash)
+    for program_files_var in ("ProgramFiles", "ProgramFiles(x86)"):
+        program_files = os.environ.get(program_files_var)
+        if program_files:
+            git_bash = Path(program_files) / "Git" / "bin" / "bash.exe"
+            if git_bash.is_file():
+                return str(git_bash)
+    return "bash"
+
+
+BASH = resolve_bash()
 
 
 def run(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -43,7 +63,7 @@ def init_repo(root: Path) -> None:
 
 
 def run_checker(root: Path) -> subprocess.CompletedProcess[str]:
-    return run("bash", "scripts/check-no-root-crash-logs.sh", cwd=root)
+    return run(BASH, "scripts/check-no-root-crash-logs.sh", cwd=root)
 
 
 def assert_result(

@@ -4,6 +4,7 @@
 
 - Keep raw-content developer tools out of production APKs. Debug overlays now clear and hide clipboard, editor, spelling, and inline-autofill content in password, incognito, and no-learning sessions. Release APK and build-variant gates enforce both boundaries.
 - Repair the backup and restore benchmark harness for the current archive workspace and persisted-content inventory APIs.
+- Keep Android's tracked `src/release` code distinct from generated release output in the repository-hygiene gate. Its fixture preserves both decisions, and the root-crash-log self-test now finds Git Bash directly on Windows instead of falling into an unavailable WSL relay.
 - Stop adaptive-touch refinement and persistence in password, incognito, and app-declared no-personalized-learning sessions. Normal text fields still learn, and focused privacy tests cover all four paths.
 - Restore the canonical release trust registry to Build Tools 37.0.0 and SQLCipher 4.18.0. Exact drift fixtures now fail when either live owner changes without a matching registry update.
 

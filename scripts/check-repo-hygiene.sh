@@ -6,7 +6,11 @@ cd "$ROOT_DIR"
 
 "$ROOT_DIR/scripts/check-no-root-crash-logs.sh"
 
-generated_paths="$(git ls-files | grep -E '(^|/)(\.gradle|\.kotlin|build|out|release|captures)/|^app/build/|^benchmark/build/|^lib/.*/build/' || true)"
+generated_paths="$(
+  git ls-files |
+    grep -E '(^|/)(\.gradle|\.kotlin|build|out|release|captures)/|^app/build/|^benchmark/build/|^lib/.*/build/' |
+    grep -Ev '(^|/)src/release/' || true
+)"
 if [ -n "$generated_paths" ]; then
   echo "::error::Generated build/report output is tracked. Remove these paths from git and keep them as workflow artifacts only:"
   echo "$generated_paths"
