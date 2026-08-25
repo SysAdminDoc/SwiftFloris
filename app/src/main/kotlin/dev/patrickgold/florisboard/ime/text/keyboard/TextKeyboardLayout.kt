@@ -42,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -97,6 +98,7 @@ import dev.patrickgold.florisboard.ime.popup.ExceptionsForKeyCodes
 import dev.patrickgold.florisboard.ime.popup.PopupUiController
 import dev.patrickgold.florisboard.ime.popup.rememberPopupUiController
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailRetention
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingGesture
 import dev.patrickgold.florisboard.ime.text.gestures.SpaceTouchpadPolicy
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
@@ -765,7 +767,14 @@ private class TextKeyboardLayoutController(
     var isGliding by mutableStateOf(false)
 
     val glideTypingDetector = GlideTypingGesture.Detector(context)
-    val glideDataForDrawing = mutableStateMapOf<Int, List<Pair<GlideTypingGesture.Detector.Position, Long>>>()
+    // A SnapshotStateList per pointer rather than a List value that gets
+    // replaced. Appending with `+` rebuilt the whole trace on every motion
+    // event, which is quadratic in the point count, and Flow Through Space
+    // keeps one gesture running across several words so that count is not
+    // small. Compose still observes the trail because the list is itself a
+    // snapshot state object.
+    val glideDataForDrawing =
+        mutableStateMapOf<Int, SnapshotStateList<Pair<GlideTypingGesture.Detector.Position, Long>>>()
     val fadingGlide = mutableStateListOf<Pair<GlideTypingGesture.Detector.Position, Long>>()
     var fadingGlideRadius by mutableFloatStateOf(0.0f)
     val glideActiveKeys = mutableStateMapOf<Int, TextKey>()
@@ -1576,8 +1585,8 @@ private class TextKeyboardLayoutController(
 
     override fun onGlideAddPoint(pointerId: Int, point: GlideTypingGesture.Detector.Position) {
         if (isGlideEnabled) {
-            glideDataForDrawing[pointerId] = glideDataForDrawing[pointerId].orEmpty() +
-                (point to System.currentTimeMillis())
+            val trace = glideDataForDrawing.getOrPut(pointerId) { mutableStateListOf() }
+            trace.add(point to System.currentTimeMillis())
             val pointed = keyboard.getKeyForPos(point.x, point.y)
             if (pointed != null) glideActiveKeys[pointerId] = pointed
             // Flow Through Space: split the gesture into separate words when the trace
@@ -1639,6 +1648,17 @@ private class TextKeyboardLayoutController(
         // leaked the point buffer for the whole session and latched
         // `isGliding` true permanently when the trail was disabled.
         if (prefs.glide.showTrail.get()) {
+            // Drop points the trail window has already expired before appending.
+            // drawGlideTrail skips them anyway, but it finds them with a linear
+            // scan from index 0 on every frame, so an unpruned list made both the
+            // retained memory and the per-frame cost grow with every glided word
+            // for the whole session. Pruning by the same cutoff the draw path
+            // uses keeps concurrent two-finger fades intact.
+            val nowMillis = System.currentTimeMillis()
+            val trailDurationMillis = prefs.glide.trailDuration.get().toLong()
+            fadingGlide.removeAll { (_, timestamp) ->
+                !GlideTrailRetention.isWithinTrailWindow(timestamp, nowMillis, trailDurationMillis)
+            }
             fadingGlide.addAll(finished)
 
             val animator = ValueAnimator.ofFloat(20.0f, 0.0f)
