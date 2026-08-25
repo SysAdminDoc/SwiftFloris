@@ -162,6 +162,47 @@ class RewriteRouterTest : FunSpec({
         provider.calls shouldBe 2
     }
 
+    test("an editor that disallows writing tools suppresses before the provider is asked") {
+        val provider = StubProvider()
+        val router = RewriteRouter(provider)
+
+        val resp = router.rewrite(RewriteRequest(
+            sourceText = "Hey, just checking in",
+            tone = RewriteTone.FORMAL,
+            isWritingToolsEnabled = false,
+        ))
+
+        (resp as RewriteRouter.Response.Suppressed).reason shouldBe "editor disallows writing tools"
+        provider.calls shouldBe 0
+    }
+
+    test("a disallowing editor is not served from a cache entry an allowing editor filled") {
+        // The guard sits ahead of the cache on purpose. Same text and tone in a
+        // field that permits rewriting must not leak the result into one that
+        // forbids it.
+        val provider = StubProvider()
+        val router = RewriteRouter(provider)
+
+        val allowed = RewriteRequest(sourceText = "Hey there", tone = RewriteTone.FORMAL)
+        router.rewrite(allowed) shouldBe RewriteRouter.Response.Rewritten("stub-rewrite", RewriteTone.FORMAL, false)
+
+        val forbidden = allowed.copy(isWritingToolsEnabled = false)
+        val resp = router.rewrite(forbidden)
+
+        (resp as RewriteRouter.Response.Suppressed).reason shouldBe "editor disallows writing tools"
+        provider.calls shouldBe 1
+    }
+
+    test("an editor that says nothing keeps the previous behaviour") {
+        val provider = StubProvider()
+        val router = RewriteRouter(provider)
+
+        val resp = router.rewrite(RewriteRequest(sourceText = "Hey there", tone = RewriteTone.FORMAL))
+
+        (resp is RewriteRouter.Response.Rewritten) shouldBe true
+        provider.calls shouldBe 1
+    }
+
     test("NoOpRewriteProvider always returns Unavailable") {
         NoOpRewriteProvider.isReady(RewriteTone.FORMAL, "en") shouldBe false
         val result = NoOpRewriteProvider.rewrite(RewriteRequest("text", tone = RewriteTone.FORMAL))

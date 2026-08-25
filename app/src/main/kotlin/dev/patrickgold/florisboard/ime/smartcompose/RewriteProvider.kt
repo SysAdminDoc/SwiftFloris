@@ -71,6 +71,16 @@ data class RewriteRequest(
     val inputType: Int = 0x01,
     val imeOptions: Int = 0,
     val maxRewrittenChars: Int = 4096,
+    /**
+     * What the editor said about generative text replacement, from
+     * `EditorInfo.isWritingToolsEnabled()`.
+     *
+     * Android 16 lets an editor forbid this outright, and an editor that says
+     * no has said no to a rewrite regardless of what the user consented to for
+     * the keyboard as a whole. Defaults to `true` so callers below API 36, and
+     * tests that do not care, keep the previous behaviour.
+     */
+    val isWritingToolsEnabled: Boolean = true,
 )
 
 /** Caller-facing result. */

@@ -64,6 +64,12 @@ class RewriteRouter(
         if (SensitiveFieldGuard.isSensitive(request.inputType, request.imeOptions)) {
             return Response.Suppressed(reason = "sensitive field")
         }
+        // Ahead of the cache, not just ahead of the provider: a rewrite this
+        // editor forbids must not be served from a hit an editor that allowed
+        // it put there.
+        if (!request.isWritingToolsEnabled) {
+            return Response.Suppressed(reason = "editor disallows writing tools")
+        }
         if (request.sourceText.isBlank()) {
             return Response.Suppressed(reason = "blank input")
         }

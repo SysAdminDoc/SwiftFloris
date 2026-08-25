@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: Android 16's IME language-settings action opens the subtype list; the language-pack screen offers Add keyboard language and distinguishes built-in resources from imported extensions; a user can enable Portuguese without importing a file; navigation, RTL, and 200 percent font-scale captures pass.
   Complexity: M
 
-- [ ] P1: Respect the Android 16 writing-tools opt-out before rewrite dispatch
-  Why: Editors can explicitly forbid generative text replacement, but the rewrite router cannot observe that decision.
-  Evidence: https://developer.android.com/reference/android/view/inputmethod/EditorInfo; app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/RewriteRouter.kt:60-79; RewriteProvider.kt.
-  Touches: EditorInfo wrapper or snapshot, RewriteRequest, RewriteRouter, rewrite route wiring, RewriteRouter tests.
-  Acceptance: On API 36 and newer, isWritingToolsEnabled false suppresses rewrite before cache lookup or provider invocation; API 35 and older retain current behavior; ordinary prediction and spell correction are unchanged; tests assert provider call counts.
-  Complexity: S
-
 - [ ] P1: Apply Advanced Protection state changes without an IME restart
   Why: The policy reads snapshots even though Android can notify the process when the user toggles Advanced Protection.
   Evidence: https://developer.android.com/reference/android/security/advancedprotection/AdvancedProtectionManager; https://developer.android.com/privacy-and-security/advanced-protection-mode; app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/AdvancedProtectionPolicy.kt:75-90.

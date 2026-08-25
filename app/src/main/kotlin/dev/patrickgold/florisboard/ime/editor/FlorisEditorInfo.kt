@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.editor
 import android.view.inputmethod.EditorInfo
 import androidx.core.view.inputmethod.EditorInfoCompat
 import androidx.emoji2.text.EmojiCompat
+import org.florisboard.lib.android.AndroidVersion
 
 class FlorisEditorInfo private constructor(val base: EditorInfo) {
     val inputAttributes = InputAttributes.wrap(base.inputType)
@@ -100,6 +101,18 @@ class FlorisEditorInfo private constructor(val base: EditorInfo) {
 
     val emojiCompatReplaceAll: Boolean
         get() = base.extras?.getBoolean(EmojiCompat.EDITOR_INFO_REPLACE_ALL_KEY, false) ?: false
+
+    /**
+     * Whether this editor permits generative text replacement.
+     *
+     * Android 16 lets an editor forbid it outright, which is a stronger
+     * statement than the keyboard's own consent preference: the user may have
+     * said yes to rewriting in general and this particular field still not
+     * accept it. Editors below API 36 cannot express the objection, so they
+     * report `true` and the surrounding guards decide as they did before.
+     */
+    val isWritingToolsEnabled: Boolean
+        get() = if (AndroidVersion.ATLEAST_API36_BAKLAVA) base.isWritingToolsEnabled else true
 
     companion object {
         val Unspecified = FlorisEditorInfo(EditorInfo())
