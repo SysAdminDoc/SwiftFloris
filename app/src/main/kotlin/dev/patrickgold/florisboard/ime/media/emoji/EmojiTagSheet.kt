@@ -74,8 +74,11 @@ fun EmojiTagSheet(
     val tabStyle = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiTab.elementName)
     val errorStyle = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiPinSheetError.elementName)
     val foreground = tabStyle.foreground(default = windowStyle.foreground(default = Color.White))
-    val background = panelStyle.background(default = windowStyle.background(default = Color(0xFF171923)))
-    val errorForeground = errorStyle.foreground(default = snyggErrorForegroundFor(background))
+    val windowBackground = windowStyle.background(default = Color(0xFF171923))
+    val background = panelStyle.background(default = windowBackground)
+    val errorForeground = errorStyle.foreground(
+        default = snyggErrorForegroundFor(background, behind = windowBackground),
+    )
     val fieldBackground = foreground.copy(alpha = 0.10f)
     val actionBackground = foreground.copy(alpha = 0.16f)
 

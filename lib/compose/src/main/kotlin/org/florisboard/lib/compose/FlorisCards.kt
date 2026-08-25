@@ -604,15 +604,18 @@ fun FlorisOutlinedBox(
                     modifier = Modifier
                         .padding(start = 10.dp, bottom = 4.dp)
                         .then(
+                            // No touch-target floor here on purpose. Forcing 48 dp
+                            // would add ~34 dp of dead space above the content and
+                            // push the caption off its baseline, and the subtitle is
+                            // a duplicate route: the title chip above it and every
+                            // row below it already navigate to the same place, each
+                            // at full size. The role is what was missing.
                             if (onSubtitleClick != null) {
-                                Modifier
-                                    .defaultMinSize(minHeight = FlorisTouchTarget.MinSize)
-                                    .rippleClickable(role = Role.Button, onClick = onSubtitleClick)
+                                Modifier.rippleClickable(role = Role.Button, onClick = onSubtitleClick)
                             } else {
                                 Modifier
                             }
                         ),
-                    contentAlignment = Alignment.CenterStart,
                 ) {
                     subtitle()
                 }

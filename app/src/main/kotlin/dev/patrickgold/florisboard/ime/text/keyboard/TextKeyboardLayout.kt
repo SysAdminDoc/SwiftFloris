@@ -1648,17 +1648,18 @@ private class TextKeyboardLayoutController(
         // leaked the point buffer for the whole session and latched
         // `isGliding` true permanently when the trail was disabled.
         if (prefs.glide.showTrail.get()) {
-            // Drop points the trail window has already expired before appending.
-            // drawGlideTrail skips them anyway, but it finds them with a linear
-            // scan from index 0 on every frame, so an unpruned list made both the
-            // retained memory and the per-frame cost grow with every glided word
-            // for the whole session. Pruning by the same cutoff the draw path
-            // uses keeps concurrent two-finger fades intact.
-            val nowMillis = System.currentTimeMillis()
-            val trailDurationMillis = prefs.glide.trailDuration.get().toLong()
-            fadingGlide.removeAll { (_, timestamp) ->
-                !GlideTrailRetention.isWithinTrailWindow(timestamp, nowMillis, trailDurationMillis)
-            }
+            // Drop expired points before appending the finished trace. Without
+            // this the shared buffer kept every word the session ever produced,
+            // and drawGlideTrail rescans it from index 0 on every frame, so both
+            // the retained memory and the per-frame cost grew with the number of
+            // words typed. Appending rather than replacing is what lets two
+            // fingers lifting together both keep fading.
+            GlideTrailRetention.dropExpired(
+                points = fadingGlide,
+                nowMillis = System.currentTimeMillis(),
+                trailDurationMillis = prefs.glide.trailDuration.get().toLong(),
+                timestampOf = { (_, timestamp) -> timestamp },
+            )
             fadingGlide.addAll(finished)
 
             val animator = ValueAnimator.ofFloat(20.0f, 0.0f)

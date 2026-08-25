@@ -164,6 +164,14 @@ class StringsTest : FunSpec({
             } shouldBe "Details: loop {error_message} loop"
         }
 
+        test("an empty value does not swallow the placeholder after it") {
+            // The old scanner resumed one character past the start of what it had
+            // just inserted, so a zero-length value left the cursor beyond the
+            // next opening brace and that placeholder was never substituted.
+            "{a}{b}".curlyFormat { key -> if (key == "a") "" else "Y" } shouldBe "Y"
+            "{a}{b}".curlyFormat("a" to "", "b" to "Y") shouldBe "Y"
+        }
+
         test("every occurrence of a placeholder is still replaced") {
             "{a} and {a} and {a}".curlyFormat("a" to "x") shouldBe "x and x and x"
         }

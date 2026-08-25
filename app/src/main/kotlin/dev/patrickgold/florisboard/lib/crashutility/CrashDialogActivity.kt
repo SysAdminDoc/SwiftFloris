@@ -168,10 +168,26 @@ class CrashDialogActivity : ComponentActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putString(STATE_ERROR_REPORT, errorReport)
+        // Saved state crosses a Binder transaction, and the report is not
+        // bounded: it carries every pending stacktrace, up to 50 of them, plus
+        // the debug log header. Handing an oversized string to the bundle would
+        // trade a recoverable empty report for a TransactionTooLargeException.
+        // The head is the part that matters, since the environment block and
+        // the first stacktrace lead the report.
+        outState.putString(STATE_ERROR_REPORT, errorReport.takeHeadForSavedState())
+    }
+
+    private fun String.takeHeadForSavedState(): String {
+        if (length <= MAX_SAVED_REPORT_CHARS) return this
+        return take(MAX_SAVED_REPORT_CHARS) + SAVED_REPORT_TRUNCATION_NOTICE
     }
 
     private companion object {
         const val STATE_ERROR_REPORT = "error_report"
+
+        /** Well inside the ~1 MB Binder budget the whole bundle shares. */
+        const val MAX_SAVED_REPORT_CHARS = 128 * 1024
+        const val SAVED_REPORT_TRUNCATION_NOTICE =
+            "\n\n[report truncated: reopen the app after a crash to capture it in full]"
     }
 }

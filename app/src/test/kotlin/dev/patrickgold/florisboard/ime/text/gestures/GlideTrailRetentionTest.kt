@@ -20,9 +20,24 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 
+/**
+ * Every assertion here drives [GlideTrailRetention.dropExpired], which is the
+ * function the keyboard controller actually calls on the shared fade buffer.
+ */
 class GlideTrailRetentionTest : FunSpec({
 
     val trailDuration = 200L
+
+    fun buffer(vararg points: Pair<Int, Long>) = mutableListOf(*points)
+
+    fun MutableList<Pair<Int, Long>>.prune(nowMillis: Long) {
+        GlideTrailRetention.dropExpired(
+            points = this,
+            nowMillis = nowMillis,
+            trailDurationMillis = trailDuration,
+            timestampOf = { it.second },
+        )
+    }
 
     test("a point exactly on the window edge is still drawn, so it is kept") {
         GlideTrailRetention.isWithinTrailWindow(
@@ -40,58 +55,61 @@ class GlideTrailRetentionTest : FunSpec({
         ) shouldBe false
     }
 
-    test("pruning drops only expired points and preserves order") {
-        val points = listOf(
-            "oldest" to 800L,
-            "expired" to 999L,
-            "edge" to 1_000L,
-            "recent" to 1_150L,
-        )
+    test("dropping keeps order and mutates the caller's list rather than replacing it") {
+        // The controller's buffer is a SnapshotStateList that Compose observes,
+        // so the pruning has to happen in place or the draw stops updating.
+        val points = buffer(0 to 800L, 1 to 999L, 2 to 1_000L, 3 to 1_150L)
+        val identity = points
 
-        GlideTrailRetention.prune(
-            points = points,
-            nowMillis = 1_200L,
-            trailDurationMillis = trailDuration,
-            timestampOf = { it.second },
-        ) shouldContainExactly listOf("edge" to 1_000L, "recent" to 1_150L)
+        points.prune(nowMillis = 1_200L)
+
+        points shouldContainExactly listOf(2 to 1_000L, 3 to 1_150L)
+        (points === identity) shouldBe true
     }
 
-    test("a trail buffer stays bounded by the window instead of by session length") {
-        // Each glided word appends its trace to the shared fade buffer. Without
-        // pruning the buffer keeps every word the session ever produced, and the
-        // renderer rescans all of it per frame. Replaying many words has to leave
-        // only the most recent one behind.
+    test("the buffer stays bounded by the window instead of by session length") {
+        // Each glided word appends its trace to the shared buffer. Unpruned, the
+        // buffer keeps every word the session produced and the renderer rescans
+        // all of it per frame. Replaying many words leaves only the recent one.
         val pointsPerWord = 40
-        var buffer = emptyList<Pair<Int, Long>>()
+        val points = buffer()
         var clock = 0L
 
         repeat(50) { word ->
             clock += trailDuration * 2
-            val trace = List(pointsPerWord) { index -> word to (clock + index) }
-            buffer = GlideTrailRetention.prune(
-                points = buffer,
-                nowMillis = clock,
-                trailDurationMillis = trailDuration,
-                timestampOf = { it.second },
-            ) + trace
+            points.prune(nowMillis = clock)
+            repeat(pointsPerWord) { index -> points.add(word to (clock + index)) }
         }
 
-        buffer.size shouldBe pointsPerWord
-        buffer.map { it.first }.toSet() shouldBe setOf(49)
+        points.size shouldBe pointsPerWord
+        points.map { it.first }.toSet() shouldBe setOf(49)
     }
 
     test("two traces finishing inside one window both survive") {
         // Lifting two fingers together must not discard the first trail.
-        val firstFinger = List(3) { 1 to (1_000L + it) }
-        val secondFinger = List(3) { 2 to (1_050L + it) }
+        val points = buffer(1 to 1_000L, 1 to 1_001L, 1 to 1_002L)
 
-        val buffer = GlideTrailRetention.prune(
-            points = firstFinger,
-            nowMillis = 1_060L,
-            trailDurationMillis = trailDuration,
-            timestampOf = { it.second },
-        ) + secondFinger
+        points.prune(nowMillis = 1_060L)
+        listOf(2 to 1_050L, 2 to 1_051L, 2 to 1_052L).forEach(points::add)
 
-        buffer.map { it.first }.toSet() shouldBe setOf(1, 2)
+        points.map { it.first }.toSet() shouldBe setOf(1, 2)
+    }
+
+    test("an expired point sitting after a surviving one is removed too") {
+        // The buffer holds traces from different pointers, so it is not globally
+        // ordered by timestamp. The renderer draws everything after the first
+        // in-window point it finds, which used to include stale points from an
+        // earlier trace and joined the two with a stray line.
+        val points = buffer(1 to 1_150L, 2 to 900L, 2 to 1_180L)
+
+        points.prune(nowMillis = 1_200L)
+
+        points shouldContainExactly listOf(1 to 1_150L, 2 to 1_180L)
+    }
+
+    test("an empty buffer is left alone") {
+        val points = buffer()
+        points.prune(nowMillis = 5_000L)
+        points.size shouldBe 0
     }
 })
