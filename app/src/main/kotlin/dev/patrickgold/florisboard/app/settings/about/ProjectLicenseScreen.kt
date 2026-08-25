@@ -34,7 +34,7 @@ import dev.patrickgold.florisboard.lib.io.loadTextAsset
 import org.florisboard.lib.compose.florisHorizontalScroll
 import org.florisboard.lib.compose.florisVerticalScroll
 import org.florisboard.lib.compose.stringRes
-import org.florisboard.lib.kotlin.UserFacingError
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 @Composable
 fun ProjectLicenseScreen() = FlorisScreen {
@@ -60,7 +60,7 @@ fun ProjectLicenseScreen() = FlorisScreen {
                 ).getOrElse {
                     stringRes(
                         R.string.about__project_license__error_license_text_failed,
-                        "error_message" to UserFacingError.summarize(it, detailsUnavailable),
+                        "error_message" to it.summarizeForUser(detailsUnavailable),
                     )
                 }
                 Text(

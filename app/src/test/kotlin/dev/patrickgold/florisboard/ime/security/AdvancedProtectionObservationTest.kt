@@ -89,7 +89,7 @@ class AdvancedProtectionObservationTest {
 
     @After
     fun tearDown() {
-        AdvancedProtectionPolicy.stopObserving(context)
+        AdvancedProtectionPolicy.stopObserving()
         AdvancedProtectionPolicy.callbackHostFactory = null
     }
 
@@ -113,7 +113,7 @@ class AdvancedProtectionObservationTest {
     @Test
     fun stoppingUnregistersOnceAndReleasesTheHost() {
         AdvancedProtectionPolicy.startObserving(context)
-        AdvancedProtectionPolicy.stopObserving(context)
+        AdvancedProtectionPolicy.stopObserving()
 
         assertEquals(1, host.unregistrations)
         assertFalse(host.isLive())
@@ -121,17 +121,21 @@ class AdvancedProtectionObservationTest {
     }
 
     @Test
-    fun stoppingWithoutAStartDoesNothing() {
-        AdvancedProtectionPolicy.stopObserving(context)
+    fun stoppingWithoutAStartUnregistersNothingButStillResets() {
+        AdvancedProtectionPolicy.stopObserving()
 
         assertEquals(0, host.unregistrations)
         assertFalse(AdvancedProtectionPolicy.isObserving())
+        assertEquals(
+            AdvancedProtectionPolicy.Decision.Unrestricted,
+            AdvancedProtectionPolicy.decisions.value,
+        )
     }
 
     @Test
     fun startingAgainAfterStoppingRegistersAfresh() {
         AdvancedProtectionPolicy.startObserving(context)
-        AdvancedProtectionPolicy.stopObserving(context)
+        AdvancedProtectionPolicy.stopObserving()
         AdvancedProtectionPolicy.startObserving(context)
 
         assertEquals(2, host.registrations)
@@ -201,11 +205,41 @@ class AdvancedProtectionObservationTest {
     }
 
     @Test
+    fun aRepeatStartDoesNotOverwriteWhatTheCallbackReported() {
+        // The seed is read before the lock is taken. Re-seeding on a start that
+        // finds a live registration would let a stale read clobber a change the
+        // callback had already delivered, and nothing would correct it.
+        AdvancedProtectionPolicy.startObserving(context)
+        host.emit(enabled = true)
+
+        AdvancedProtectionPolicy.startObserving(context)
+
+        assertTrue(
+            AdvancedProtectionPolicy.decisions.value.forcesIncognito,
+            "a redundant start must not discard the observed state",
+        )
+    }
+
+    @Test
+    fun aRefusedRegistrationDoesNotStrandAProtectedSeed() {
+        val refusing = FakeHost(registerSucceeds = false)
+        AdvancedProtectionPolicy.callbackHostFactory = { refusing }
+
+        AdvancedProtectionPolicy.startObserving(context)
+
+        assertEquals(
+            AdvancedProtectionPolicy.Decision.Unrestricted,
+            AdvancedProtectionPolicy.decisions.value,
+            "with no callback coming, nothing could ever clear a protected seed",
+        )
+    }
+
+    @Test
     fun stoppingDropsBackToUnrestricted() {
         AdvancedProtectionPolicy.startObserving(context)
         host.emit(enabled = true)
 
-        AdvancedProtectionPolicy.stopObserving(context)
+        AdvancedProtectionPolicy.stopObserving()
 
         assertEquals(
             AdvancedProtectionPolicy.Decision.Unrestricted,

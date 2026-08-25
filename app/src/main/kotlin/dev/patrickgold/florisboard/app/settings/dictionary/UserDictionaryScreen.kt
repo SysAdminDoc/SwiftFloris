@@ -107,6 +107,7 @@ import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 private val AllLanguagesLocale = FlorisLocale.from(language = "zz")
 private val UserDictionaryEntryToAdd = UserDictionaryEntry(id = 0, "", 255, null, null)
@@ -327,7 +328,7 @@ fun UserDictionaryScreen(
             EncryptedDictionaryExport.FailureReason.NOT_AN_ENVELOPE,
             EncryptedDictionaryExport.FailureReason.TRUNCATED ->
                 context.stringRes(R.string.settings__udm__encrypted_dictionary__corrupt)
-            null -> error.localizedMessage ?: error.message ?: error::class.simpleName.orEmpty()
+            null -> error.summarizeForUser(unknownEntryErrorMessage)
         }
     }
 
@@ -633,9 +634,7 @@ fun UserDictionaryScreen(
                     }.onSuccess {
                         context.showLongToast(R.string.settings__udm__dictionary_export_success)
                     }.onFailure { error ->
-                        val errorMessage = error.localizedMessage
-                            ?: error.message
-                            ?: error::class.simpleName.orEmpty()
+                        val errorMessage = error.summarizeForUser(unknownEntryErrorMessage)
                         context.showLongToast(
                             R.string.settings__udm__dictionary_export_failure,
                             "error_message" to errorMessage,
@@ -1048,7 +1047,7 @@ fun UserDictionaryScreen(
                             }.onFailure { error ->
                                 finishEntryOperation(
                                     UserDictionaryEntryPolicy.saveResult(saved = false),
-                                    error.localizedMessage ?: error.message ?: unknownEntryErrorMessage,
+                                    error.summarizeForUser(unknownEntryErrorMessage),
                                 )
                                 buildUi()
                             }
@@ -1087,7 +1086,7 @@ fun UserDictionaryScreen(
                         }.onFailure { error ->
                             finishEntryOperation(
                                 UserDictionaryEntryPolicy.deleteResult(deleted = false),
-                                error.localizedMessage ?: error.message ?: unknownEntryErrorMessage,
+                                error.summarizeForUser(unknownEntryErrorMessage),
                             )
                             buildUi()
                         }

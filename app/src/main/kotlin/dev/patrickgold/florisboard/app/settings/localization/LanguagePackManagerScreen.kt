@@ -69,7 +69,7 @@ import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
-import org.florisboard.lib.kotlin.UserFacingError
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 enum class LanguagePackManagerScreenAction(val id: String) {
     MANAGE("manage-installed-language-packs");
@@ -242,7 +242,7 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                                 lastNotice = LanguagePackManagerNotice.DeleteSuccess
                                 context.showLongToast(R.string.settings__localization__language_pack_delete_success)
                             }.onFailure { error ->
-                                val errorMessage = UserFacingError.summarize(error, detailsUnavailable)
+                                val errorMessage = error.summarizeForUser(detailsUnavailable)
                                 lastNotice = LanguagePackManagerNotice.DeleteFailure
                                 lastErrorMessage = errorMessage
                                 context.showLongToast(

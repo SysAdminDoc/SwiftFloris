@@ -122,15 +122,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         // requested* incognito (the toggle on the smartbar, the
         // FORCE_ON power-user setting). It just cannot turn the
         // app-declared flag *off*.
-        activeState.isIncognitoMode = PerAppKeyboardProfilePolicy.resolveIncognitoMode(
-            appDeclaredNoPersonalizedLearning = editorInfo.imeOptions.flagNoPersonalizedLearning,
-            globalPreference = prefs.suggestion.incognitoMode.get(),
-            isDynamicIncognitoForced = prefs.suggestion.forceIncognitoModeFromDynamic.get(),
-            override = profile?.incognito ?: PerAppBooleanOverride.FOLLOW_GLOBAL,
-            advancedProtectionEnabled = AdvancedProtectionPolicy
-                .decide(appContext)
-                .forcesIncognito,
-        )
+        activeState.isIncognitoMode = resolveIncognitoFor(editorInfo, profile)
         super.handleStartInputView(editorInfo, isRestart)
         keyboardManager.configureNumericPasswordScramble(
             NumericPasswordScramblePolicy.shouldApply(
@@ -142,6 +134,40 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         if (!editorContract.allowsImeSuggestions) {
             nlpManager.clearSuggestions()
         }
+    }
+
+    private fun resolveIncognitoFor(
+        editorInfo: FlorisEditorInfo,
+        profile: ResolvedPerAppKeyboardProfile?,
+    ): Boolean {
+        return PerAppKeyboardProfilePolicy.resolveIncognitoMode(
+            appDeclaredNoPersonalizedLearning = editorInfo.imeOptions.flagNoPersonalizedLearning,
+            globalPreference = prefs.suggestion.incognitoMode.get(),
+            isDynamicIncognitoForced = prefs.suggestion.forceIncognitoModeFromDynamic.get(),
+            override = profile?.incognito ?: PerAppBooleanOverride.FOLLOW_GLOBAL,
+            advancedProtectionEnabled = AdvancedProtectionPolicy.decide(appContext).forcesIncognito,
+        )
+    }
+
+    /**
+     * Re-runs the incognito decision for the field currently in focus.
+     *
+     * Normally this is decided once, when a field is focused. Advanced
+     * Protection can flip underneath a session already in progress, and it has
+     * to move the answer both ways: turning it on stops the current session
+     * learning immediately, and turning it off hands the decision back to the
+     * saved preferences rather than leaving the keyboard private until the user
+     * happens to tap another field.
+     *
+     * Must run on the main thread. `activeState` packs its flags into one
+     * non-atomic word, so writing it from a background dispatcher can lose a
+     * concurrent flag write from the input path, and the flag it would lose
+     * here is the privacy one.
+     */
+    fun reevaluateIncognitoMode() {
+        val editorInfo = activeInfo
+        val profile = activePerAppProfile(editorInfo.packageName)
+        activeState.isIncognitoMode = resolveIncognitoFor(editorInfo, profile)
     }
 
     override fun handleSelectionUpdate(oldSelection: EditorRange, newSelection: EditorRange, composing: EditorRange) {

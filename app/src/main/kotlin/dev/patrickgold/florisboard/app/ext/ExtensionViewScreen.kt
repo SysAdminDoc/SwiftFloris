@@ -78,6 +78,7 @@ import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 @Composable
 fun ExtensionViewScreen(id: String) {
@@ -94,6 +95,7 @@ fun ExtensionViewScreen(id: String) {
 
 @Composable
 private fun ViewScreen(ext: Extension) = FlorisScreen {
+    val detailsUnavailable = stringRes(R.string.error__details_unavailable)
     title = ext.meta.title
 
     val navController = LocalNavController.current
@@ -296,7 +298,7 @@ private fun ViewScreen(ext: Extension) = FlorisScreen {
                             navController.popBackStack()
                         }.onFailure { error ->
                             lastDeleteNotice = ThemeExtensionDeleteNotice.DeleteFailure
-                            lastDeleteErrorMessage = error.localizedMessage ?: error.message
+                            lastDeleteErrorMessage = error.summarizeForUser(detailsUnavailable)
                             context.showLongToast(
                                 R.string.error__snackbar_message_template,
                                 "error_message" to (lastDeleteErrorMessage ?: ""),

@@ -75,6 +75,7 @@ import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisTouchTarget
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.curlyFormat
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 private data class SelectedLayoutKey(
     val rowIndex: Int = 0,
@@ -83,6 +84,7 @@ private data class SelectedLayoutKey(
 
 @Composable
 fun CustomLayoutEditorScreen() = FlorisScreen {
+    val detailsUnavailable = stringRes(R.string.error__details_unavailable)
     title = stringRes(R.string.settings__keyboard__custom_layout_editor__title)
     previewFieldVisible = true
     iconSpaceReserved = false
@@ -147,7 +149,7 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
         }.onFailure { error ->
             draft = null
             baselineDraft = null
-            loadError = error.localizedMessage ?: error.message
+            loadError = error.summarizeForUser(detailsUnavailable)
         }
         isLoading = false
     }
@@ -221,7 +223,7 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
                     }
                 }
                 .onFailure { error ->
-                    statusMessage = error.localizedMessage ?: error.message
+                    statusMessage = error.summarizeForUser(detailsUnavailable)
                         ?: fallbackErrorTitle
                 }
             isSaving = false

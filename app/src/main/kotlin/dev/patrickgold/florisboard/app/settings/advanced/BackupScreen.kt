@@ -72,7 +72,7 @@ import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
-import org.florisboard.lib.kotlin.UserFacingError
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 object Backup {
     const val FILE_PROVIDER_AUTHORITY = "${BuildConfig.APPLICATION_ID}.provider.file"
@@ -408,7 +408,7 @@ fun BackupScreen() = FlorisScreen {
                     navController.popBackStack()
                 }.onFailure { error ->
                     flogError { error.stackTraceToString() }
-                    val errorMessage = UserFacingError.summarize(error, unknownBackupError)
+                    val errorMessage = error.summarizeForUser(unknownBackupError)
                     context.showLongToast(
                         R.string.backup_and_restore__back_up__failure,
                         "error_message" to errorMessage,
@@ -493,7 +493,7 @@ fun BackupScreen() = FlorisScreen {
                 }
             }.onFailure { error ->
                 flogError { error.stackTraceToString() }
-                val errorMessage = UserFacingError.summarize(error, unknownBackupError)
+                val errorMessage = error.summarizeForUser(unknownBackupError)
                 context.showLongToast(
                     R.string.backup_and_restore__back_up__failure,
                     "error_message" to errorMessage,

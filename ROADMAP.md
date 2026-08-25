@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: Android 16's IME language-settings action opens the subtype list; the language-pack screen offers Add keyboard language and distinguishes built-in resources from imported extensions; a user can enable Portuguese without importing a file; navigation, RTL, and 200 percent font-scale captures pass.
   Complexity: M
 
-- [ ] P1: Produce and verify a genuinely unsigned F-Droid build
-  Why: The recipe names an unsigned output while Gradle always applies release or debug signing, so reproducible binary comparison cannot start from the declared artifact.
-  Evidence: fdroid/io.github.sysadmindoc.swiftfloris.yml:24-41; app/build.gradle.kts:116-133 and :233-243; https://f-droid.org/en/docs/Reproducible_Builds/; https://f-droid.org/en/docs/Build_Metadata_Reference/.
-  Touches: app/build.gradle.kts, fdroid/io.github.sysadmindoc.swiftfloris.yml, utils/repr_build, scripts/check-public-doc-version-pins.py, metadata self-tests.
-  Acceptance: A dedicated F-Droid task or variant emits the exact YAML output path; apksigner confirms it is unsigned; local fdroid build and binary comparison pass; AllowedAPKSigningKeys contains the verified upstream release certificate; the false KnownVuln entry is absent; a fixture signed with the debug key fails.
-  Complexity: M
-
 - [ ] P1: Gate the final app APK for 16 KB native compatibility
   Why: SQLCipher ships native libraries, while only addon APKs currently receive alignment checks.
   Evidence: https://developer.android.com/guide/practices/page-sizes; scripts/verify-addon-apk.sh:210-237; gradle/libs.versions.toml; scripts/release-evidence.ps1.

@@ -107,6 +107,7 @@ import org.florisboard.lib.kotlin.io.subDir
 import org.florisboard.lib.kotlin.io.subFile
 import org.florisboard.lib.kotlin.io.writeJson
 import kotlin.reflect.KClass
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 private val TextFieldVerticalPadding = 8.dp
 private val MetaDataContentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp)
@@ -244,6 +245,7 @@ private fun EditScreen(
     workspace: CacheManager.ExtEditorWorkspace<*>,
     isCreateExt: Boolean,
 ) = FlorisScreen {
+    val detailsUnavailable = stringRes(R.string.error__details_unavailable)
     title = stringRes(if (isCreateExt) {
         when (workspace.ext) {
             is KeyboardExtension -> R.string.ext__editor__title_create_keyboard
@@ -355,7 +357,7 @@ private fun EditScreen(
                 navController.popBackStack()
             }.onFailure { error ->
                 lastEditNotice = ThemeExtensionEditNotice.SaveFailure
-                lastEditErrorMessage = error.localizedMessage ?: error.message
+                lastEditErrorMessage = error.summarizeForUser(detailsUnavailable)
             }
         }
     }

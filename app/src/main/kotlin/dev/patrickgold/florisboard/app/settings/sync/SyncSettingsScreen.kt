@@ -108,6 +108,7 @@ import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 import java.io.FileNotFoundException
 import java.util.UUID
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 @Composable
 fun SyncSettingsScreen() = FlorisScreen {
@@ -174,7 +175,7 @@ fun SyncSettingsScreen() = FlorisScreen {
 
     fun failTransfer(message: String, error: Throwable? = null) {
         syncTransferNotice = SyncTransferNotice.Failure
-        syncTransferError = error?.localizedMessage ?: error?.message ?: message
+        syncTransferError = error?.summarizeForUser(message) ?: message
         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
 
@@ -347,7 +348,7 @@ fun SyncSettingsScreen() = FlorisScreen {
             syncExportedCount = exportedCount
             Toast.makeText(context, syncExportedText, Toast.LENGTH_SHORT).show()
         }.onFailure { error ->
-            failTransfer(error.localizedMessage ?: syncOpenFailedText, error)
+            failTransfer(error.summarizeForUser(syncOpenFailedText), error)
         }
     }
 
@@ -415,7 +416,7 @@ fun SyncSettingsScreen() = FlorisScreen {
                 Toast.LENGTH_SHORT,
             ).show()
         }.onFailure { error ->
-            failTransfer(error.localizedMessage ?: syncOpenFailedText, error)
+            failTransfer(error.summarizeForUser(syncOpenFailedText), error)
         }
     }
 

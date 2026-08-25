@@ -38,8 +38,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showLongToast
 import dev.patrickgold.florisboard.lib.devtools.flogError
-import org.florisboard.lib.kotlin.UserFacingError
 import org.florisboard.lib.compose.stringRes
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 @Composable
 fun ExtensionExportScreen(id: String) {
@@ -86,10 +86,9 @@ private fun ExportScreen(ext: Extension) = FlorisScreen {
                     context.showLongToast(R.string.ext__export__success)
                 } else {
                     val error = exportResult.exceptionOrNull()
-                    flogError { error?.stackTraceToString().orEmpty() }
                     context.showLongToast(
                         R.string.ext__export__failure,
-                        "error_message" to UserFacingError.summarize(error, detailsUnavailable),
+                        "error_message" to error.summarizeForUser(detailsUnavailable),
                     )
                 }
                 navController.popBackStack()
@@ -103,10 +102,9 @@ private fun ExportScreen(ext: Extension) = FlorisScreen {
             runCatching {
                 exportLauncher.launch(ExtensionDefaults.createFlexName(ext.meta.id))
             }.onFailure { error ->
-                flogError { error.stackTraceToString() }
                 context.showLongToast(
                     R.string.ext__export__failure,
-                    "error_message" to UserFacingError.summarize(error, detailsUnavailable),
+                    "error_message" to error.summarizeForUser(detailsUnavailable),
                 )
                 navController.popBackStack()
             }

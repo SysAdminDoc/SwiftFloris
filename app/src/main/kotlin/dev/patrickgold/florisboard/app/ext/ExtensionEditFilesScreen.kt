@@ -68,6 +68,7 @@ import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.io.subDir
 import org.florisboard.lib.kotlin.io.subFile
 import org.florisboard.lib.kotlin.mimeTypeFilterOf
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 const val FONTS = "fonts"
 const val IMAGES = "images"
@@ -118,6 +119,7 @@ internal object ExtensionEditorFileNames {
 
 @Composable
 fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = FlorisScreen {
+    val detailsUnavailable = stringRes(R.string.error__details_unavailable)
     title = stringRes(R.string.ext__editor__files__title)
 
     val context = LocalContext.current
@@ -213,7 +215,7 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
                         currentImportDest = null
                         currentImportResult = null
                         lastNotice = ExtensionEditorFileNotice.ImportFailure
-                        lastNoticeDetail = error.localizedMessage ?: error.message
+                        lastNoticeDetail = error.summarizeForUser(detailsUnavailable)
                     }
                 }
             },

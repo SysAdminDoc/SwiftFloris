@@ -200,9 +200,17 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             // Private typing is the exception: it is decided when a field is
             // focused, so a session already in progress would keep learning
             // until the user moved to another field. Force it here instead.
-            AdvancedProtectionPolicy.decisions.collectLatestIn(scope) { decision ->
-                if (decision.forcesIncognito && !activeState.isIncognitoMode) {
-                    activeState.isIncognitoMode = true
+            // Clipboard retention and addon enrolment already read the live
+            // AAPM state at every decision, so a toggle reaches them at once.
+            // Private typing is decided when a field is focused, so a session
+            // already in progress needs telling. Re-resolving rather than
+            // forcing true is what lets a disable hand the decision back to the
+            // saved preferences instead of leaving the keyboard private until
+            // the user taps elsewhere. On the main thread because activeState
+            // packs its flags into one non-atomic word.
+            AdvancedProtectionPolicy.decisions.collectLatestIn(scope) {
+                withContext(Dispatchers.Main.immediate) {
+                    editorInstance.reevaluateIncognitoMode()
                 }
             }
             activeState.collectLatestIn(scope) {

@@ -82,6 +82,7 @@ import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.resultOk
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import org.florisboard.lib.kotlin.UserFacingError
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 enum class ExtensionImportScreenType(
     val id: String,
@@ -206,7 +207,7 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                     }
                 }.mapSkipReasons().onFailure { error ->
                     lastImportNotice = ExtensionImportFlowNotice.Failure
-                    lastImportErrorMessage = error.localizedMessage
+                    lastImportErrorMessage = error.summarizeForUser(detailsUnavailable)
                 })
                 isPreparingFiles = false
             }
@@ -218,7 +219,7 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                 importLauncher.launch("*/*")
             }.onFailure { error ->
                 lastImportNotice = ExtensionImportFlowNotice.Failure
-                lastImportErrorMessage = error.localizedMessage
+                lastImportErrorMessage = error.summarizeForUser(detailsUnavailable)
             }
         }
     }
@@ -284,8 +285,7 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                         closeImportResult()
                         navController.popBackStack()
                     }.onFailure { error ->
-                        flogError { error.stackTraceToString() }
-                        val errorMessage = UserFacingError.summarize(error, detailsUnavailable)
+                        val errorMessage = error.summarizeForUser(detailsUnavailable)
                         lastImportNotice = ExtensionImportFlowNotice.Failure
                         lastImportErrorMessage = errorMessage
                         closeImportResult()
@@ -423,8 +423,11 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                             modifier = Modifier
                                 .florisHorizontalScroll()
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
-                            text = result.exceptionOrNull()?.localizedMessage?.let { errorMessage ->
-                                stringRes(R.string.ext__import__failure, "error_message" to errorMessage)
+                            text = result.exceptionOrNull()?.let { failure ->
+                                stringRes(
+                                    R.string.ext__import__failure,
+                                    "error_message" to failure.summarizeForUser(detailsUnavailable),
+                                )
                             } ?: stringRes(R.string.ext__import__error_details_unavailable),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

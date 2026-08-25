@@ -119,6 +119,7 @@ import org.florisboard.lib.snygg.SnyggSpecDecl
 import org.florisboard.lib.snygg.SnyggStylesheet
 import org.florisboard.lib.snygg.SnyggStylesheetEditor
 import org.florisboard.lib.snygg.ui.Saver
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 internal val PrettyPrintConfig = SnyggJsonConfiguration.of(
     prettyPrint = true,
@@ -146,6 +147,7 @@ fun ThemeEditorScreen(
     workspace: CacheManager.ExtEditorWorkspace<*>,
     editor: ThemeExtensionComponentEditor,
 ) = FlorisScreen {
+    val detailsUnavailable = stringRes(R.string.error__details_unavailable)
     title = stringRes(R.string.ext__editor__edit_component__title_theme)
     scrollable = false
 
@@ -260,6 +262,7 @@ fun ThemeEditorScreen(
 
     content {
         stylesheetEditorFailure?.let { failure ->
+            val stylesheetFailureText = failure.summarizeForUser(detailsUnavailable)
             JetPrefAlertDialog(
                 title = stringRes(R.string.settings__theme_editor__stylesheet_error_title),
                 confirmLabel = stringRes(R.string.action__yes),
@@ -276,7 +279,7 @@ fun ThemeEditorScreen(
                 Column {
                     Text(
                         modifier = Modifier.padding(bottom = 8.dp),
-                        text = failure.message.toString(),
+                        text = stylesheetFailureText,
                         fontStyle = FontStyle.Italic,
                     )
                     Text(

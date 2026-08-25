@@ -25,6 +25,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 internal object ScheduledBackupNotifications {
     private const val ChannelId = "scheduled_backup_status"
@@ -48,7 +49,7 @@ internal object ScheduledBackupNotifications {
             title = context.getString(R.string.scheduled_backup__notification_failure_title),
             message = context.getString(
                 R.string.scheduled_backup__notification_failure_summary,
-                (error.message ?: error::class.java.simpleName).take(220),
+                error.summarizeForUser(error::class.java.simpleName),
             ),
             isError = true,
         )

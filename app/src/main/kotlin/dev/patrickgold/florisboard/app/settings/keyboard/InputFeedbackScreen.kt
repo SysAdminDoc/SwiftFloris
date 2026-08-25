@@ -49,7 +49,7 @@ import org.florisboard.lib.android.vibrate
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.stringRes
-import org.florisboard.lib.kotlin.UserFacingError
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
 @Composable
@@ -82,7 +82,7 @@ fun InputFeedbackScreen() = FlorisScreen {
             }.onFailure { error ->
                 context.showLongToast(
                     R.string.pref__input_feedback__custom_sounds__import_failed,
-                    "error_message" to UserFacingError.summarize(error, detailsUnavailable),
+                    "error_message" to error.summarizeForUser(detailsUnavailable),
                 )
             }
         }

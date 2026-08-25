@@ -160,10 +160,16 @@ object AdvancedProtectionPolicy {
      * two callbacks and only one could ever be handed back to unregister.
      */
     fun startObserving(context: Context, sdkInt: Int = Build.VERSION.SDK_INT) {
-        val seeded = decide(context, sdkInt)
         synchronized(registrationLock) {
-            decisionState.value = seeded
-            if (!isSupported(sdkInt) || activeHost != null) return
+            if (activeHost != null) {
+                // Already live. Re-seeding here would race the callback: the
+                // read happens before the lock is taken, so a change that
+                // arrived in between would be overwritten with the older value
+                // and nothing would ever correct it.
+                return
+            }
+            decisionState.value = decide(context, sdkInt)
+            if (!isSupported(sdkInt)) return
             // The explicit SDK_INT comparison, rather than isSupported(sdkInt),
             // is what lets lint see that platformHost cannot run on a platform
             // that lacks AdvancedProtectionManager. sdkInt stays a parameter so
@@ -178,7 +184,14 @@ object AdvancedProtectionPolicy {
             val registered = host.register { enabled ->
                 decisionState.value = Decision(advancedProtectionEnabled = enabled)
             }
-            if (registered) activeHost = host
+            if (registered) {
+                activeHost = host
+            } else {
+                // No callback is coming. Fall back to the unobserved answer so
+                // a seed that read "protected" cannot be stranded here with
+                // nothing able to clear it.
+                decisionState.value = Decision.Unrestricted
+            }
         }
     }
 
@@ -186,11 +199,14 @@ object AdvancedProtectionPolicy {
      * Unregisters the callback registered by [startObserving], if any, and
      * drops the observed state back to unrestricted.
      */
-    fun stopObserving(context: Context, sdkInt: Int = Build.VERSION.SDK_INT) {
+    fun stopObserving() {
         synchronized(registrationLock) {
+            // Reset first and unconditionally. Returning early on a null host
+            // used to leave whatever the last seed wrote still being reported
+            // as the observed answer.
+            decisionState.value = Decision.Unrestricted
             val host = activeHost ?: return
             activeHost = null
-            decisionState.value = Decision.Unrestricted
             host.unregister()
         }
     }

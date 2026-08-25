@@ -66,7 +66,7 @@ import dev.patrickgold.florisboard.app.settings.search.Preference
 import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.FlorisCanvasIcon
 import org.florisboard.lib.compose.stringRes
-import org.florisboard.lib.kotlin.UserFacingError
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 @Composable
 fun AboutScreen() = FlorisScreen {
@@ -112,7 +112,7 @@ fun AboutScreen() = FlorisScreen {
                         context,
                         context.stringRes(
                             R.string.about__version_copied__error,
-                            "error_message" to UserFacingError.summarize(e, detailsUnavailable),
+                            "error_message" to e.summarizeForUser(detailsUnavailable),
                         ),
                         Toast.LENGTH_SHORT,
                     ).show()

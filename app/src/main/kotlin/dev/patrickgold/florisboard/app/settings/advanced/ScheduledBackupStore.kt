@@ -20,6 +20,7 @@ import android.content.Context
 import dev.patrickgold.florisboard.ime.security.TinkStringPreferenceCrypto
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.UUID
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 /** User-selectable cadence supported by Android's persisted periodic work. */
 internal enum class ScheduledBackupCadence(
@@ -171,9 +172,7 @@ internal object ScheduledBackupStore {
     }
 
     fun recordFailure(context: Context, error: Throwable, timestamp: Long = System.currentTimeMillis()) {
-        val message = (error.message ?: error::class.java.simpleName)
-            .replace(Regex("\\s+"), " ")
-            .take(300)
+        val message = error.summarizeForUser(error::class.java.simpleName)
         prefs(context).edit()
             .putLong(KEY_LAST_FAILURE_AT, timestamp)
             .putString(KEY_LAST_FAILURE_MESSAGE, message)

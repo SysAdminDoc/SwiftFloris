@@ -67,6 +67,7 @@ import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 /**
  * ROADMAP §10.5 L7.6 + L7.6b — Settings → MCP daemon bridge.
@@ -84,6 +85,7 @@ import org.florisboard.lib.compose.stringRes
  */
 @Composable
 fun McpSettingsScreen() = FlorisScreen {
+    val detailsUnavailable = stringRes(R.string.error__details_unavailable)
     title = stringRes(R.string.settings__mcp__title)
     previewFieldVisible = false
 
@@ -161,7 +163,7 @@ fun McpSettingsScreen() = FlorisScreen {
                 activeDaemons = snapshot.accepted
                 discoverySnapshot = snapshot
             } catch (e: Exception) {
-                scanError = e.message ?: e::class.simpleName
+                scanError = e.summarizeForUser(detailsUnavailable)
             } finally {
                 scanInProgress = false
             }

@@ -113,8 +113,21 @@ fun PrivacyPostureScreen() = FlorisScreen {
     // rather than remembered: the user toggles AAPM in system settings, which
     // produces no configuration change, so a remembered read would keep showing
     // the state this screen was composed with.
+    // Collected so a toggle in system settings, which produces no configuration
+    // change, updates a screen that is already composed. Combined with a live
+    // read taken on each entry, because the callback is best-effort: a device
+    // where the manager is missing or registration throws would otherwise pin
+    // this row to whatever the process saw at startup, which is worse than the
+    // per-navigation refresh it replaced.
     val observedProtection by AdvancedProtectionPolicy.decisions.collectAsState()
-    val advancedProtection = if (AdvancedProtectionPolicy.isSupported()) observedProtection else null
+    val liveProtection = remember(context, observedProtection) {
+        AdvancedProtectionPolicy.decide(context)
+    }
+    val advancedProtection = if (AdvancedProtectionPolicy.isSupported()) {
+        if (AdvancedProtectionPolicy.isObserving()) observedProtection else liveProtection
+    } else {
+        null
+    }
     val voiceProviderStatuses = remember(context) {
         VoiceInputManager(context).knownExternalVoiceInputProviderStatuses()
     }

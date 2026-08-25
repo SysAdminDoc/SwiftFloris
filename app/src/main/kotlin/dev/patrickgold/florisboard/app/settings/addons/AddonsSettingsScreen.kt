@@ -72,6 +72,7 @@ import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 import java.text.NumberFormat
 import java.util.Locale
+import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 /**
  * ROADMAP §7 Next-10.3d — read-only Settings surface for installed addon APKs.
@@ -82,6 +83,7 @@ import java.util.Locale
  */
 @Composable
 fun AddonsSettingsScreen() = FlorisScreen {
+    val detailsUnavailable = stringRes(R.string.error__details_unavailable)
     title = stringRes(R.string.settings__addons__title)
     previewFieldVisible = false
     iconSpaceReserved = true
@@ -149,7 +151,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
                     prefs.addon.signingCertPins.set(result.encodedSigningPins)
                 }
             } catch (e: Exception) {
-                scanError = e.message ?: e::class.simpleName
+                scanError = e.summarizeForUser(detailsUnavailable)
                 dictionaryCatalogLoaded = true
             } finally {
                 scanInProgress = false
@@ -170,7 +172,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
                 activePinnedPackageNames = emptySet()
                 registryGeneration = AddonRegistryStore.generation()
             } catch (e: Exception) {
-                scanError = e.message ?: e::class.simpleName
+                scanError = e.summarizeForUser(detailsUnavailable)
                 dictionaryCatalogLoaded = true
             } finally {
                 scanInProgress = false
