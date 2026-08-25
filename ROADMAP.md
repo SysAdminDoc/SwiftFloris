@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: Android 16's IME language-settings action opens the subtype list; the language-pack screen offers Add keyboard language and distinguishes built-in resources from imported extensions; a user can enable Portuguese without importing a file; navigation, RTL, and 200 percent font-scale captures pass.
   Complexity: M
 
-- [ ] P1: Gate the final app APK for 16 KB native compatibility
-  Why: SQLCipher ships native libraries, while only addon APKs currently receive alignment checks.
-  Evidence: https://developer.android.com/guide/practices/page-sizes; scripts/verify-addon-apk.sh:210-237; gradle/libs.versions.toml; scripts/release-evidence.ps1.
-  Touches: new or shared APK-alignment verifier, release-evidence.ps1, app release tasks, verifier fixtures, 16 KB emulator smoke harness.
-  Acceptance: Every release ABI passes ZIP page alignment and ELF LOAD-segment alignment checks against the final APK; deliberately misaligned fixtures fail; the release APK installs, launches Settings, and starts the IME on a 16 KB emulator.
-  Complexity: M
-
 - [ ] P1: Apply installed locale hints with explicit user choices first
   Why: Host apps can provide a conversation locale and Android 13 per-app locale, but SwiftFloris ignores both outside debug output.
   Evidence: https://developer.android.com/reference/android/view/inputmethod/EditorInfo; https://developer.android.com/reference/android/app/LocaleManager; https://github.com/futo-org/android-keyboard/pull/1892; app/src/main/kotlin/dev/patrickgold/florisboard/lib/util/DebugSummarizeUtils.kt:47-49; app/src/main/kotlin/dev/patrickgold/florisboard/ime/core/SubtypeManager.kt:191-238.
@@ -48,6 +41,12 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Complexity: M
 
 ### P2
+
+- [ ] P2: Wire the rewrite surface to production, or say it is a contract
+  Why: `RewriteRouter` has no production instantiation, `RewriteProviderRegistry.setActive` has no caller, and every `RewriteRequest` is built in a test. The Android 16 writing-tools guard added on 2026-08-25 is correct and covered, but it sits on a path a shipped build never enters, so `FlorisEditorInfo.isWritingToolsEnabled` currently has no production reader either.
+  Where: app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/RewriteRouter.kt:40; RewriteProvider.kt:121; app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/FlorisEditorInfo.kt:114.
+  Acceptance: Either a production caller builds a `RewriteRequest` from the live `FlorisEditorInfo` (carrying `isWritingToolsEnabled`) and dispatches through `RewriteRouter`, with a test proving an editor that forbids rewriting is suppressed end to end; or the package is documented as a contract awaiting a provider, and the KDoc says so rather than describing a pipeline that never runs.
+  Complexity: M
 
 - [ ] P2: Make the keyboard layout controller reachable from unit tests
   Why: `TextKeyboardLayoutController` is private to `TextKeyboardLayout.kt`, so the glide buffer lifecycle, pointer bookkeeping, and touch routing have no direct coverage. The trail-retention rule had to be extracted to `GlideTrailRetention` to be testable at all, and the per-pointer trace handling around it is still only covered indirectly.

@@ -296,6 +296,22 @@ Invoke-EvidenceCommand "gradle-local-gates" (Join-Path $RepoRoot "gradlew.bat") 
     ":addons:dictionary-pack-sample:assembleRelease"
 ))
 
+# The app ships SQLCipher native libraries across four ABIs, and until now
+# only addon APKs were checked for 16 KB page compatibility. A library linked
+# for 4 KB pages does not load on an Android 15+ 16 KB device; it crashes at
+# first use.
+$releaseApkDir = Join-Path $RepoRoot "app\build\outputs\apk\release"
+$releaseApk = Get-ChildItem -Path $releaseApkDir -Filter "app-release*.apk" -ErrorAction SilentlyContinue |
+    Select-Object -First 1
+if (-not $releaseApk) {
+    throw "Release APK was not produced under $releaseApkDir"
+}
+Add-Summary "Release APK: $($releaseApk.FullName)"
+Invoke-EvidenceCommand "app-apk-16kb-alignment" $python @(
+    "scripts/check-apk-16kb-alignment.py",
+    $releaseApk.FullName
+)
+
 $sampleAddonApk = Join-Path $RepoRoot "addons\dictionary-pack-sample\build\outputs\apk\release\dictionary-pack-sample-release.apk"
 if (-not (Test-Path $sampleAddonApk)) {
     throw "Sample dictionary-pack APK was not produced: $sampleAddonApk"
