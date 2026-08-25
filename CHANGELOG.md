@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.9.64 (2026-08-25)
+## v1.9.65 (2026-08-25)
 
 - Respect "Remove animations" as soon as it is switched on. The animator duration scale lives in `Settings.Global` and changing it produces no configuration change, so a value keyed on the configuration kept reporting whatever was true when the screen was composed. It is observed now, like the other global settings this app reads.
 - Show an updated layout extension without restarting. The layout and popup caches key on a component name rather than on the archive behind it, and nothing cleared them, so an extension that was updated or reinstalled kept serving whatever had been parsed from the previous `.flex`. The keyboard cache was already cleared on an extension change and went straight back to the stale entry. A read that failed is also no longer cached forever: a truncated archive or a transient IO error used to make that layout permanently unloadable for the rest of the process.
