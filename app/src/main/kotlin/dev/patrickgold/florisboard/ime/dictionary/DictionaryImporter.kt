@@ -535,8 +535,12 @@ class DictionaryImporter {
         internal const val MAX_IMPORTED_ENTRIES = 50_000
         private const val MAX_JSON_DEPTH = 64
         private const val MAX_ZIP_ENTRIES = 256
+        // Lazy up to the self-closing "/>", not "any run containing no slash".
+        // A personal dictionary is exactly where "24/7", "km/h" and "n/a" live,
+        // and excluding "/" from the attribute run meant those entries never
+        // matched and were dropped without a word of warning.
         private val ENTRY_REGEX = Regex(
-            pattern = "<entry\\s+([^/>]*)/>",
+            pattern = "<entry\\s+([^>]*?)/>",
             options = setOf(RegexOption.IGNORE_CASE),
         )
         private val NUMERIC_ENTITY_REGEX = Regex("&#(?:[xX]([0-9a-fA-F]+)|([0-9]+));")

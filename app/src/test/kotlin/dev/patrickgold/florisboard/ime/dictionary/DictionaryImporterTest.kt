@@ -64,6 +64,27 @@ class DictionaryImporterTest : FunSpec({
         result[0].word shouldBe "r&d"
     }
 
+    test("keeps entries whose values contain a slash") {
+        // A personal dictionary is exactly where "24/7", "km/h" and "n/a" live.
+        // The entry matcher used to exclude "/" from the attribute run, so any
+        // entry carrying one failed to match and vanished. parseZip only errors
+        // when *zero* entries parse, so a file with other valid words imported
+        // "successfully" while silently dropping these.
+        val xml = """
+            <userdictionary>
+                <entry word="24/7" frequency="200" locale="en"/>
+                <entry word="km/h" frequency="180" locale="en"/>
+                <entry word="plain" frequency="128" locale="en"/>
+                <entry word="eta" frequency="150" shortcut="n/a" locale="en"/>
+            </userdictionary>
+        """.trimIndent()
+
+        val result = importer.parseGboardXml(xml)
+
+        result.map { it.word } shouldBe listOf("24/7", "km/h", "plain", "eta")
+        result[3].shortcut shouldBe "n/a"
+    }
+
     test("clamps frequency into the 0..255 byte range") {
         val xml = """
             <userdictionary>

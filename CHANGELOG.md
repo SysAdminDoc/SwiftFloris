@@ -12,6 +12,7 @@
 - Say what the language pack screen is for. Discussion #21 is a user hunting for Portuguese there while `pt.fldic` was already bundled, guided by copy that read like the place to add a language and a button labelled "Add subtype".
 - Count things correctly. Six strings ran every quantity through one English form, so a single item read "1 triggers", "1 apps" and "Keep 1 verified archives".
 - Give every neutral hairline one opacity. Dividers and container borders drew `outlineVariant` at five different alphas across thirteen call sites.
+- Stop silently dropping Gboard dictionary entries that contain a slash. The entry matcher excluded `/` from the attribute run, so "24/7", "km/h" and "n/a" never matched and were discarded. The import only reports failure when zero entries parse, so a file with other valid words imported "successfully" while losing them.
 - Stop tracking generated Python bytecode, and reject it in the hygiene gate.
 - Fix nine awkward or ungrammatical user-facing strings, an incognito toast that claimed a manual toggle changed a default, nine em dashes against the project style, four spellings of "spacebar", and British spellings in the en-US default.
 - Cut Kotlin compiler warnings from 30 to 22, and match `LayoutTypeSerializer`'s visibility to the type it serializes so it cannot fail to resolve at a use site.
