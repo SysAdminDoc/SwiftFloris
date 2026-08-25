@@ -37,6 +37,7 @@ import dev.patrickgold.florisboard.ime.nlp.SuggestionProvider
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -498,7 +499,9 @@ internal class LatinDictionaryStore(
     private val wordDataSerializer = MapSerializer(String.serializer(), Int.serializer())
     private val dictionaryLoadGuard = Mutex()
     private val dictionaries = ConcurrentHashMap<String, LatinDictionarySnapshot>()
-    private val preWarmScope = CoroutineScope(Dispatchers.Default)
+    // SupervisorJob so an index pre-warm that runs out of heap on a low-memory
+    // device cannot cancel the scope and mute every later pre-warm.
+    private val preWarmScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     @Volatile
     private var cachedGeneration: Long = Long.MIN_VALUE
 

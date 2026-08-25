@@ -153,26 +153,38 @@ private fun FlorisScreenScope.Content(
             )
         }
 
-        // Poll the system IME enabler state so we can auto-advance as soon
-        // as the user enables SwiftFloris in system settings. The key includes
-        // the state parameters so the effect restarts (with fresh captures)
-        // whenever they change, avoiding stale-closure reads.
+        // Poll the system IME enabler state so we can auto-advance as soon as the
+        // user enables SwiftFloris in system settings. The key includes the state
+        // parameters so the effect restarts (with fresh captures) whenever they
+        // change, avoiding stale-closure reads.
+        //
+        // Those same captures are why the poll has to stop itself. They stay
+        // frozen for the lifetime of one effect run, so once the relaunch fires
+        // the loop's condition is still satisfied on the next tick and stays
+        // satisfied until the settings observer propagates and restarts the
+        // effect. Without the return that window relaunched the activity twice a
+        // second. The guard above it skips the loop entirely on the runs where
+        // the captured state already rules a relaunch out, instead of polling
+        // system settings from the main thread for the rest of the screen's life.
         LaunchedEffect(isFlorisBoardEnabled, isFlorisBoardSelected, hasNotificationPermission) {
+            if (isFlorisBoardEnabled ||
+                isFlorisBoardSelected ||
+                hasNotificationPermission != NotificationPermissionState.NOT_SET
+            ) {
+                return@LaunchedEffect
+            }
             while (true) {
                 delay(500L)
-                val isEnabled = InputMethodUtils.isFlorisboardEnabled(context)
                 if (stepState.getCurrentAuto().value == SetupStep.EnableIme.id &&
                     stepState.getCurrentManual().value == -1 &&
-                    !isFlorisBoardEnabled &&
-                    !isFlorisBoardSelected &&
-                    hasNotificationPermission == NotificationPermissionState.NOT_SET &&
-                    isEnabled
+                    InputMethodUtils.isFlorisboardEnabled(context)
                 ) {
                     context.launchActivity(FlorisAppActivity::class) {
                         it.flags = (Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
                             or Intent.FLAG_ACTIVITY_SINGLE_TOP
                             or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     }
+                    return@LaunchedEffect
                 }
             }
         }

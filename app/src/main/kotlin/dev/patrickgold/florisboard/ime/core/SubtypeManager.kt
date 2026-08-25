@@ -26,6 +26,7 @@ import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -135,7 +136,9 @@ object PerAppSubtypeMemory {
 class SubtypeManager(context: Context) {
     private val prefs by FlorisPreferenceStore
     private val keyboardManager by context.keyboardManager()
-    private val scope = CoroutineScope(Dispatchers.Default)
+    // SupervisorJob so one failed persist or switch cannot cancel the parent and
+    // leave subtype switching dead for the rest of the process lifetime.
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     val subtypesFlow: StateFlow<List<Subtype>>
         field = MutableStateFlow(listOf())
