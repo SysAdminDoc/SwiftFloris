@@ -169,6 +169,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     init {
         scope.launch(Dispatchers.Main.immediate) {
             resources.anyChangedVersion.collectIn(scope) {
+                // The layout caches key on a component name, so clearing only
+                // the keyboard cache recomputed from a layout still parsed out
+                // of the previous archive.
+                layoutManager.invalidateCaches()
                 updateActiveEvaluators {
                     keyboardCache.clear()
                 }

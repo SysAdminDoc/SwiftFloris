@@ -46,6 +46,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.launch
 import org.florisboard.lib.kotlin.DeferredResult
 import org.florisboard.lib.kotlin.runCatchingAsync
 
@@ -95,6 +96,20 @@ class LayoutManager(context: Context) {
     val debugLayoutComputationResultFlow = MutableStateFlow<DebugLayoutComputationResult?>(null)
 
     /**
+     * Drops every cached layout and popup mapping.
+     *
+     * These caches key on a component name, not on the archive behind it, so an
+     * extension that is updated or reinstalled keeps serving whatever was parsed
+     * from the previous `.flex`. `KeyboardManager` already clears its own
+     * keyboard cache when the extension index changes, and that recompute went
+     * straight back to the stale entry here.
+     */
+    suspend fun invalidateCaches() {
+        layoutCacheGuard.withLock { layoutCache.clear() }
+        popupMappingCacheGuard.withLock { popupMappingCache.clear() }
+    }
+
+    /**
      * Loads the layout for the specified type and name.
      *
      * @return A deferred result for a layout.
@@ -132,6 +147,16 @@ class LayoutManager(context: Context) {
                     }
                 }
                 layoutCache[ltn] = layout
+                // A read that failed is not a fact about the layout, it is a
+                // fact about that attempt: a truncated archive, a transient IO
+                // error. Caching the failed Deferred made it permanent for the
+                // process, so drop it once it is known to have failed and let
+                // the next caller try again.
+                layout.invokeOnCompletion {
+                    if (layout.isCompleted && layout.getCompleted().isFailure) {
+                        ioScope.launch { layoutCacheGuard.withLock { layoutCache.remove(ltn) } }
+                    }
+                }
                 return@withLock layout
             }
         }.await().getOrThrow()
@@ -165,6 +190,11 @@ class LayoutManager(context: Context) {
                     }
                 }
                 popupMappingCache[name] = popupMapping
+                popupMapping.invokeOnCompletion {
+                    if (popupMapping.isCompleted && popupMapping.getCompleted().isFailure) {
+                        ioScope.launch { popupMappingCacheGuard.withLock { popupMappingCache.remove(name) } }
+                    }
+                }
                 return@withLock popupMapping
             }
         }.await().getOrThrow()
