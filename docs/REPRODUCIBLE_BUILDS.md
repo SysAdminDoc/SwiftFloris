@@ -80,11 +80,17 @@ metadata.
 git clone --branch v1.9.64 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
 cd SwiftFloris
 
-# 2. Build the release APK (debug-signed fallback fine for byte comparison)
+# 2. Build the release APK. Without KEYSTORE_PATH this is unsigned, which is
+#    what F-Droid builds from and what a byte comparison should start from.
 ./gradlew :app:assembleRelease
 
-# 3. Compare against the published APK (after stripping signatures)
-APK_LOCAL=app/build/outputs/apk/release/app-release.apk
+# 3. Compare against the published APK (after stripping signatures).
+#    AGP names the artifact for you; read it rather than guessing, because a
+#    signed and an unsigned build land under different names.
+APK_LOCAL=app/build/outputs/apk/release/$(
+  grep -o '"outputFile"[[:space:]]*:[[:space:]]*"[^"]*"' \
+    app/build/outputs/apk/release/output-metadata.json | head -n 1 | cut -d'"' -f4
+)
 APK_PUBLISHED=app-release-v1.9.64.apk
 
 apkdiff() {

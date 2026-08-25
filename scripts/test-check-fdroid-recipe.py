@@ -91,7 +91,29 @@ def main() -> int:
             ),
             encoding="utf-8",
         )
-        if expect_fail(fixture, "falls back to another signing key", "a release build that debug-signs"):
+        if expect_fail(fixture, "does not recognise", "a release build that debug-signs"):
+            return 1
+
+    with TemporaryDirectory() as tmp:
+        # The evasion that defeated the first version of this rule: hoist the
+        # debug config into a variable above buildTypes and refer to it by name.
+        # Reads innocuously, still debug-signs the release.
+        fixture = Path(tmp)
+        build_fixture(fixture)
+        build = fixture / BUILD_REL
+        text = build.read_text(encoding="utf-8")
+        text = text.replace(
+            "    signingConfigs {",
+            '    val devFallbackKey = signingConfigs.getByName("debug")\n    signingConfigs {',
+            1,
+        )
+        text = text.replace(
+            '            signingConfig = signingConfigs.findByName("release")\n        }',
+            '            signingConfig = signingConfigs.findByName("release") ?: devFallbackKey\n        }',
+            1,
+        )
+        build.write_text(text, encoding="utf-8")
+        if expect_fail(fixture, "does not recognise", "a hoisted debug-key fallback"):
             return 1
 
     with TemporaryDirectory() as tmp:

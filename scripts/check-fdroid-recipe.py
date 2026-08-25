@@ -64,13 +64,19 @@ def check_release_is_unsigned(build_text: str, errors: list[str]) -> None:
     ]
     if not signing_lines:
         return
+
+    # Allow exactly one shape, rather than blacklisting the ways of writing a
+    # fallback. A denylist was evadable by hoisting the debug config into a
+    # variable above buildTypes and referring to it by name, which reads
+    # innocuously and still debug-signs the release.
+    permitted = 'signingConfig = signingConfigs.findByName("release")'
     for line in signing_lines:
-        if "getByName(" in line or '"debug"' in line:
+        if line != permitted:
             errors.append(
-                f"{BUILD_FILE} release build type falls back to another signing key: {line!r}. "
-                "Without a release keystore the release build must stay unsigned, or F-Droid "
-                "receives an APK signed by a key it did not make, under a filename its recipe "
-                "does not name."
+                f"{BUILD_FILE} release build type assigns a signing config this gate does not "
+                f"recognise: {line!r}. The only accepted form is `{permitted}`. Without a release "
+                "keystore the release build must stay unsigned, or F-Droid receives an APK signed "
+                "by a key it did not make, under a filename its recipe does not name."
             )
 
 

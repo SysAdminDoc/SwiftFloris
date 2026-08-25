@@ -134,9 +134,12 @@ configure<ApplicationExtension> {
 
     // ROADMAP §6 N6.2 — release signing. The KEYSTORE_PATH + SIGNING_*
     // env vars are populated by the maintainer's local release environment.
-    // When KEYSTORE_PATH is unset (developer builds or test dispatches without
-    // signing material), the release variant falls back to debug signing
-    // so contributors can still validate the build pipeline.
+    // When KEYSTORE_PATH is unset (developer builds, or an F-Droid build, which
+    // signs the result itself), the release variant carries no signing config at
+    // all and AGP emits app-release-unsigned.apk. That artifact still builds and
+    // still verifies byte-for-byte; it just cannot be installed until somebody
+    // signs it. Debug-signing it here would hand F-Droid a signature it did not
+    // make, under a filename its recipe does not name.
     signingConfigs {
         val keystorePath = System.getenv("KEYSTORE_PATH")
         if (!keystorePath.isNullOrBlank()) {
@@ -585,6 +588,30 @@ tasks.register("verifyRoborazziRelease") {
     dependsOn("verifyRoborazziReleaseRoborazzi")
 }
 
+/**
+ * The APK this build produced, per AGP's own output metadata.
+ *
+ * `output-metadata.json` is written by the packaging task and names the single
+ * artifact it emitted. Reading it is the only way to tell a fresh unsigned build
+ * from a signed one left over in the same directory.
+ */
+fun resolveBuiltApk(outputDir: File): File {
+    val metadata = File(outputDir, "output-metadata.json")
+    if (!metadata.isFile) {
+        throw GradleException("Release APK metadata is missing: $metadata (run assembleRelease first)")
+    }
+    val declaredName = Regex("\"outputFile\"\\s*:\\s*\"([^\"]+)\"")
+        .find(metadata.readText())
+        ?.groupValues
+        ?.get(1)
+        ?: throw GradleException("Could not read outputFile from $metadata")
+    val apk = File(outputDir, declaredName)
+    if (!apk.isFile) {
+        throw GradleException("Release APK named by $metadata is missing: $apk")
+    }
+    return apk
+}
+
 tasks.register("verifyReleaseDevtoolsIsolation") {
     group = "verification"
     description = "Fails when raw-content developer controls, routes, or overlay strings reach the release APK."
@@ -639,16 +666,13 @@ tasks.register("verifyReleaseDevtoolsIsolation") {
             throw GradleException("Release developer bridge must remain route-free and control-free.")
         }
 
-        // Signed and unsigned release builds land under different names, and
-        // which one exists depends on whether a release keystore was configured
-        // for this build. Both must pass this scan.
+        // Signed and unsigned release builds land under different names, so the
+        // name has to come from this build rather than from a guess. Picking by
+        // filename would happily scan a signed APK left behind by an earlier
+        // run and certify an artifact that is not the one shipping: AGP does not
+        // clear the output directory, so both names can sit there at once.
         val releaseApkDir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
-        val releaseApk = sequenceOf("app-release.apk", "app-release-unsigned.apk")
-            .map { name -> File(releaseApkDir, name) }
-            .firstOrNull { it.isFile }
-            ?: throw GradleException(
-                "Release APK is missing: expected app-release.apk or app-release-unsigned.apk in $releaseApkDir",
-            )
+        val releaseApk = resolveBuiltApk(releaseApkDir)
         val forbiddenMarkers = listOf(
             "Clipboard overlay",
             "Input state overlay",

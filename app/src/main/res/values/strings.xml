@@ -376,6 +376,7 @@
     <string name="settings__per_app_language__privacy_title">Local package-name map</string>
     <string name="settings__per_app_language__privacy_summary">SwiftFloris stores only app package names and subtype IDs in local preferences. This feature does not request app-locale permissions.</string>
     <string name="settings__localization__group_subtypes__label" comment="Label of subtypes group">Active keyboard languages</string>
+    <string name="settings__localization__subtype_add_summary" comment="Summary under the add-language row on the language pack screen">Most languages are already built in. Pick one here to start typing in it.</string>
     <string name="settings__localization__subtype_add_title" comment="Title of subtype dialog when adding a new subtype">Add keyboard language</string>
     <string name="settings__localization__language_pack_title" comment="Title of the language pack manager screen for managing installed and custom language packs">Manage installed language packs</string>
     <string name="settings__localization__language_pack_summary" comment="Summary of preference item for adding a new language pack">Optional extras for scripts that need them, such as Chinese shape-based input. To type in another language, add a keyboard language instead.</string>

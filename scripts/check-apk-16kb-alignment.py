@@ -51,6 +51,8 @@ def load_segment_alignments(blob: bytes) -> list[int]:
     ei_data = blob[5]
     if ei_class not in (1, 2):
         raise ElfError(f"unknown ELF class {ei_class}")
+    if ei_data not in (1, 2):
+        raise ElfError(f"unknown ELF data encoding {ei_data}")
     endian = "<" if ei_data == 1 else ">"
     is_64 = ei_class == 2
 
@@ -83,15 +85,35 @@ def load_segment_alignments(blob: bytes) -> list[int]:
     return alignments
 
 
-def check_apk(apk_path: Path) -> list[str]:
+def check_apk(apk_path: Path, expected_abis: set[str] | None = None) -> list[str]:
     problems: list[str] = []
     with zipfile.ZipFile(apk_path) as apk:
         libs = [
             info
             for info in apk.infolist()
-            if info.filename.startswith("lib/") and info.filename.endswith(NATIVE_LIB_SUFFIX)
+            if info.filename.startswith("lib/")
+            and info.filename.endswith(NATIVE_LIB_SUFFIX)
+            and not info.is_dir()
         ]
+        found_abis = {info.filename.split("/")[1] for info in libs if info.filename.count("/") >= 2}
+
+        if expected_abis is not None:
+            missing = sorted(expected_abis - found_abis)
+            if missing:
+                problems.append(
+                    f"{apk_path.name}: expected native libraries for {missing} and found none. "
+                    f"An ABI that disappears makes this check pass by having nothing to check."
+                )
+            unexpected = sorted(found_abis - expected_abis)
+            if unexpected:
+                problems.append(
+                    f"{apk_path.name}: carries unexpected ABIs {unexpected}; "
+                    f"add them to the expected set once they are meant to ship"
+                )
+
         if not libs:
+            if expected_abis:
+                return problems
             print(f"  {apk_path.name}: no native libraries")
             return problems
 
@@ -134,19 +156,27 @@ def check_apk(apk_path: Path) -> list[str]:
     return problems
 
 
+# What the app is expected to ship. Named rather than inferred so an ABI that
+# silently disappears (a stray abiFilters, a dropped dependency) fails this gate
+# instead of making it pass by leaving nothing to check.
+RELEASE_ABIS = {"arm64-v8a", "armeabi-v7a", "x86", "x86_64"}
+
+
 def main(argv: list[str]) -> int:
-    if len(argv) < 2:
-        print("::error::usage: check-apk-16kb-alignment.py <apk> [more.apk ...]")
+    args = [a for a in argv[1:] if a != "--any-abis"]
+    expected: set[str] | None = RELEASE_ABIS if len(args) == len(argv) - 1 else None
+    if not args:
+        print("::error::usage: check-apk-16kb-alignment.py [--any-abis] <apk> [more.apk ...]")
         return 2
 
     all_problems: list[str] = []
-    for raw in argv[1:]:
+    for raw in args:
         apk_path = Path(raw)
         if not apk_path.is_file():
             print(f"::error::APK not found: {apk_path}")
             return 1
         print(f"16 KB alignment: {apk_path}")
-        all_problems.extend(check_apk(apk_path))
+        all_problems.extend(check_apk(apk_path, expected_abis=expected))
 
     for problem in all_problems:
         print(f"::error::{problem}")

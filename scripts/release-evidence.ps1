@@ -301,15 +301,22 @@ Invoke-EvidenceCommand "gradle-local-gates" (Join-Path $RepoRoot "gradlew.bat") 
 # for 4 KB pages does not load on an Android 15+ 16 KB device; it crashes at
 # first use.
 $releaseApkDir = Join-Path $RepoRoot "app\build\outputs\apk\release"
-$releaseApk = Get-ChildItem -Path $releaseApkDir -Filter "app-release*.apk" -ErrorAction SilentlyContinue |
-    Select-Object -First 1
-if (-not $releaseApk) {
-    throw "Release APK was not produced under $releaseApkDir"
+# Named by AGP's own metadata, not matched by glob: a signed APK left over
+# from an earlier run would otherwise win the sort and get attested in place of
+# the artifact this run built.
+$releaseMetadata = Join-Path $releaseApkDir "output-metadata.json"
+if (-not (Test-Path $releaseMetadata)) {
+    throw "Release APK metadata was not produced: $releaseMetadata"
 }
-Add-Summary "Release APK: $($releaseApk.FullName)"
+$releaseApkName = (Get-Content $releaseMetadata -Raw | ConvertFrom-Json).elements[0].outputFile
+$releaseApk = Join-Path $releaseApkDir $releaseApkName
+if (-not (Test-Path $releaseApk)) {
+    throw "Release APK named by $releaseMetadata is missing: $releaseApk"
+}
+Add-Summary "Release APK: $releaseApk"
 Invoke-EvidenceCommand "app-apk-16kb-alignment" $python @(
     "scripts/check-apk-16kb-alignment.py",
-    $releaseApk.FullName
+    $releaseApk
 )
 
 $sampleAddonApk = Join-Path $RepoRoot "addons\dictionary-pack-sample\build\outputs\apk\release\dictionary-pack-sample-release.apk"

@@ -35,6 +35,18 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P2
 
+- [ ] P2: Show which language packs are built in and which were imported
+  Why: A review of the 2026-08-25 language-setup work found this clause of the original item unimplemented. `LanguagePackCatalogEntry` carries `extensionId`, `title`, `kind`, `state` and `components`, and nothing else; the only behavioural difference between an asset-sourced pack and an imported one is that `extensionManager.canDelete` hides the Delete button, which is an absent control rather than a distinction the user can read.
+  Where: app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/localization/LanguagePackManagerPolicy.kt:44-52; LanguagePackManagerScreen.kt.
+  Acceptance: The catalog entry carries an origin, the row says which it is in words rather than by omitting a button, and a test covers both an asset-sourced and an imported pack.
+  Complexity: S
+
+- [ ] P2: Cover the localization surfaces with RTL and 200 percent font-scale captures
+  Why: The 2026-08-25 language-setup work claimed these captures as acceptance and did not add them. `SettingsRegressionMatrixScreenshotTest` applies RTL to HomeScreen and a 2x font scale to SettingsSearchScreen only; no capture exists for LocalizationScreen, LanguagePackManagerScreen or SubtypeEditorScreen, which is where the language flow now lives.
+  Where: app/src/test/kotlin/dev/patrickgold/florisboard/screenshot/SettingsRegressionMatrixScreenshotTest.kt:110-127; PendingSettingsScreensScreenshotTest.kt.
+  Acceptance: Captures exist for the localization screen and the language-pack screen at RTL and at fontScale 2.0, and `verifyRoborazziDebug` covers them.
+  Complexity: S
+
 - [ ] P2: Wire the rewrite surface to production, or say it is a contract
   Why: `RewriteRouter` has no production instantiation, `RewriteProviderRegistry.setActive` has no caller, and every `RewriteRequest` is built in a test. The Android 16 writing-tools guard added on 2026-08-25 is correct and covered, but it sits on a path a shipped build never enters, so `FlorisEditorInfo.isWritingToolsEnabled` currently has no production reader either.
   Where: app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/RewriteRouter.kt:40; RewriteProvider.kt:121; app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/FlorisEditorInfo.kt:114.

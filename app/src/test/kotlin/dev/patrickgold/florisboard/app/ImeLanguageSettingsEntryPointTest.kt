@@ -17,86 +17,107 @@
 package dev.patrickgold.florisboard.app
 
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.view.inputmethod.InputMethodInfo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
+import java.io.File
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
- * Android 16 asks an IME where its language settings live, and routes the user
- * there from the system keyboard settings. Discussion #21 is somebody hunting
- * for Portuguese in the wrong screen while the data was already bundled, so the
- * shortest path from "the system offered me a link" to "I can add a language"
- * is worth pinning.
+ * Android 16 routes a user from the system keyboard settings to the IME's own
+ * language setup. Discussion #21 is somebody hunting for Portuguese in the wrong
+ * screen while the data was already bundled, so this path is worth pinning.
  *
- * Resolved against the merged manifest rather than grepped out of the source,
- * because what matters is that the platform can find the activity, not that a
- * string appears in a file.
+ * The platform does not discover it by broadcasting an action. It reads
+ * `android:languageSettingsActivity` off the `<input-method>` element and builds
+ * an explicit component intent from it, which is why an intent-filter here would
+ * do nothing at all. These assertions therefore check the three places that have
+ * to agree: the attribute in `method.xml`, the alias in the manifest, and the
+ * constant the activity compares against.
  */
 @RunWith(AndroidJUnit4::class)
 class ImeLanguageSettingsEntryPointTest {
 
     private val context: Context get() = ApplicationProvider.getApplicationContext()
 
+    private fun projectFile(path: String): File {
+        return sequenceOf(File(path), File("../$path"))
+            .firstOrNull { it.exists() && it.canRead() }
+            ?: error("File is not reachable from ${File(".").absolutePath}: $path")
+    }
+
     @Test
-    fun theActionWeListenForIsTheOneThePlatformSends() {
-        // The activity supports API 26, so the constant is spelled out rather
-        // than referenced. This is what stops the two drifting apart.
-        assertEquals(
-            InputMethodInfo.ACTION_IME_LANGUAGE_SETTINGS,
-            "android.view.inputmethod.action.IME_LANGUAGE_SETTINGS",
+    fun methodXmlNamesTheLanguageSettingsActivity() {
+        // Without this attribute createImeLanguageSettingsActivityIntent returns
+        // null and the system offers the user no way through, whatever the
+        // manifest declares.
+        val methodXml = projectFile("app/src/main/res/xml/method.xml").readText()
+
+        assertTrue(
+            "android:languageSettingsActivity=\"${FlorisAppActivity.ImeLanguageSettingsAliasName}\"" in methodXml,
+            "method.xml must point at the alias the manifest declares",
         )
     }
 
     @Test
-    fun exactlyOneActivityAnswersTheLanguageSettingsAction() {
-        val intent = Intent(InputMethodInfo.ACTION_IME_LANGUAGE_SETTINGS)
-            .setPackage(context.packageName)
-
-        val matches = context.packageManager.queryIntentActivities(
-            intent,
-            PackageManager.MATCH_DEFAULT_ONLY,
-        )
-
-        assertEquals(
-            1,
-            matches.size,
-            "expected exactly one entry point; the system picks arbitrarily among several " +
-                "and none at all leaves the keyboard settings with no way through",
-        )
-    }
-
-    @Test
-    fun theEntryPointLandsOnTheSettingsActivity() {
-        val intent = Intent(InputMethodInfo.ACTION_IME_LANGUAGE_SETTINGS)
-            .setPackage(context.packageName)
-
-        val resolved = context.packageManager.resolveActivity(
-            intent,
-            PackageManager.MATCH_DEFAULT_ONLY,
+    fun theNamedComponentExistsAndTargetsTheActivityThatCanNavigate() {
+        val info = context.packageManager.getActivityInfo(
+            android.content.ComponentName(
+                context.packageName,
+                FlorisAppActivity.ImeLanguageSettingsAliasName,
+            ),
+            0,
         )
 
         assertEquals(
             FlorisAppActivity::class.java.name,
-            resolved?.activityInfo?.targetActivity ?: resolved?.activityInfo?.name,
-            "the alias must target the activity that knows how to navigate",
+            info.targetActivity ?: info.name,
+            "the alias must resolve to the activity that knows how to navigate",
         )
     }
 
     @Test
-    @Config(sdk = [36])
-    fun theEntryPointIsPresentOnTheReleaseThatIntroducedTheAction() {
-        val intent = Intent(InputMethodInfo.ACTION_IME_LANGUAGE_SETTINGS)
-            .setPackage(context.packageName)
+    fun theEntryPointIsNotExported() {
+        // The platform starts it from inside our own package by explicit
+        // component, so nothing outside needs to reach it.
+        val info = context.packageManager.getActivityInfo(
+            android.content.ComponentName(
+                context.packageName,
+                FlorisAppActivity.ImeLanguageSettingsAliasName,
+            ),
+            0,
+        )
 
-        assertEquals(
-            1,
-            context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY).size,
+        assertFalse(info.exported, "an internal entry point should not be exported")
+    }
+
+    @Test
+    fun noStrayIntentFilterAdvertisesAnActionThePlatformNeverSends() {
+        // A previous attempt matched on an ACTION_IME_LANGUAGE_SETTINGS
+        // intent-filter. The platform never sends one, so that was dead code
+        // dressed up as an integration.
+        val manifest = projectFile("app/src/main/AndroidManifest.xml").readText()
+
+        assertFalse(
+            "IME_LANGUAGE_SETTINGS" in manifest,
+            "the manifest should not advertise an action the platform does not use",
+        )
+    }
+
+    @Test
+    fun theResolvedComponentIsQueryableThroughPackageManager() {
+        val activities = context.packageManager
+            .getPackageInfo(context.packageName, PackageManager.GET_ACTIVITIES)
+            .activities
+            .orEmpty()
+
+        assertTrue(
+            activities.any { it.name == FlorisAppActivity.ImeLanguageSettingsAliasName },
+            "the alias must be present in the merged manifest",
         )
     }
 }

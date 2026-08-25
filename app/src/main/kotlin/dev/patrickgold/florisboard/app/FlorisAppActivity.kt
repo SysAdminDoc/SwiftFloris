@@ -246,7 +246,7 @@ class FlorisAppActivity : ComponentActivity() {
             intentToBeHandled = intent
             return
         }
-        if (intent.action == ACTION_IME_LANGUAGE_SETTINGS) {
+        if (intent.isLanguageSettingsEntryPoint()) {
             intentToBeHandled = intent
             return
         }
@@ -291,10 +291,14 @@ class FlorisAppActivity : ComponentActivity() {
         LaunchedEffect(intentToBeHandled) {
             val intent = intentToBeHandled
             if (intent != null) {
-                if (intent.action == ACTION_IME_LANGUAGE_SETTINGS) {
+                if (intent.isLanguageSettingsEntryPoint()) {
                     // Land on the subtype list rather than the home screen: the
                     // system sent the user here to add a keyboard language, and
                     // making them find it again is the confusion this answers.
+                    // Marked consumed so a rotation, which re-runs onCreate and
+                    // replays the launch intent, does not push a second copy
+                    // onto the restored back stack.
+                    setIntent(intent.also { it.putExtra(EXTRA_LANGUAGE_SETTINGS_CONSUMED, true) })
                     navController.navigate(Routes.Settings.Localization)
                 } else if (
                     intent.action == Intent.ACTION_VIEW &&
@@ -319,14 +323,31 @@ class FlorisAppActivity : ComponentActivity() {
         }
     }
 
-    private companion object {
+    /**
+     * Whether this activity was started as the IME language-settings entry point.
+     *
+     * The platform starts the alias named in `method.xml`'s
+     * `android:languageSettingsActivity` by explicit component, so the component
+     * name is the only signal; there is no action to match on. The consumed flag
+     * keeps a configuration change from replaying the launch intent and pushing
+     * the destination a second time.
+     */
+    private fun Intent.isLanguageSettingsEntryPoint(): Boolean {
+        if (getBooleanExtra(EXTRA_LANGUAGE_SETTINGS_CONSUMED, false)) return false
+        return component?.className == ImeLanguageSettingsAliasName
+    }
+
+    internal companion object {
         /**
-         * `InputMethodInfo.ACTION_IME_LANGUAGE_SETTINGS`, spelled out because
-         * the constant is API 36 and this activity supports API 26. The value is
-         * a stable intent action, checked against the compile SDK.
+         * The alias declared in `AndroidManifest.xml` and pointed at by
+         * `method.xml`. Held here so a test can assert the three agree rather
+         * than each carrying its own copy of the string.
          */
-        const val ACTION_IME_LANGUAGE_SETTINGS =
-            "android.view.inputmethod.action.IME_LANGUAGE_SETTINGS"
+        internal const val ImeLanguageSettingsAliasName =
+            "dev.patrickgold.florisboard.ImeLanguageSettingsAlias"
+
+        private const val EXTRA_LANGUAGE_SETTINGS_CONSUMED =
+            "swiftfloris.app.language_settings_consumed"
     }
 
     private fun Intent.importUris(): List<Uri> {

@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Input
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.ButtonDefaults
@@ -138,6 +139,18 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
             FlorisOutlinedBox(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
             ) {
+                // Add a keyboard language first, and unconditionally. Two
+                // language packs ship in assets, so the catalog is never empty
+                // on a real device and an affordance shown only in the empty
+                // state is an affordance nobody sees. Discussion #21 is somebody
+                // hunting for Portuguese on this screen while pt.fldic was
+                // already bundled, which is the thing this row answers.
+                Preference(
+                    onClick = { navController.navigate(Routes.Settings.SubtypeAdd) },
+                    icon = Icons.Default.Add,
+                    title = stringRes(R.string.settings__localization__subtype_add_title),
+                    summary = stringRes(R.string.settings__localization__subtype_add_summary),
+                )
                 Preference(
                     onClick = {
                         if (LanguagePackManagerPolicy.canTriggerImport(isDeleteInProgress)) {
@@ -160,8 +173,6 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                 icon = Icons.Default.Language,
                 title = stringRes(R.string.settings__localization__language_pack_empty_title),
                 message = stringRes(R.string.settings__localization__language_pack_empty_message),
-                actionLabel = stringRes(R.string.settings__localization__subtype_add_title),
-                onAction = { navController.navigate(Routes.Settings.SubtypeAdd) },
             )
         }
         for (entry in languagePackCatalog) key(entry.extensionId) {

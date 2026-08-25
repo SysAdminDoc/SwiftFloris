@@ -2,6 +2,7 @@
 <input-method xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:settingsActivity="dev.patrickgold.florisboard.SettingsLauncherAlias"
+    android:languageSettingsActivity="dev.patrickgold.florisboard.ImeLanguageSettingsAlias"
     android:supportsInlineSuggestions="true"
     android:supportsInlineSuggestionsWithTouchExploration="true"
     android:supportsStylusHandwriting="true"
