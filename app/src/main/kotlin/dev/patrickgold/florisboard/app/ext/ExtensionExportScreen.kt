@@ -37,6 +37,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showLongToast
+import dev.patrickgold.florisboard.lib.devtools.flogError
+import org.florisboard.lib.kotlin.UserFacingError
+import org.florisboard.lib.compose.stringRes
 
 @Composable
 fun ExtensionExportScreen(id: String) {
@@ -57,6 +60,7 @@ private fun ExportScreen(ext: Extension) = FlorisScreen {
     scrollable = false
 
     val navController = LocalNavController.current
+    val detailsUnavailable = stringRes(R.string.error__details_unavailable)
     val context = LocalContext.current
     val extensionManager by context.extensionManager()
     val scope = rememberCoroutineScope()
@@ -82,7 +86,11 @@ private fun ExportScreen(ext: Extension) = FlorisScreen {
                     context.showLongToast(R.string.ext__export__success)
                 } else {
                     val error = exportResult.exceptionOrNull()
-                    context.showLongToast(R.string.ext__export__failure, "error_message" to error?.localizedMessage)
+                    flogError { error?.stackTraceToString().orEmpty() }
+                    context.showLongToast(
+                        R.string.ext__export__failure,
+                        "error_message" to UserFacingError.summarize(error, detailsUnavailable),
+                    )
                 }
                 navController.popBackStack()
             }
@@ -95,7 +103,11 @@ private fun ExportScreen(ext: Extension) = FlorisScreen {
             runCatching {
                 exportLauncher.launch(ExtensionDefaults.createFlexName(ext.meta.id))
             }.onFailure { error ->
-                context.showLongToast(R.string.ext__export__failure, "error_message" to error.localizedMessage)
+                flogError { error.stackTraceToString() }
+                context.showLongToast(
+                    R.string.ext__export__failure,
+                    "error_message" to UserFacingError.summarize(error, detailsUnavailable),
+                )
                 navController.popBackStack()
             }
         }

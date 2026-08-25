@@ -66,6 +66,7 @@ import dev.patrickgold.florisboard.app.settings.search.Preference
 import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.FlorisCanvasIcon
 import org.florisboard.lib.compose.stringRes
+import org.florisboard.lib.kotlin.UserFacingError
 
 @Composable
 fun AboutScreen() = FlorisScreen {
@@ -73,6 +74,7 @@ fun AboutScreen() = FlorisScreen {
 
     val navController = LocalNavController.current
     val context = LocalContext.current
+    val detailsUnavailable = stringRes(R.string.error__details_unavailable)
     val clipboardManager by context.clipboardManager()
 
     val appVersion = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
@@ -108,7 +110,10 @@ fun AboutScreen() = FlorisScreen {
                 } catch (e: Throwable) {
                     Toast.makeText(
                         context,
-                        context.stringRes(R.string.about__version_copied__error, "error_message" to e.message),
+                        context.stringRes(
+                            R.string.about__version_copied__error,
+                            "error_message" to UserFacingError.summarize(e, detailsUnavailable),
+                        ),
                         Toast.LENGTH_SHORT,
                     ).show()
                 }

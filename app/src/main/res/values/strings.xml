@@ -2364,6 +2364,7 @@
     <string name="error__details">Details</string>
     <string name="error__invalid">Invalid</string>
     <string name="error__snackbar_message">Something went wrong</string>
+    <string name="error__details_unavailable" comment="Shown in place of a technical error detail when the failure carried no usable message">No technical details were provided.</string>
     <string name="error__snackbar_message_template">Something went wrong: {error_message}</string>
 
     <!-- General strings -->

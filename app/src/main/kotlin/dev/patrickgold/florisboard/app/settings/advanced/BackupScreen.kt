@@ -72,6 +72,7 @@ import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
+import org.florisboard.lib.kotlin.UserFacingError
 
 object Backup {
     const val FILE_PROVIDER_AUTHORITY = "${BuildConfig.APPLICATION_ID}.provider.file"
@@ -331,6 +332,7 @@ fun BackupScreen() = FlorisScreen {
     previewFieldVisible = false
 
     val navController = LocalNavController.current
+    val unknownBackupError = stringRes(R.string.backup_and_restore__back_up__unknown_error)
     val context = LocalContext.current
     val cacheManager by context.cacheManager()
     val scope = rememberCoroutineScope()
@@ -406,15 +408,16 @@ fun BackupScreen() = FlorisScreen {
                     navController.popBackStack()
                 }.onFailure { error ->
                     flogError { error.stackTraceToString() }
+                    val errorMessage = UserFacingError.summarize(error, unknownBackupError)
                     context.showLongToast(
                         R.string.backup_and_restore__back_up__failure,
-                        "error_message" to error.message,
+                        "error_message" to errorMessage,
                     )
                     closeBackupWorkspace()
                     isBackupInProgress = false
                     lastBackupNotice =
                         BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Failure)
-                    lastBackupErrorMessage = error.message
+                    lastBackupErrorMessage = errorMessage
                 }
             }
         },
@@ -490,14 +493,15 @@ fun BackupScreen() = FlorisScreen {
                 }
             }.onFailure { error ->
                 flogError { error.stackTraceToString() }
+                val errorMessage = UserFacingError.summarize(error, unknownBackupError)
                 context.showLongToast(
                     R.string.backup_and_restore__back_up__failure,
-                    "error_message" to error.message,
+                    "error_message" to errorMessage,
                 )
                 closeBackupWorkspace()
                 isBackupInProgress = false
                 lastBackupNotice = BackupFlowNotice.Failure
-                lastBackupErrorMessage = error.message
+                lastBackupErrorMessage = errorMessage
             }
         } finally {
             passphrase?.fill('\u0000')

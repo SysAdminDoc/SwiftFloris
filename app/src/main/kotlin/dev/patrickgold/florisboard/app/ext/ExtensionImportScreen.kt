@@ -80,6 +80,8 @@ import org.florisboard.lib.compose.florisHorizontalScroll
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.resultOk
+import dev.patrickgold.florisboard.lib.devtools.flogError
+import org.florisboard.lib.kotlin.UserFacingError
 
 enum class ExtensionImportScreenType(
     val id: String,
@@ -114,6 +116,7 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
 
     val navController = LocalNavController.current
     val context = LocalContext.current
+    val detailsUnavailable = stringRes(R.string.ext__import__error_details_unavailable)
     val activity = context.findActivity()
     val cacheManager by context.cacheManager()
     val extensionManager by context.extensionManager()
@@ -281,10 +284,12 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                         closeImportResult()
                         navController.popBackStack()
                     }.onFailure { error ->
+                        flogError { error.stackTraceToString() }
+                        val errorMessage = UserFacingError.summarize(error, detailsUnavailable)
                         lastImportNotice = ExtensionImportFlowNotice.Failure
-                        lastImportErrorMessage = error.localizedMessage
+                        lastImportErrorMessage = errorMessage
                         closeImportResult()
-                        context.showLongToast(R.string.ext__import__failure, "error_message" to error.localizedMessage)
+                        context.showLongToast(R.string.ext__import__failure, "error_message" to errorMessage)
                     }
                     isImportInProgress = false
                 }

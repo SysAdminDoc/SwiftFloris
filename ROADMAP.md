@@ -12,13 +12,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: Every entry above is either reproduced and fixed with a regression test, or closed with a one-line note saying which existing guard makes it unreachable. Entries that survive triage but are too large get their own roadmap item.
   Complexity: L
 
-- [ ] P1: Bound and de-duplicate the error text that reaches user-facing toasts
-  Why: Restore, backup, extension import, and snippet import all interpolate `Throwable.localizedMessage` straight into a toast or notice card. That text can be attacker-influenced (ZipUtils echoes a rejected archive entry name of up to 255 chars) and is unbounded in the general case, so a hostile archive still controls a large slice of what the user is shown even though it can no longer hang the formatter.
-  Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/BackupRestorePolicy.kt:183-187; app/src/main/kotlin/dev/patrickgold/florisboard/lib/io/ZipUtils.kt:275,295,319; app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/RestoreScreen.kt:403-409.
-  Touches: BackupRestorePolicy.kt, a shared error-presentation helper, RestoreScreen.kt, BackupScreen.kt, ExtensionImportScreen.kt, SnippetSettingsScreen.kt, strings.xml, presentation tests.
-  Acceptance: One shared helper truncates at a documented length, strips control characters and newlines, and is used by every path that surfaces a caught throwable to the user; a fixture archive whose entry name is 255 hostile characters renders a bounded single-line message; the underlying cause is still written in full to the log.
-  Complexity: S
-
 - [ ] P1: Route users and Android 16 directly to keyboard language setup
   Why: Discussion #21 shows real confusion even though the requested Portuguese data is already bundled.
   Evidence: https://github.com/SysAdminDoc/SwiftFloris/discussions/21; app/src/main/assets/ime/dict/pt.fldic; app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/localization/LocalizationScreen.kt:85-100; app/src/main/res/values/strings.xml:375-378; https://developer.android.com/reference/android/view/inputmethod/InputMethodInfo.
@@ -169,11 +162,4 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Why: `rememberReducedMotion` keys its lookup on `LocalConfiguration`, but the animator duration scale is a `Settings.Global` value that does not produce a configuration change, so turning "Remove animations" on while the app is open has no effect until something else recomposes it.
   Where: lib/compose/src/main/kotlin/org/florisboard/lib/compose/ReducedMotion.kt:30-44.
   Acceptance: The value is observed through a settings observer like the other `Settings.Global` reads in `State.kt`, and toggling the system setting updates the running UI.
-  Complexity: S
-
-- [ ] P3: Make scheduled-backup retention quantity-aware
-  Why: The current option formats every count through one English plural form.
-  Evidence: app/src/main/res/values/strings.xml:1838; https://developer.android.com/guide/topics/resources/string-resource#Plurals.
-  Touches: strings.xml and translated quantity resources, scheduled-backup settings UI, resource-format tests.
-  Acceptance: Retention uses a plurals resource with the count passed to resource selection and formatting; one and many render correctly in English and pseudolocales; the locale coverage and resource-format gates pass.
   Complexity: S

@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.app.settings.advanced
 
 import dev.patrickgold.florisboard.R
+import org.florisboard.lib.kotlin.UserFacingError
 
 internal object BackupRestorePolicy {
     fun requiresPortableEncryption(clipboardItemsSelected: Boolean): Boolean =
@@ -181,9 +182,7 @@ internal object BackupRestorePolicy {
     }
 
     fun restoreErrorMessage(error: Throwable, fallbackMessage: String): String {
-        return error.localizedMessage
-            ?.takeIf { it.isNotBlank() }
-            ?: fallbackMessage
+        return UserFacingError.summarize(error, fallbackMessage)
     }
 }
 

@@ -49,6 +49,7 @@ import org.florisboard.lib.android.vibrate
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.stringRes
+import org.florisboard.lib.kotlin.UserFacingError
 
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
 @Composable
@@ -58,6 +59,7 @@ fun InputFeedbackScreen() = FlorisScreen {
     iconSpaceReserved = false
 
     val context = LocalContext.current
+    val detailsUnavailable = stringRes(R.string.error__details_unavailable)
     val vibrator = context.systemVibratorOrNull()
     val scope = rememberCoroutineScope()
     var pendingSoundClass by remember { mutableStateOf<KeypressSoundClass?>(null) }
@@ -80,7 +82,7 @@ fun InputFeedbackScreen() = FlorisScreen {
             }.onFailure { error ->
                 context.showLongToast(
                     R.string.pref__input_feedback__custom_sounds__import_failed,
-                    "error_message" to (error.message ?: "unknown error"),
+                    "error_message" to UserFacingError.summarize(error, detailsUnavailable),
                 )
             }
         }

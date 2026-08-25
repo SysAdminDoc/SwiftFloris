@@ -34,6 +34,7 @@ import dev.patrickgold.florisboard.lib.io.loadTextAsset
 import org.florisboard.lib.compose.florisHorizontalScroll
 import org.florisboard.lib.compose.florisVerticalScroll
 import org.florisboard.lib.compose.stringRes
+import org.florisboard.lib.kotlin.UserFacingError
 
 @Composable
 fun ProjectLicenseScreen() = FlorisScreen {
@@ -41,6 +42,7 @@ fun ProjectLicenseScreen() = FlorisScreen {
     scrollable = false
 
     val context = LocalContext.current
+    val detailsUnavailable = stringRes(R.string.error__details_unavailable)
 
     content {
         // Forcing LTR because the Apache 2.0 License shipped and displayed
@@ -56,7 +58,10 @@ fun ProjectLicenseScreen() = FlorisScreen {
                 val licenseText = FlorisRef.assets("license/project_license.txt").loadTextAsset(
                     context
                 ).getOrElse {
-                    stringRes(R.string.about__project_license__error_license_text_failed, "error_message" to (it.message ?: ""))
+                    stringRes(
+                        R.string.about__project_license__error_license_text_failed,
+                        "error_message" to UserFacingError.summarize(it, detailsUnavailable),
+                    )
                 }
                 Text(
                     text = licenseText,
