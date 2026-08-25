@@ -6,6 +6,13 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P1
 
+- [ ] P1: Bound and de-duplicate the error text that reaches user-facing toasts
+  Why: Restore, backup, extension import, and snippet import all interpolate `Throwable.localizedMessage` straight into a toast or notice card. That text can be attacker-influenced (ZipUtils echoes a rejected archive entry name of up to 255 chars) and is unbounded in the general case, so a hostile archive still controls a large slice of what the user is shown even though it can no longer hang the formatter.
+  Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/BackupRestorePolicy.kt:183-187; app/src/main/kotlin/dev/patrickgold/florisboard/lib/io/ZipUtils.kt:275,295,319; app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/RestoreScreen.kt:403-409.
+  Touches: BackupRestorePolicy.kt, a shared error-presentation helper, RestoreScreen.kt, BackupScreen.kt, ExtensionImportScreen.kt, SnippetSettingsScreen.kt, strings.xml, presentation tests.
+  Acceptance: One shared helper truncates at a documented length, strips control characters and newlines, and is used by every path that surfaces a caught throwable to the user; a fixture archive whose entry name is 255 hostile characters renders a bounded single-line message; the underlying cause is still written in full to the log.
+  Complexity: S
+
 - [ ] P1: Route users and Android 16 directly to keyboard language setup
   Why: Discussion #21 shows real confusion even though the requested Portuguese data is already bundled.
   Evidence: https://github.com/SysAdminDoc/SwiftFloris/discussions/21; app/src/main/assets/ime/dict/pt.fldic; app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/localization/LocalizationScreen.kt:85-100; app/src/main/res/values/strings.xml:375-378; https://developer.android.com/reference/android/view/inputmethod/InputMethodInfo.
@@ -64,6 +71,30 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P2
 
+- [ ] P2: Make the keyboard layout controller reachable from unit tests
+  Why: `TextKeyboardLayoutController` is private to `TextKeyboardLayout.kt`, so the glide buffer lifecycle, pointer bookkeeping, and touch routing have no direct coverage. The trail-retention rule had to be extracted to `GlideTrailRetention` to be testable at all, and the per-pointer trace handling around it is still only covered indirectly.
+  Where: app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboardLayout.kt:741 and :1580-1670; app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/gestures/GlideTrailRetention.kt.
+  Acceptance: The controller's non-Compose state transitions are reachable from a JVM or Robolectric test without making the whole composable public; tests cover a single-pointer glide, two pointers finishing in either order, and a cancel mid-gesture; the fade buffer is asserted bounded after a long replay.
+  Complexity: M
+
+- [ ] P2: Give the settings home screen the spacing rhythm every other screen uses
+  Why: HomeScreen is the only settings file inventing 3, 5, 6, 7, 10, 14, 17, 44 and 86 dp values. Every other screen sticks to the 4/8/12/16/24/32 steps that `defaultFlorisOutlinedBox` (8/16) and `FlorisCardDefaults` establish, so cards visibly fail to align when you move between home and any screen it links to.
+  Where: app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/HomeScreen.kt:361, 464, 469, 681, 690, 691, 701, 745, 790, 795, 828, 869.
+  Acceptance: A named spacing scale exists alongside `FlorisSurfaceTokens`; HomeScreen uses it; the Roborazzi home captures are re-recorded deliberately with the alignment change reviewed rather than tolerated.
+  Complexity: S
+
+- [ ] P2: Replace the remaining dark-only Snygg colour fallbacks
+  Why: `snyggErrorForegroundFor` fixed the emoji sheet error tone, but three surfaces still pass a fixed dark literal as the last-resort value for an element that no bundled stylesheet defines, so a light or custom theme that misses the rule gets a dark panel or a black strip. `window-resize-overlay-fixed` is defined in 0 of 21 stylesheets and always falls back to an untinted 50% gray scrim.
+  Where: app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/emoji/EmojiTagSheet.kt:77 and PinToGroupSheet.kt:86 (`Color(0xFF171923)`); app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/CandidatesRow.kt:335 (same literal); app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/Smartbar.kt:374 (`Color.Black`); app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowEditorHandles.kt:213 (`Color.Gray.copy(alpha = 0.5f)`).
+  Acceptance: Every last-resort colour is derived from a resolved sibling or from the theme's light/dark posture rather than a literal; a test enumerates the elements referenced from Kotlin that no bundled stylesheet defines and asserts each one's fallback is derived, so a new undefined element cannot silently ship a dark-only default.
+  Complexity: M
+
+- [ ] P2: Decide what the pending honeycomb keyboard widgets are for
+  Why: `HoneycombHexButton` and `HoneycombKeyboardRow` are reachable only from a Roborazzi capture. Their own KDoc says production shipped in v1.8.79 through the normal Snygg `TextKeyButton` path with `HoneycombHexShape`, which is the code that is actually live. They still carry hardcoded dark-navy colours that ignore Snygg entirely, and `HoneycombKeyboardRow` computes `rowStrideDp` only to discard it behind `@Suppress("UNUSED_VARIABLE")`.
+  Where: app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/HoneycombHexButton.kt:75-77; HoneycombKeyboardRow.kt:73-88; app/src/test/kotlin/dev/patrickgold/florisboard/screenshot/PendingKeyboardSurfacesScreenshotTest.kt:142.
+  Acceptance: Either the widgets are wired to Snygg and given a stated production role, or they and their capture are removed; `HoneycombTessellation` and `HoneycombHexShape` stay either way because `TextKeyboard.kt` and `TextKeyboardLayout.kt` use them.
+  Complexity: S
+
 - [ ] P2: Preserve reproducible-build output when the container build fails
   Why: The current script copies output only after success and removes the failed container before its evidence is collected.
   Evidence: utils/repr_build/run.sh:90-108.
@@ -84,13 +115,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Touches: app/build.gradle.kts, Kover filters and verification rules, release-evidence.ps1, coverage documentation.
   Acceptance: Package or class-level line and branch floors cover privacy policy, backup and restore, migrations, addon enrollment, editor transactions, and dictionary persistence; generated and UI-only code is excluded with written reasons; a self-test removes coverage from a fixture and proves verification fails.
   Complexity: M
-
-- [ ] P2: Reject generated Python bytecode from the repository
-  Why: Two .pyc files are tracked and the ignore and hygiene rules do not prevent recurrence.
-  Evidence: scripts/__pycache__/check-locale-coverage.cpython-313.pyc; scripts/__pycache__/verify-targetsdk37-shadow.cpython-313.pyc; .gitignore; scripts/check-repo-hygiene.sh.
-  Touches: tracked bytecode files, .gitignore, scripts/check-repo-hygiene.sh, hygiene self-test.
-  Acceptance: No tracked .pyc or __pycache__ path remains; standard ignore rules cover both; the hygiene gate rejects a staged fixture anywhere in the tree.
-  Complexity: S
 
 - [ ] P2: Centralize and localize input-provider metadata
   Why: The subtype editor owns a two-entry English map and cannot describe future providers consistently.
@@ -122,6 +146,24 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Complexity: M
 
 ### P3
+
+- [ ] P3: Rename the misspelled `hint_component_label_to_long` resource key
+  Why: The key should be `too_long`. It is referenced by roughly 30 translated `values-*` files, so renaming it out of band would drop every existing translation.
+  Where: app/src/main/res/values/strings.xml; app/src/main/kotlin/dev/patrickgold/florisboard/lib/ext/ExtensionValidation.kt:106; all `values-*/strings.xml`.
+  Acceptance: The rename is coordinated with Crowdin so translations follow the key; the locale-coverage gate stays green.
+  Complexity: S
+
+- [ ] P3: Remove the dead `else` branch in the popup hint priority resolution
+  Why: The compiler reports the enclosing `when` as exhaustive, so the branch is unreachable. It reads as defensive but hides the compile error that would otherwise flag a new `KeyHintMode` value.
+  Where: app/src/main/kotlin/dev/patrickgold/florisboard/ime/popup/PopupSet.kt:99.
+  Acceptance: The branch is gone and adding a hint mode fails the build rather than silently taking a fallback path; popup priority tests still pass for every existing mode pair.
+  Complexity: S
+
+- [ ] P3: Re-evaluate reduced motion without waiting for a configuration change
+  Why: `rememberReducedMotion` keys its lookup on `LocalConfiguration`, but the animator duration scale is a `Settings.Global` value that does not produce a configuration change, so turning "Remove animations" on while the app is open has no effect until something else recomposes it.
+  Where: lib/compose/src/main/kotlin/org/florisboard/lib/compose/ReducedMotion.kt:30-44.
+  Acceptance: The value is observed through a settings observer like the other `Settings.Global` reads in `State.kt`, and toggling the system setting updates the running UI.
+  Complexity: S
 
 - [ ] P3: Make scheduled-backup retention quantity-aware
   Why: The current option formats every count through one English plural form.
