@@ -17,6 +17,15 @@ if [ -n "$generated_paths" ]; then
   exit 1
 fi
 
+bytecode_paths="$(
+  git ls-files | grep -E '(^|/)__pycache__/|\.py[cod]$' || true
+)"
+if [ -n "$bytecode_paths" ]; then
+  echo "::error::Generated Python bytecode is tracked. Remove these paths from git; __pycache__/ and *.py[cod] are ignored:"
+  echo "$bytecode_paths"
+  exit 1
+fi
+
 benchmark_serial_fields="$(git grep -n -I -E '"(serial|deviceSerial|device_serial)"[[:space:]]*:[[:space:]]*"[A-Za-z0-9][A-Za-z0-9._-]{5,}"' -- docs || true)"
 if [ -n "$benchmark_serial_fields" ]; then
   echo "::error::Tracked documentation contains a device serial. Benchmark outputs must use deviceKey derived from manufacturer/model/SDK:"

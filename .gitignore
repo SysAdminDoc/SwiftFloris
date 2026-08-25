@@ -12,6 +12,10 @@
 # Java class files
 *.class
 
+# Python bytecode (build scripts under scripts/ and tools/)
+__pycache__/
+*.py[cod]
+
 # Generated files
 bin/
 gen/

@@ -95,6 +95,19 @@ def main() -> int:
             print("expected generated release output to fail")
             return 1
 
+    with TemporaryDirectory() as tmp:
+        fixture = Path(tmp)
+        init_repo(fixture)
+        bytecode = fixture / "scripts" / "__pycache__" / "example.cpython-313.pyc"
+        bytecode.parent.mkdir(parents=True)
+        bytecode.write_bytes(b"fixture")
+        run("git", "add", "-f", "scripts/__pycache__/example.cpython-313.pyc", cwd=fixture)
+        failing = run_checker(fixture)
+        if failing.returncode != 1 or "__pycache__/example.cpython-313.pyc" not in failing.stdout:
+            print(failing.stdout)
+            print("expected tracked Python bytecode to fail")
+            return 1
+
     print("repository hygiene checker self-test: PASS")
     return 0
 
