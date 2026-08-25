@@ -82,7 +82,10 @@ class AddonProvenanceReportTest : FunSpec({
             language = "pl",
             displayName = "Polish",
             wordCount = 1,
-            fldicAssetPath = "x",
+            // A real path, because the descriptor now requires the format its
+            // field is named for. This test is about the addon type, not the
+            // path, so the placeholder was only ever incidental.
+            fldicAssetPath = "ime/dict/pl.fldic",
             source = "x",
             license = "x",
         )

@@ -94,6 +94,14 @@ data class DictionaryPackDescriptor(
         require(!fldicAssetPath.hasParentTraversalSegment()) {
             "fldicAssetPath must not contain a '..' path segment"
         }
+        // The loader picks its decoder off this extension: anything else is
+        // handed to the JSON parser, which throws on a binary dictionary. The
+        // field is named for the format it is supposed to carry, so requiring it
+        // here keeps a mistyped descriptor a rejected enrolment rather than a
+        // failure on the typing path.
+        require(fldicAssetPath.endsWith(FLDIC_EXTENSION, ignoreCase = true)) {
+            "fldicAssetPath must name a $FLDIC_EXTENSION file"
+        }
         zipfAssetPath?.let {
             require(it.isNotBlank()) { "zipfAssetPath must not be blank when present" }
             require(!it.startsWith("/")) {
@@ -120,7 +128,9 @@ data class DictionaryPackDescriptor(
          * i.e. the path tries to escape its asset root. A literal `..foo` filename
          * is allowed; only a standalone parent-directory segment is rejected.
          */
-        private fun String.hasParentTraversalSegment(): Boolean =
+    private const val FLDIC_EXTENSION = ".fldic"
+
+    private fun String.hasParentTraversalSegment(): Boolean =
             split('/', '\\').any { it == ".." }
 
         private val JsonConfig = Json {

@@ -91,6 +91,38 @@ class DictionaryPackDescriptorTest : FunSpec({
         }
     }
 
+    test("rejects a dictionary path that is not the format the loader will decode") {
+        // The loader picks its decoder off this extension and hands anything
+        // else to the JSON parser, which throws on a binary dictionary. Catching
+        // it at enrolment keeps a mistyped descriptor from becoming a failure on
+        // the typing path.
+        listOf("ime/dict/pl.txt", "ime/dict/pl.json", "ime/dict/pl", "ime/dict/fldic.gz").forEach { path ->
+            shouldThrow<IllegalArgumentException> {
+                DictionaryPackDescriptor(
+                    schema = 1,
+                    language = "pl",
+                    displayName = "Bad",
+                    wordCount = 1,
+                    fldicAssetPath = path,
+                    source = "x",
+                    license = "MIT",
+                )
+            }
+        }
+    }
+
+    test("accepts the declared format regardless of how it is cased") {
+        DictionaryPackDescriptor(
+            schema = 1,
+            language = "pl",
+            displayName = "Good",
+            wordCount = 1,
+            fldicAssetPath = "ime/dict/PL.FLDIC",
+            source = "x",
+            license = "MIT",
+        ).fldicAssetPath shouldBe "ime/dict/PL.FLDIC"
+    }
+
     test("rejects absolute asset paths to keep the loader inside the addon's assets") {
         shouldThrow<IllegalArgumentException> {
             DictionaryPackDescriptor(

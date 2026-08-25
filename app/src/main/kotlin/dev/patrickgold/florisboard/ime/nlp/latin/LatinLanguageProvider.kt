@@ -50,6 +50,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.roundToInt
+import dev.patrickgold.florisboard.lib.devtools.flogError
 
 class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProvider {
     companion object {
@@ -594,7 +595,17 @@ internal class LatinDictionaryStore(
         var merged: Map<String, Int>? = null
         for (path in paths.distinct()) {
             val rawData = readAsset.read(path) ?: continue
-            val frequencies = decodeFrequencies(path, rawData)
+            // An addon-supplied path reaches this loop, and a descriptor that
+            // names the wrong format sends its bytes to the JSON parser. The
+            // sibling supplemental-English loader already treats a decode as
+            // fallible; this one propagated, and it sits on the path a keystroke
+            // takes. Skip the asset and keep whatever else loaded.
+            val frequencies = runCatching { decodeFrequencies(path, rawData) }
+                .onFailure { error ->
+                    flogError { "Dictionary asset '$path' could not be decoded: ${error.message}" }
+                }
+                .getOrNull()
+                ?: continue
             if (frequencies.isEmpty()) continue
             merged = mergeFrequencies(merged, frequencies)
         }
