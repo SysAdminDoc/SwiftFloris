@@ -137,7 +137,7 @@ fun FlorisSimpleCard(
     actionLabel: String? = null,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f),
+    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha),
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
     liveRegion: LiveRegionMode? = null,
     icon: (@Composable () -> Unit)? = null,
@@ -385,7 +385,7 @@ fun FlorisNeutralCard(
         modifier = modifier,
         backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha),
         liveRegion = liveRegion,
         onClick = onClick,
         icon = if (showIcon) ({
@@ -416,7 +416,7 @@ fun FlorisInfoCard(
         modifier = modifier,
         backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha),
         liveRegion = liveRegion,
         onClick = onClick,
         icon = if (showIcon) ({
@@ -470,7 +470,7 @@ fun FlorisEmptyState(
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha),
         ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,

@@ -62,6 +62,6 @@ fun FlorisAppBar(
             ),
             scrollBehavior = scrollBehavior,
         )
-        HorizontalDivider(color = colorScheme.outlineVariant.copy(alpha = 0.38f))
+        HorizontalDivider(color = colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha))
     }
 }

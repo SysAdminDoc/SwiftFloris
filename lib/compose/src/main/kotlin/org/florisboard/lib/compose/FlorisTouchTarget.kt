@@ -30,3 +30,19 @@ import androidx.compose.ui.unit.dp
 object FlorisTouchTarget {
     val MinSize = 48.dp
 }
+
+/**
+ * Shared surface tokens for the neutral hairlines that separate and outline
+ * content.
+ *
+ * Every divider and outlined-container border in the product draws
+ * `outlineVariant` at reduced opacity. Those reductions had drifted to five
+ * different values across the shared cards, the app bar, the step layout, the
+ * home screen and the extension screens, so the same visual role rendered at a
+ * different weight depending on which screen you were looking at. One token
+ * keeps them in step, and makes a future contrast change a single edit.
+ */
+object FlorisSurfaceTokens {
+    /** Opacity applied to `outlineVariant` for dividers and container borders. */
+    const val HairlineAlpha = 0.56f
+}

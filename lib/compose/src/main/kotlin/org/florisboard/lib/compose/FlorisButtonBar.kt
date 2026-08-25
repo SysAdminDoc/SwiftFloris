@@ -50,7 +50,7 @@ fun FlorisButtonBar(content: @Composable FlorisButtonBarScope.() -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp),
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha),
             ) {}
             Box(modifier = Modifier.fillMaxWidth()) {
                 Row(

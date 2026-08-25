@@ -52,6 +52,7 @@ import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponent
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
+import org.florisboard.lib.compose.FlorisSurfaceTokens
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisTextButton
@@ -177,7 +178,7 @@ private fun ComponentMetaRow(
     val valueMaxLines = DynamicFontScale.maxLines(compact = 2, expanded = 4, fontScale = fontScale)
 
     if (showDividerAbove) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha))
     }
     Row(
         modifier = modifier

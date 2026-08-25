@@ -70,6 +70,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showLongToast
+import org.florisboard.lib.compose.FlorisSurfaceTokens
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedButton
@@ -321,7 +322,7 @@ private fun ExtensionMetaRowSimpleText(
     val labelMaxLines = DynamicFontScale.maxLines(compact = 1, expanded = 2, fontScale = fontScale)
 
     if (showDividerAbove) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha))
     }
     Row(
         modifier = modifier
@@ -360,7 +361,7 @@ private fun ExtensionMetaRowScrollableChips(
     val labelMaxLines = DynamicFontScale.maxLines(compact = 1, expanded = 2, fontScale = fontScale)
 
     if (showDividerAbove) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha))
     }
     Row(
         modifier = modifier

@@ -85,6 +85,7 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import org.florisboard.lib.compose.FlorisSurfaceTokens
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisButton
 import org.florisboard.lib.compose.FlorisOutlinedButton
@@ -383,7 +384,7 @@ private fun SettingsHomeDashboard(
                 statusValue = statusSignalValue,
                 buildVersion = buildVersion,
             )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha))
             SettingsHomeQuickActions(
                 onImport = onImport,
                 onPrivacy = onPrivacy,
@@ -780,7 +781,7 @@ private fun SettingsHomeSearchRail(
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha),
                 shape = MaterialTheme.shapes.small,
             )
             .clickable(role = Role.Button, onClick = onSearch)

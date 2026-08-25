@@ -265,7 +265,7 @@ private fun ColumnScope.Step(
                 .background(colorScheme.surfaceContainer)
                 .border(
                     width = 1.dp,
-                    color = colorScheme.outlineVariant.copy(alpha = 0.42f),
+                    color = colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha),
                     shape = shape,
                 )
                 .padding(horizontal = 18.dp, vertical = 16.dp),
@@ -329,7 +329,7 @@ private fun StepHeader(
                 color = if (isCurrent) {
                     primaryColor.copy(alpha = 0.36f)
                 } else {
-                    colorScheme.outlineVariant.copy(alpha = 0.32f)
+                    colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha)
                 },
                 shape = MaterialTheme.shapes.small,
             )
