@@ -108,7 +108,7 @@ internal class CorrectionOutcomePriors private constructor(
     @Synchronized
     fun recordAccepted(originalText: CharSequence, correctedText: CharSequence) {
         val key = pairKey(originalText, correctedText) ?: return
-        ensureLoadedLocked()
+        withLoadedOr(Unit) {
         val entry = entries.getOrPut(key) { OutcomeEntry() }
         entry.acceptedCount = (entry.acceptedCount + 1).coerceAtMost(MaxCount)
         if (entry.rejectedCount > 0) {
@@ -120,12 +120,13 @@ internal class CorrectionOutcomePriors private constructor(
         weeklyEntry.acceptedCount = (weeklyEntry.acceptedCount + 1).coerceAtMost(MaxWeeklyCount)
         trimLocked()
         persistLocked()
+        }
     }
 
     @Synchronized
     fun recordRejected(originalText: CharSequence, correctedText: CharSequence) {
         val key = pairKey(originalText, correctedText) ?: return
-        ensureLoadedLocked()
+        withLoadedOr(Unit) {
         val entry = entries.getOrPut(key) { OutcomeEntry() }
         if (entry.acceptedCount > 0) {
             entry.acceptedCount -= 1
@@ -137,35 +138,37 @@ internal class CorrectionOutcomePriors private constructor(
         weeklyEntry.rejectedCount = (weeklyEntry.rejectedCount + 1).coerceAtMost(MaxWeeklyCount)
         trimLocked()
         persistLocked()
+        }
     }
 
     @Synchronized
     fun signal(originalText: CharSequence, correctedText: CharSequence): CorrectionOutcomeSignal {
         val key = pairKey(originalText, correctedText) ?: return CorrectionOutcomeSignal()
-        ensureLoadedLocked()
-        val entry = entries[key] ?: return CorrectionOutcomeSignal()
-        return CorrectionOutcomeSignal(
-            acceptedConfidence = (entry.acceptedCount.toDouble() / AcceptedCountForFullConfidence)
-                .coerceIn(0.0, 1.0),
-            rejectedConfidence = (entry.rejectedCount.toDouble() / RejectedCountForFullConfidence)
-                .coerceIn(0.0, 1.0),
-        )
+        return withLoadedOr(CorrectionOutcomeSignal()) {
+            val entry = entries[key] ?: return@withLoadedOr CorrectionOutcomeSignal()
+            CorrectionOutcomeSignal(
+                acceptedConfidence = (entry.acceptedCount.toDouble() / AcceptedCountForFullConfidence)
+                    .coerceIn(0.0, 1.0),
+                rejectedConfidence = (entry.rejectedCount.toDouble() / RejectedCountForFullConfidence)
+                    .coerceIn(0.0, 1.0),
+            )
+        }
     }
 
     @Synchronized
     fun entryCount(): Int {
-        ensureLoadedLocked()
-        return entries.size
+        return withLoadedOr(0) { entries.size }
     }
 
     @Synchronized
     fun accuracyDelta(): CorrectionAccuracyDelta {
-        ensureLoadedLocked()
-        val currentWeek = weekIndex(nowProvider())
-        return CorrectionAccuracyDelta(
-            currentWeekAccepted = weeklyStats[currentWeek]?.acceptedCount ?: 0,
-            previousWeekAccepted = weeklyStats[currentWeek - 1]?.acceptedCount ?: 0,
-        )
+        return withLoadedOr(CorrectionAccuracyDelta(currentWeekAccepted = 0, previousWeekAccepted = 0)) {
+            val currentWeek = weekIndex(nowProvider())
+            CorrectionAccuracyDelta(
+                currentWeekAccepted = weeklyStats[currentWeek]?.acceptedCount ?: 0,
+                previousWeekAccepted = weeklyStats[currentWeek - 1]?.acceptedCount ?: 0,
+            )
+        }
     }
 
     @Synchronized
@@ -197,8 +200,40 @@ internal class CorrectionOutcomePriors private constructor(
         }
     }
 
+    /**
+     * Runs [block] with the store loaded, or returns [fallback] when it will not
+     * parse.
+     *
+     * Unlike the n-gram stores, every entry point here is an ordinary
+     * synchronous call: `recordAccepted` runs straight off the key handler and
+     * `signal` runs once per candidate per keystroke. There is no coroutine
+     * boundary, so the scope's exception handler never sees these, and an
+     * unreadable priors file threw directly out of the input path. A missing
+     * correction prior is a missing signal, not a reason to end the keystroke.
+     */
+    private fun <T> withLoadedOr(fallback: T, block: () -> T): T {
+        return try {
+            ensureLoadedLocked()
+            block()
+        } catch (error: PersonalNgramPersistence.LoadException) {
+            flogError(LogTopic.DICTIONARY) {
+                "Correction outcome priors unavailable; continuing without them: ${error.message}"
+            }
+            fallback
+        }
+    }
+
     private fun ensureLoadedLocked() {
         if (loaded) return
+        // A load that already failed will fail the same way: nothing has
+        // rewritten the file in between. Without this, signal() re-parsed the
+        // same unreadable file once per candidate per keystroke.
+        if (storageState == PersonalNgramPersistence.LoadState.UNREADABLE) {
+            throw PersonalNgramPersistence.LoadException(
+                storageFile ?: return,
+                IllegalStateException("correction outcome load previously failed"),
+            )
+        }
         val file = storageFile ?: return
         if (!file.exists() || file.length() <= 0L) {
             loaded = true

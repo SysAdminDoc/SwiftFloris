@@ -21,6 +21,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.job
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -101,6 +102,18 @@ class PersonalBigramStore private constructor(private val context: Context) {
     private val pendingCommitsByLocale = java.util.concurrent.ConcurrentHashMap<String, AtomicInteger>()
     private val loadStates = ConcurrentHashMap<String, PersonalNgramPersistence.LoadState>()
 
+    /**
+     * Waits for the work the fire-and-forget entry points have already started.
+     *
+     * `learn`, `forget` and friends launch on [ioScope] and return, so a test
+     * that asserts straight afterwards can pass without the coroutine having
+     * run. Joining the scope's current children is the only way to make those
+     * assertions mean anything.
+     */
+    internal suspend fun awaitIdleForTesting() {
+        ioScope.coroutineContext.job.children.toList().forEach { it.join() }
+    }
+
     private fun fileFor(localeTag: String): File =
         File(context.filesDir, "personal_bigrams_${localeTag.ifBlank { "default" }}.tsv")
 
@@ -140,6 +153,20 @@ class PersonalBigramStore private constructor(private val context: Context) {
         loadGuard.withLock {
             return ensureLoadedLocked(localeTag)
         }
+    }
+
+    /**
+     * Loads [localeTag]'s table, or returns null when it will not parse.
+     *
+     * For the read paths. A keystroke scores candidates through these, and a
+     * personal-dictionary file that cannot be parsed is a missing signal, not a
+     * reason to end the keystroke: the scoring coroutine has no caller able to
+     * catch anything, so a throw here reached the default handler. Only the
+     * explicit *AndAwait mutation APIs still propagate, because whoever called
+     * one asked to be told.
+     */
+    private suspend fun loadOrNull(localeTag: String): MutableMap<String, MutableMap<String, Int>>? {
+        return runCatching { ensureLoaded(localeTag) }.getOrNull()
     }
 
     /**
@@ -325,8 +352,8 @@ class PersonalBigramStore private constructor(private val context: Context) {
         if (max <= 0) return emptyList()
         val prev = normalize(prevWord)
         if (prev.isEmpty()) return emptyList()
-        val table = ensureLoaded(locale.languageTag())
         val localeTag = locale.languageTag()
+        val table = loadOrNull(localeTag) ?: return emptyList()
         val snapshot = synchronized(table) {
             val nextMap = table[prev]?.toMap() ?: return emptyList()
             val recencyMap = lastSeenByLocale[localeTag]?.get(prev)?.toMap().orEmpty()
@@ -369,7 +396,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
         val curr = normalize(currWord)
         if (prev.isEmpty() || curr.isEmpty()) return 0.0
         val localeTag = locale.languageTag()
-        val table = ensureLoaded(localeTag)
+        val table = loadOrNull(localeTag) ?: return 0.0
         val snapshot = synchronized(table) {
             val nextMap = table[prev]?.toMap() ?: return 0.0
             val recencyMap = lastSeenByLocale[localeTag]?.get(prev)?.toMap().orEmpty()
@@ -402,7 +429,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
         val curr = normalize(currWord)
         if (prev.isEmpty() || curr.isEmpty()) return 0.0
         val localeTag = locale.languageTag()
-        ensureLoaded(localeTag)
+        loadOrNull(localeTag) ?: return 0.0
         val rejectionCount = rejectionCountsByLocale[localeTag]?.let { rejections ->
             synchronized(rejections) {
                 rejections[prev]?.get(curr)

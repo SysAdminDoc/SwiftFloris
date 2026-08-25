@@ -66,11 +66,29 @@ class PersonalNgramUnreadableStoreTest {
         val locale = FlorisLocale.fromTag("en")
         val corrupt = corruptBigramFile(locale.languageTag())
 
-        // The fire-and-forget path. If this propagated, it would arrive on the
-        // default uncaught handler rather than here.
+        // The fire-and-forget path. Its coroutines run on Dispatchers.IO,
+        // outside this scheduler, so the assertion has to wait for them or it
+        // passes without the work having happened.
         repeat(5) { store.learn("swift", "floris", locale) }
+        store.awaitIdleForTesting()
 
         assertTrue(corrupt.isFile, "a load failure must not delete the user's file")
+    }
+
+    @Test
+    fun scoringAgainstAnUnreadableStoreDegradesRatherThanThrowing() = runTest {
+        // The read path is hotter than the write path: NlpManager scores every
+        // candidate on every keystroke through these, from a launch with no
+        // caller able to catch anything. A missing personal prior is a missing
+        // signal, not a reason to end the keystroke.
+        val store = PersonalBigramStore.forTesting(context)
+        store.resetAndAwait()
+        val locale = FlorisLocale.fromTag("en")
+        corruptBigramFile(locale.languageTag())
+
+        store.score("swift", "floris", locale) shouldBeZero true
+        store.rejectionPenalty("swift", "floris", locale) shouldBeZero true
+        store.predict("swift", locale, max = 5).isEmpty() shouldBeTrue true
     }
 
     @Test
@@ -127,4 +145,12 @@ class PersonalNgramUnreadableStoreTest {
             "one unreadable locale must not stop the others learning",
         )
     }
+}
+
+private infix fun Double.shouldBeZero(expected: Boolean) {
+    kotlin.test.assertEquals(expected, this == 0.0, "expected $this to be zero")
+}
+
+private infix fun Boolean.shouldBeTrue(expected: Boolean) {
+    kotlin.test.assertEquals(expected, this)
 }

@@ -153,6 +153,20 @@ class PersonalTrigramStore private constructor(private val context: Context) {
     /**
      * Loads [localeTag]'s table, or returns null when it will not parse.
      *
+     * For the read paths. A keystroke scores candidates through these, and a
+     * personal-dictionary file that cannot be parsed is a missing signal, not a
+     * reason to end the keystroke: the scoring coroutine has no caller able to
+     * catch anything, so a throw here reached the default handler. Only the
+     * explicit *AndAwait mutation APIs still propagate, because whoever called
+     * one asked to be told.
+     */
+    private suspend fun loadOrNull(localeTag: String): MutableMap<String, MutableMap<String, Int>>? {
+        return runCatching { ensureLoaded(localeTag) }.getOrNull()
+    }
+
+    /**
+     * Loads [localeTag]'s table, or returns null when it will not parse.
+     *
      * For the aggregate read paths only. A single unreadable file used to
      * propagate out of these, so one torn write took down the whole Learned
      * entries screen and the typing-stats count rather than hiding the one
@@ -335,7 +349,7 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         if (a.isEmpty() || b.isEmpty()) return emptyList()
         val localeTag = locale.languageTag()
         val key = contextKey(a, b)
-        val table = ensureLoaded(localeTag)
+        val table = loadOrNull(localeTag) ?: return emptyList()
         val snapshot = synchronized(table) {
             val nextMap = table[key]?.toMap() ?: return emptyList()
             val recencyMap = lastSeenByLocale[localeTag]?.get(key)?.toMap().orEmpty()
@@ -380,7 +394,7 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         if (a.isEmpty() || b.isEmpty() || c.isEmpty()) return 0.0
         val localeTag = locale.languageTag()
         val key = contextKey(a, b)
-        val table = ensureLoaded(localeTag)
+        val table = loadOrNull(localeTag) ?: return 0.0
         val snapshot = synchronized(table) {
             val nextMap = table[key]?.toMap() ?: return 0.0
             val recencyMap = lastSeenByLocale[localeTag]?.get(key)?.toMap().orEmpty()
@@ -415,7 +429,7 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         if (a.isEmpty() || b.isEmpty() || c.isEmpty()) return 0.0
         val localeTag = locale.languageTag()
         val key = contextKey(a, b)
-        ensureLoaded(localeTag)
+        loadOrNull(localeTag) ?: return 0.0
         val rejectionCount = rejectionCountsByLocale[localeTag]?.let { rejections ->
             synchronized(rejections) {
                 rejections[key]?.get(c)

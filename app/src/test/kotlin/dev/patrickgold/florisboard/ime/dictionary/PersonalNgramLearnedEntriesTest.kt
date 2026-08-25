@@ -22,6 +22,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.doubles.shouldBeLessThan
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -187,8 +188,14 @@ class PersonalNgramLearnedEntriesTest {
         file.writeText("swift\tfloris\t4\t100\nbroken-row\n")
         val originalBytes = file.readBytes().toList()
 
+        // Reading degrades: predict runs inside NlpManager's fire-and-forget
+        // scoring launch, which has no caller able to catch anything, so a throw
+        // there reached the default handler and killed the process. The two
+        // properties this test is named for are asserted the same way as before,
+        // and the propagating path is still covered by learnAndAwait.
+        store.predict("swift", locale, max = 1).shouldBeEmpty()
         shouldThrow<PersonalNgramPersistence.LoadException> {
-            store.predict("swift", locale, max = 1)
+            store.learnAndAwait("swift", "floris", locale)
         }
 
         store.loadState(locale) shouldBe PersonalNgramPersistence.LoadState.UNREADABLE
@@ -205,8 +212,10 @@ class PersonalNgramLearnedEntriesTest {
         file.writeText("the\tquick\tbrown\t4\t100\nbroken-row\n")
         val originalBytes = file.readBytes().toList()
 
+        // Same split as the bigram case: reading degrades, writing tells.
+        store.predict("the", "quick", locale, max = 1).shouldBeEmpty()
         shouldThrow<PersonalNgramPersistence.LoadException> {
-            store.predict("the", "quick", locale, max = 1)
+            store.learnAndAwait("the", "quick", "brown", locale)
         }
 
         store.loadState(locale) shouldBe PersonalNgramPersistence.LoadState.UNREADABLE

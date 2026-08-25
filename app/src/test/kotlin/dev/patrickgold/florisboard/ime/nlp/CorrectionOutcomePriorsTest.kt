@@ -134,9 +134,17 @@ class CorrectionOutcomePriorsTest : FunSpec({
         val originalBytes = file.readBytes().toList()
         val priors = CorrectionOutcomePriors.fromFile(file)
 
-        shouldThrow<PersonalNgramPersistence.LoadException> {
-            priors.entryCount()
-        }
+        // Every entry point here is an ordinary synchronous call on the input
+        // thread: recordAccepted runs straight off the key handler and signal
+        // runs once per candidate per keystroke. Throwing from those took the
+        // keyboard down, so they report a neutral prior instead. The two
+        // properties this test is named for are asserted exactly as before.
+        priors.entryCount() shouldBe 0
+        priors.signal("teh", "the") shouldBe CorrectionOutcomeSignal()
+        priors.accuracyDelta() shouldBe CorrectionAccuracyDelta(
+            currentWeekAccepted = 0,
+            previousWeekAccepted = 0,
+        )
 
         priors.storageState shouldBe PersonalNgramPersistence.LoadState.UNREADABLE
         file.readBytes().toList() shouldBe originalBytes

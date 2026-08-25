@@ -94,13 +94,18 @@ data class DictionaryPackDescriptor(
         require(!fldicAssetPath.hasParentTraversalSegment()) {
             "fldicAssetPath must not contain a '..' path segment"
         }
-        // The loader picks its decoder off this extension: anything else is
-        // handed to the JSON parser, which throws on a binary dictionary. The
-        // field is named for the format it is supposed to carry, so requiring it
-        // here keeps a mistyped descriptor a rejected enrolment rather than a
-        // failure on the typing path.
-        require(fldicAssetPath.endsWith(FLDIC_EXTENSION, ignoreCase = true)) {
-            "fldicAssetPath must name a $FLDIC_EXTENSION file"
+        // The loader routes on this extension and sends everything that is not
+        // exactly ".fldic" to the JSON parser, so the two formats it can decode
+        // are the two named here. Anything else reaches the JSON parser holding
+        // bytes that are not JSON, which throws on the typing path.
+        //
+        // Case-sensitive on purpose, matching the router. "PL.FLDIC" would pass
+        // a case-insensitive check and then be handed to the JSON parser as a
+        // binary dictionary, which is the trap this exists to close rather than
+        // to widen.
+        require(DECODABLE_EXTENSIONS.any { fldicAssetPath.endsWith(it) }) {
+            "fldicAssetPath must name one of $DECODABLE_EXTENSIONS, spelled in lower case, " +
+                "because the loader routes on the exact suffix"
         }
         zipfAssetPath?.let {
             require(it.isNotBlank()) { "zipfAssetPath must not be blank when present" }
@@ -119,6 +124,16 @@ data class DictionaryPackDescriptor(
         minSchemaCompat <= SUPPORTED_SCHEMA && schema <= SUPPORTED_SCHEMA
 
     companion object {
+        /**
+         * The suffixes the dictionary loader can decode.
+         *
+         * `LatinLanguageProvider.decodeFrequencies` treats exactly ".fldic" as
+         * the binary format and sends everything else to the JSON parser, so
+         * these two are what a descriptor may name. Kept in the same order the
+         * router checks them.
+         */
+        internal val DECODABLE_EXTENSIONS = listOf(".fldic", ".json")
+
         /** Highest descriptor schema version this IME understands. Bump when
          *  the on-disk layout grows a load-bearing field. */
         const val SUPPORTED_SCHEMA: Int = 1
@@ -128,9 +143,7 @@ data class DictionaryPackDescriptor(
          * i.e. the path tries to escape its asset root. A literal `..foo` filename
          * is allowed; only a standalone parent-directory segment is rejected.
          */
-    private const val FLDIC_EXTENSION = ".fldic"
-
-    private fun String.hasParentTraversalSegment(): Boolean =
+        private fun String.hasParentTraversalSegment(): Boolean =
             split('/', '\\').any { it == ".." }
 
         private val JsonConfig = Json {
