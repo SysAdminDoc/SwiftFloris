@@ -25,6 +25,59 @@ import java.nio.file.Files
 
 class SnippetManagerTest : FunSpec({
 
+    test("an imported file keeps a loadable extension whatever the source name was") {
+        // The Settings screen passes uri.lastPathSegment, which for a SAF
+        // document URI is an id rather than a filename. Mapping the disallowed
+        // characters to underscores used to strip the extension with them, and
+        // loadAll lists .yml/.yaml only, so the file was written, counted as
+        // imported, and then invisible in the list and undeletable.
+        val root = Files.createTempDirectory("snippet-names").toFile()
+        try {
+            val manager = SnippetManager(root)
+            manager.sanitizeFileName("msf:1000000123") shouldBe "msf_1000000123.yml"
+            manager.sanitizeFileName("primary:Download/snips.yml") shouldBe
+                "primary_Download_snips.yml"
+            manager.sanitizeFileName("plain.yaml") shouldBe "plain.yaml"
+            manager.sanitizeFileName("UPPER.YML") shouldBe "UPPER.YML"
+            manager.sanitizeFileName("") shouldBe "import.yml"
+            manager.sanitizeFileName("...") shouldBe "import.yml"
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("a document-id import round-trips through the file list and delete") {
+        val root = Files.createTempDirectory("snippet-import").toFile()
+        try {
+            val manager = SnippetManager(root)
+            runBlocking { manager.initialize().join() }
+
+            val imported = runBlocking {
+                manager.importYaml(
+                    """
+                        matches:
+                          - trigger: ":sig"
+                            replace: "Sent from SwiftFloris"
+                    """.trimIndent(),
+                    filename = "msf:1000000123",
+                )
+            }
+
+            imported.importedCount shouldBe 1
+            // Visible: the screen lists what loadAll found, so an unlisted file
+            // is one the user cannot see or remove.
+            val listed = manager.fileStates.value.single()
+            listed.filename shouldBe "msf_1000000123.yml"
+            manager.snippets.value.single() shouldBe EspansoMatch(":sig", "Sent from SwiftFloris")
+
+            // Removable: the delete action passes the listed name straight back.
+            runBlocking { manager.removeFile(listed.filename) } shouldBe true
+            manager.fileStates.value.isEmpty() shouldBe true
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
     test("initialize loads snippets for IME expansion without opening Settings") {
         val root = Files.createTempDirectory("snippet-manager").toFile()
         try {

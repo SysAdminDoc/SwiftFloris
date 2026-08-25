@@ -83,7 +83,7 @@ class SnippetManager internal constructor(private val filesDir: File) {
             val all = mutableListOf<EspansoMatch>()
             val files = mutableListOf<SnippetFileInfo>()
             var skippedFileCount = 0
-            dir.listFiles { f -> f.extension == "yml" || f.extension == "yaml" }
+            dir.listFiles { f -> f.extension.lowercase() in SUPPORTED_SNIPPET_EXTENSIONS }
                 ?.filter { it.isFile }
                 ?.sortedBy { it.name }
                 ?.forEach { file ->
@@ -165,13 +165,41 @@ class SnippetManager internal constructor(private val filesDir: File) {
         return target.takeIf { it.parentFile == directory }
     }
 
+    /**
+     * Turns an arbitrary source name into one this directory can hold, and that
+     * [loadAll] will actually pick back up.
+     *
+     * The extension is not cosmetic. `loadAll` lists `.yml` and `.yaml` only, so
+     * a name that loses its suffix produces a file that was written, reported as
+     * imported, and is then invisible in the file list and unreachable from the
+     * delete action. That is exactly what a SAF pick used to do: the caller
+     * passes `uri.lastPathSegment`, which for a document URI is an id such as
+     * `msf:1000000123` or `primary:Download/snips.yml`, and mapping the
+     * disallowed characters to underscores left `msf_1000000123` behind.
+     */
     internal fun sanitizeFileName(filename: String): String {
         val sanitized = filename
             .replace(Regex("[^a-zA-Z0-9._-]"), "_")
             .take(128)
-        return sanitized.takeIf { it.isNotBlank() && it != "." && it != ".." } ?: "import.yml"
+            .takeIf { it.isNotBlank() && it != "." && it != ".." }
+            ?: return DEFAULT_SNIPPET_FILE_NAME
+        val hasSupportedExtension = SUPPORTED_SNIPPET_EXTENSIONS.any { extension ->
+            sanitized.endsWith(".$extension", ignoreCase = true)
+        }
+        if (hasSupportedExtension) return sanitized
+        // Trim before appending so the result still fits the same budget.
+        val stem = sanitized.take(128 - DEFAULT_SNIPPET_EXTENSION.length - 1).trimEnd('.')
+        return if (stem.isEmpty()) {
+            DEFAULT_SNIPPET_FILE_NAME
+        } else {
+            "$stem.$DEFAULT_SNIPPET_EXTENSION"
+        }
     }
 }
+
+private val SUPPORTED_SNIPPET_EXTENSIONS = setOf("yml", "yaml")
+private const val DEFAULT_SNIPPET_EXTENSION = "yml"
+private const val DEFAULT_SNIPPET_FILE_NAME = "import.$DEFAULT_SNIPPET_EXTENSION"
 
 internal object SnippetImportPolicy {
     const val MaxYamlBytes: Long = 2L * 1024L * 1024L
