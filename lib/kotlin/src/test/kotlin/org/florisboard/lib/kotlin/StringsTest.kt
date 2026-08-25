@@ -132,6 +132,43 @@ class StringsTest : FunSpec({
         }
     }
 
+    context("Test String.curlyFormat (self-referential values)") {
+        // Several call sites interpolate text the user does not control. A ZIP
+        // entry name is echoed verbatim into a SecurityException message, and
+        // that message is then interpolated into a "... Details: {error_message}"
+        // toast. A value carrying its own placeholder must be inserted once and
+        // never rescanned, or restoring a crafted archive hangs or OOMs Settings.
+        test("a value equal to its own placeholder is substituted exactly once") {
+            "Details: {error_message}".curlyFormat(
+                "error_message" to "{error_message}",
+            ) shouldBe "Details: {error_message}"
+        }
+
+        test("a value containing its own placeholder does not grow without bound") {
+            val hostile = "entry name '../{error_message}' is unsafe"
+            "Details: {error_message}".curlyFormat(
+                "error_message" to hostile,
+            ) shouldBe "Details: $hostile"
+        }
+
+        test("a value containing a later argument's placeholder is left alone") {
+            "{first} then {second}".curlyFormat(
+                "first" to "carries {second}",
+                "second" to "B",
+            ) shouldBe "carries {second} then B"
+        }
+
+        test("the factory overload also refuses to rescan substituted text") {
+            "Details: {error_message}".curlyFormat { key ->
+                if (key == "error_message") "loop {error_message} loop" else null
+            } shouldBe "Details: loop {error_message} loop"
+        }
+
+        test("every occurrence of a placeholder is still replaced") {
+            "{a} and {a} and {a}".curlyFormat("a" to "x") shouldBe "x and x and x"
+        }
+    }
+
     context("Test String.curlyFormat (arg factory with dictionary)") {
         val dict = listOf(
             "app_name" to "UnitTestApp",

@@ -41,27 +41,48 @@ private const val CURLY_ARG_CLOSE = '}'
 
 typealias CurlyArg = Pair<String, Any?>
 
+/**
+ * Substitutes `{name}` placeholders using [argValueFactory].
+ *
+ * The template is scanned exactly once, left to right, and substituted values
+ * are appended verbatim without ever being re-examined. That matters because
+ * several call sites interpolate text the user does not control, such as a ZIP
+ * entry name echoed back inside a `SecurityException` message. A value that
+ * contains its own placeholder would otherwise be substituted into itself
+ * forever, hanging or exhausting the heap of whichever process formatted it.
+ */
 fun String.curlyFormat(argValueFactory: (argName: String) -> String?): String {
     contract {
         callsInPlace(argValueFactory, InvocationKind.UNKNOWN)
     }
-    val sb = StringBuilder(this)
-    var curlyOpenIndex = sb.indexOf(CURLY_ARG_OPEN)
-    while (curlyOpenIndex >= 0) {
-        val nextCurlyOpenIndex = sb.indexOf(CURLY_ARG_OPEN, curlyOpenIndex + 1)
-        val nextCurlyCloseIndex = sb.indexOf(CURLY_ARG_CLOSE, curlyOpenIndex + 1)
-        if (nextCurlyCloseIndex < 0) break
-        if (nextCurlyOpenIndex in 0 until nextCurlyCloseIndex) {
-            curlyOpenIndex = nextCurlyOpenIndex
+    if (isEmpty()) return this
+    val out = StringBuilder(length)
+    var cursor = 0
+    while (cursor < length) {
+        val openIndex = indexOf(CURLY_ARG_OPEN, cursor)
+        if (openIndex < 0) break
+        val closeIndex = indexOf(CURLY_ARG_CLOSE, openIndex + 1)
+        if (closeIndex < 0) break
+        // A second '{' before the closing brace means the first one opened
+        // nothing; restart the scan from the inner brace.
+        val nextOpenIndex = indexOf(CURLY_ARG_OPEN, openIndex + 1)
+        if (nextOpenIndex in 0 until closeIndex) {
+            out.append(this, cursor, nextOpenIndex)
+            cursor = nextOpenIndex
+            continue
         }
-        val argName = sb.substring(curlyOpenIndex + 1, nextCurlyCloseIndex)
-        val argValue = argValueFactory(argName)
+        val argValue = argValueFactory(substring(openIndex + 1, closeIndex))
         if (argValue != null) {
-            sb.replace(curlyOpenIndex, nextCurlyCloseIndex + 1, argValue)
+            out.append(this, cursor, openIndex).append(argValue)
+        } else {
+            out.append(this, cursor, closeIndex + 1)
         }
-        curlyOpenIndex = sb.indexOf(CURLY_ARG_OPEN, curlyOpenIndex + 1)
+        cursor = closeIndex + 1
     }
-    return sb.toString()
+    if (cursor < length) {
+        out.append(this, cursor, length)
+    }
+    return out.toString()
 }
 
 fun String.curlyFormat(vararg args: CurlyArg): String {
@@ -70,23 +91,17 @@ fun String.curlyFormat(vararg args: CurlyArg): String {
 
 fun String.curlyFormat(args: List<CurlyArg>): String {
     if (args.isEmpty()) return this
-    val sb = StringBuilder(this)
-    for ((n, arg) in args.withIndex()) {
+    // Positional and named keys are registered in argument order and the first
+    // binding for a key wins, matching how the arguments used to be applied one
+    // after another over the whole template.
+    val bindings = HashMap<String, String>(args.size * 2)
+    for ((index, arg) in args.withIndex()) {
         val (argName, argValue) = arg
-        sb.formatCurlyArg(n.toString(), argValue)
-        sb.formatCurlyArg(argName, argValue)
+        val rendered = argValue.toString()
+        bindings.putIfAbsent(index.toString(), rendered)
+        if (argName.isNotBlank()) {
+            bindings.putIfAbsent(argName, rendered)
+        }
     }
-    return sb.toString()
-}
-
-private fun StringBuilder.formatCurlyArg(name: String, value: Any?) {
-    if (name.isBlank()) return
-    val spec = "$CURLY_ARG_OPEN$name$CURLY_ARG_CLOSE"
-    var index = this.lastIndexOf(spec)
-    while (index >= 0) {
-        val start = index
-        val end = index + spec.length
-        this.replace(start, end, value.toString())
-        index = this.lastIndexOf(spec)
-    }
+    return curlyFormat { bindings[it] }
 }
