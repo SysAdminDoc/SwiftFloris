@@ -64,13 +64,26 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
         )
         .setMaxStreams(KeypressSoundClass.entries.size)
         .build()
-    private val customSoundIds: Map<KeypressSoundClass, Int> =
-        KeypressSoundClass.entries.mapNotNull { soundClass ->
+    // Loaded lazily and reloaded when the store says its files changed. This
+    // was a val snapshotted at construction, and the controller lives as long as
+    // the IME service, so a sound imported in Settings stayed inaudible and a
+    // deleted one carried on playing from the handle already in the SoundPool.
+    private var customSoundIds: Map<KeypressSoundClass, Int> = emptyMap()
+    private var loadedSoundRevision: Long = -1L
+
+    @Synchronized
+    private fun syncCustomSounds() {
+        val revision = KeypressSoundStore.revision.get()
+        if (revision == loadedSoundRevision) return
+        customSoundIds.values.forEach { soundId -> runCatching { soundPool.unload(soundId) } }
+        customSoundIds = KeypressSoundClass.entries.mapNotNull { soundClass ->
             val soundFile = KeypressSoundStore.file(ims, soundClass)
             if (!soundFile.isFile) return@mapNotNull null
             val soundId = runCatching { soundPool.load(soundFile.path, 1) }.getOrNull()
             if (soundId == null || soundId == 0) null else soundClass to soundId
         }.toMap()
+        loadedSoundRevision = revision
+    }
 
     private var systemAudioEnabled: Boolean = false
     private var systemHapticEnabled: Boolean = false
@@ -123,6 +136,10 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
     }
 
     private fun performAudioFeedback(data: KeyData, factor: Double) {
+        // A volatile long read on the keypress path, and a reload only when it
+        // moved. Cheap enough to sit here, which is what lets an import made
+        // while the keyboard is on screen be audible on the next key.
+        syncCustomSounds()
         if (audioManager == null && customSoundIds.isEmpty()) return
         if (!prefs.inputFeedback.audioEnabled.get()) return
         if (prefs.inputFeedback.audioActivationMode.get() ==

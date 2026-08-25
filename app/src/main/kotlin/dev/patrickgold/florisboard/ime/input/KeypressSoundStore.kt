@@ -44,6 +44,17 @@ enum class KeypressSoundClass(val fileName: String) {
 }
 
 object KeypressSoundStore {
+    /**
+     * Bumped whenever the files under this directory change.
+     *
+     * The IME loads each sample into a SoundPool once and keeps the handle, so
+     * without a signal an import made in Settings was inaudible until the
+     * keyboard service was destroyed, and a deleted sample carried on playing
+     * from the handle still held. Settings and the IME are both alive while the
+     * preview keyboard is on screen, which is exactly when this happens.
+     */
+    val revision = java.util.concurrent.atomic.AtomicLong(0L)
+
     const val DirectoryName = "keypress_sounds"
     const val MaxSoundBytes = 1L * 1024L * 1024L
 
@@ -58,11 +69,16 @@ object KeypressSoundStore {
             file(context, soundClass).isFile
         }
 
-    fun delete(context: Context, soundClass: KeypressSoundClass): Boolean =
-        !file(context, soundClass).exists() || file(context, soundClass).delete()
+    fun delete(context: Context, soundClass: KeypressSoundClass): Boolean {
+        val target = file(context, soundClass)
+        val deleted = !target.exists() || target.delete()
+        if (deleted) revision.incrementAndGet()
+        return deleted
+    }
 
     fun deleteAll(context: Context) {
         directory(context).deleteRecursively()
+        revision.incrementAndGet()
     }
 
     fun import(context: Context, soundClass: KeypressSoundClass, source: Uri) {
@@ -84,8 +100,8 @@ object KeypressSoundStore {
                 },
             )
         }
+            revision.incrementAndGet()
     }
-
     internal fun copyBounded(input: InputStream, output: OutputStream, limit: Long): Long {
         require(limit > 0L) { "The sound size limit must be positive." }
         val buffer = ByteArray(16 * 1024)
