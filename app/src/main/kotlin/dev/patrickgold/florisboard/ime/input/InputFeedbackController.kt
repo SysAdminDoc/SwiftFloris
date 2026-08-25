@@ -68,6 +68,9 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
     // was a val snapshotted at construction, and the controller lives as long as
     // the IME service, so a sound imported in Settings stayed inaudible and a
     // deleted one carried on playing from the handle already in the SoundPool.
+    // Volatile because performAudioFeedback reads this from the coroutine it
+    // launches, on a different thread from the synchronized reload.
+    @Volatile
     private var customSoundIds: Map<KeypressSoundClass, Int> = emptyMap()
     private var loadedSoundRevision: Long = -1L
 

@@ -61,6 +61,7 @@ import dev.patrickgold.florisboard.ime.media.emoji.CustomEmojiTagStore
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiPinGroupStore
 import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackRepository
 import dev.patrickgold.florisboard.ime.media.sticker.evictStickerBitmapCache
+import dev.patrickgold.florisboard.ime.input.KeypressSoundStore
 import dev.patrickgold.florisboard.snippetManager
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -557,6 +558,11 @@ fun RestoreScreen() = FlorisScreen {
                     dstDir.deleteRecursively()
                 }
                 BackupArchiveStores.copyDirectory(srcDir, dstDir)
+                // This writes the sound directory behind KeypressSoundStore's
+                // back, and a running keyboard holds each sample in a SoundPool
+                // by handle. Without this it would keep playing the samples the
+                // restore just replaced.
+                KeypressSoundStore.revision.incrementAndGet()
             }
         }
         if (selection.imeTheme) {

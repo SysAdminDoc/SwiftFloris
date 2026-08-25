@@ -147,19 +147,22 @@ class LayoutManager(context: Context) {
                     }
                 }
                 layoutCache[ltn] = layout
-                // A read that failed is not a fact about the layout, it is a
-                // fact about that attempt: a truncated archive, a transient IO
-                // error. Caching the failed Deferred made it permanent for the
-                // process, so drop it once it is known to have failed and let
-                // the next caller try again.
-                layout.invokeOnCompletion {
-                    if (layout.isCompleted && layout.getCompleted().isFailure) {
-                        ioScope.launch { layoutCacheGuard.withLock { layoutCache.remove(ltn) } }
-                    }
-                }
                 return@withLock layout
             }
-        }.await().getOrThrow()
+        }.let { deferred ->
+            val result = deferred.await()
+            // A read that failed is a fact about that attempt, not about the
+            // layout: a truncated archive, a transient IO error. Leaving the
+            // failed Deferred in the map made it permanent for the process.
+            // Identity-checked so a newer entry for the same key, inserted by
+            // another caller in the meantime, is not the one thrown away.
+            if (result.isFailure) {
+                layoutCacheGuard.withLock {
+                    if (layoutCache[ltn] === deferred) layoutCache.remove(ltn)
+                }
+            }
+            result.getOrThrow()
+        }
     }
 
     private fun loadPopupMappingAsync(subtype: Subtype? = null) = ioScope.runCatchingAsync {
@@ -190,14 +193,17 @@ class LayoutManager(context: Context) {
                     }
                 }
                 popupMappingCache[name] = popupMapping
-                popupMapping.invokeOnCompletion {
-                    if (popupMapping.isCompleted && popupMapping.getCompleted().isFailure) {
-                        ioScope.launch { popupMappingCacheGuard.withLock { popupMappingCache.remove(name) } }
-                    }
-                }
                 return@withLock popupMapping
             }
-        }.await().getOrThrow()
+        }.let { deferred ->
+            val result = deferred.await()
+            if (result.isFailure) {
+                popupMappingCacheGuard.withLock {
+                    if (popupMappingCache[name] === deferred) popupMappingCache.remove(name)
+                }
+            }
+            result.getOrThrow()
+        }
     }
 
     /**
