@@ -20,6 +20,9 @@ import android.content.Context
 import android.os.Build
 import android.security.advancedprotection.AdvancedProtectionManager
 import androidx.annotation.ChecksSdkIntAtLeast
+import androidx.annotation.RequiresApi
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * Reacts to Android Advanced Protection Mode (AAPM).
@@ -89,4 +92,109 @@ object AdvancedProtectionPolicy {
         val enabled = runCatching { manager.isAdvancedProtectionEnabled }.getOrDefault(false)
         return Decision(advancedProtectionEnabled = enabled)
     }
+
+    /**
+     * The current decision, as a stream.
+     *
+     * [decide] stays the authoritative read and every enforcement point still
+     * calls it, so a callback that never arrives cannot leave a stale answer
+     * enforcing anything. What this adds is a change *signal*, for the two
+     * places a pull cannot serve: a Settings screen that is already composed
+     * when the user toggles AAPM elsewhere, and a keyboard session already in
+     * progress, which would otherwise keep learning until the next field focus.
+     */
+    val decisions: StateFlow<Decision>
+        get() = decisionState
+
+    private val decisionState = MutableStateFlow(Decision.Unrestricted)
+    private val registrationLock = Any()
+    private var activeHost: CallbackHost? = null
+
+    /**
+     * The platform plumbing, behind a seam.
+     *
+     * Robolectric has no `AdvancedProtectionManager` even at SDK 36, so the
+     * real host returns null under test and every lifecycle assertion would
+     * pass without a callback ever existing. Tests install a fake instead, and
+     * assert against something that actually registered.
+     */
+    internal interface CallbackHost {
+        fun register(onChanged: (Boolean) -> Unit): Boolean
+        fun unregister()
+    }
+
+    /** Test seam. Null means "use the real `AdvancedProtectionManager`". */
+    internal var callbackHostFactory: ((Context) -> CallbackHost?)? = null
+
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    private fun platformHost(context: Context): CallbackHost? {
+        val manager = runCatching {
+            context.getSystemService(AdvancedProtectionManager::class.java)
+        }.getOrNull() ?: return null
+        return object : CallbackHost {
+            private var callback: AdvancedProtectionManager.Callback? = null
+
+            override fun register(onChanged: (Boolean) -> Unit): Boolean {
+                val created = AdvancedProtectionManager.Callback { enabled -> onChanged(enabled) }
+                val ok = runCatching {
+                    manager.registerAdvancedProtectionCallback(Runnable::run, created)
+                }.isSuccess
+                if (ok) callback = created
+                return ok
+            }
+
+            override fun unregister() {
+                val held = callback ?: return
+                callback = null
+                runCatching { manager.unregisterAdvancedProtectionCallback(held) }
+            }
+        }
+    }
+
+    /**
+     * Registers the platform callback if it is not already registered, and
+     * seeds [decisions] from a live read.
+     *
+     * Idempotent: a second call while a callback is live re-seeds the state and
+     * returns without registering again, because the platform would then hold
+     * two callbacks and only one could ever be handed back to unregister.
+     */
+    fun startObserving(context: Context, sdkInt: Int = Build.VERSION.SDK_INT) {
+        val seeded = decide(context, sdkInt)
+        synchronized(registrationLock) {
+            decisionState.value = seeded
+            if (!isSupported(sdkInt) || activeHost != null) return
+            // The explicit SDK_INT comparison, rather than isSupported(sdkInt),
+            // is what lets lint see that platformHost cannot run on a platform
+            // that lacks AdvancedProtectionManager. sdkInt stays a parameter so
+            // a test can simulate an older release.
+            val host = callbackHostFactory?.invoke(context)
+                ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    platformHost(context)
+                } else {
+                    null
+                }
+                ?: return
+            val registered = host.register { enabled ->
+                decisionState.value = Decision(advancedProtectionEnabled = enabled)
+            }
+            if (registered) activeHost = host
+        }
+    }
+
+    /**
+     * Unregisters the callback registered by [startObserving], if any, and
+     * drops the observed state back to unrestricted.
+     */
+    fun stopObserving(context: Context, sdkInt: Int = Build.VERSION.SDK_INT) {
+        synchronized(registrationLock) {
+            val host = activeHost ?: return
+            activeHost = null
+            decisionState.value = Decision.Unrestricted
+            host.unregister()
+        }
+    }
+
+    /** Visible for tests: whether a platform callback is currently held. */
+    internal fun isObserving(): Boolean = synchronized(registrationLock) { activeHost != null }
 }

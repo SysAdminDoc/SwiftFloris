@@ -73,6 +73,7 @@ import dev.patrickgold.florisboard.ime.text.keyboard.BottomRowKey
 import dev.patrickgold.florisboard.ime.text.keyboard.BottomRowPreset
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboardCache
+import dev.patrickgold.florisboard.ime.security.AdvancedProtectionPolicy
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.devtools.flogWarning
@@ -193,6 +194,16 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
             prefs.keyboard.utilityKeyAction.asFlow().collectLatestIn(scope) {
                 updateActiveEvaluators()
+            }
+            // Every enforcement point reads the live AAPM state, so turning it
+            // on already blocks the next clipboard write and the next enrolment.
+            // Private typing is the exception: it is decided when a field is
+            // focused, so a session already in progress would keep learning
+            // until the user moved to another field. Force it here instead.
+            AdvancedProtectionPolicy.decisions.collectLatestIn(scope) { decision ->
+                if (decision.forcesIncognito && !activeState.isIncognitoMode) {
+                    activeState.isIncognitoMode = true
+                }
             }
             activeState.collectLatestIn(scope) {
                 updateActiveEvaluators()

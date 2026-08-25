@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -108,10 +109,12 @@ fun PrivacyPostureScreen() = FlorisScreen {
         isPermissionDeclared(context, Manifest.permission.INTERNET)
     }
     // Null on releases without Advanced Protection Mode, so the row is absent
-    // rather than claiming a protection the platform cannot offer.
-    val advancedProtection = remember(context) {
-        if (AdvancedProtectionPolicy.isSupported()) AdvancedProtectionPolicy.decide(context) else null
-    }
+    // rather than claiming a protection the platform cannot offer. Collected
+    // rather than remembered: the user toggles AAPM in system settings, which
+    // produces no configuration change, so a remembered read would keep showing
+    // the state this screen was composed with.
+    val observedProtection by AdvancedProtectionPolicy.decisions.collectAsState()
+    val advancedProtection = if (AdvancedProtectionPolicy.isSupported()) observedProtection else null
     val voiceProviderStatuses = remember(context) {
         VoiceInputManager(context).knownExternalVoiceInputProviderStatuses()
     }

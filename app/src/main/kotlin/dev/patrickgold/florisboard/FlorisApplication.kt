@@ -38,6 +38,7 @@ import dev.patrickgold.florisboard.ime.media.emoji.FlorisEmojiCompat
 import dev.patrickgold.florisboard.ime.nlp.NlpManager
 import dev.patrickgold.florisboard.ime.smartcompose.NlpAddonHub
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingManager
+import dev.patrickgold.florisboard.ime.security.AdvancedProtectionPolicy
 import dev.patrickgold.florisboard.ime.text.keyboard.AdaptiveTouchModel
 import dev.patrickgold.florisboard.ime.theme.PerAppAccentController
 import dev.patrickgold.florisboard.ime.wordstyles.WordStylesCanvasRenderer
@@ -180,6 +181,11 @@ class FlorisApplication : Application() {
         snippetManager.value.initialize()
         DictionaryManager.init(this)
         AdaptiveTouchModel.initialize(this)
+        // One registration for the process. Enforcement still reads the live
+        // state at each decision, so this only carries the change signal to
+        // surfaces a pull cannot reach: a composed Settings screen, and a
+        // keyboard session already in progress.
+        AdvancedProtectionPolicy.startObserving(this)
         runCatching { ScheduledBackupScheduler.reconcile(this) }
             .onFailure { error ->
                 flogError { "Scheduled backup work reconciliation failed: ${error.message}" }

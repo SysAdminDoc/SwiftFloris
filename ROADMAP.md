@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: Android 16's IME language-settings action opens the subtype list; the language-pack screen offers Add keyboard language and distinguishes built-in resources from imported extensions; a user can enable Portuguese without importing a file; navigation, RTL, and 200 percent font-scale captures pass.
   Complexity: M
 
-- [ ] P1: Apply Advanced Protection state changes without an IME restart
-  Why: The policy reads snapshots even though Android can notify the process when the user toggles Advanced Protection.
-  Evidence: https://developer.android.com/reference/android/security/advancedprotection/AdvancedProtectionManager; https://developer.android.com/privacy-and-security/advanced-protection-mode; app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/AdvancedProtectionPolicy.kt:75-90.
-  Touches: AdvancedProtectionPolicy.kt, FlorisApplication.kt or FlorisImeService.kt, ClipboardManager.kt, AddonEnumerator.kt, lifecycle and policy tests.
-  Acceptance: API 36 registers one callback at process or service initialization and unregisters it on teardown; enabling protection immediately forces private typing, stops new clipboard persistence, and blocks new addon enrollment; disabling it re-evaluates saved preferences without process restart; lifecycle tests prove no duplicate registration.
-  Complexity: M
-
 - [ ] P1: Produce and verify a genuinely unsigned F-Droid build
   Why: The recipe names an unsigned output while Gradle always applies release or debug signing, so reproducible binary comparison cannot start from the declared artifact.
   Evidence: fdroid/io.github.sysadmindoc.swiftfloris.yml:24-41; app/build.gradle.kts:116-133 and :233-243; https://f-droid.org/en/docs/Reproducible_Builds/; https://f-droid.org/en/docs/Build_Metadata_Reference/.
