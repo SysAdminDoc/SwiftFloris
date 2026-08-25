@@ -20,6 +20,7 @@ import android.content.Context
 import dev.patrickgold.florisboard.ime.dictionary.PersonalNgramPersistence
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogWarning
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,6 +30,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
+import dev.patrickgold.florisboard.lib.devtools.flogError
 
 internal data class CorrectionOutcomeSignal(
     val acceptedConfidence: Double = 0.0,
@@ -71,7 +73,24 @@ internal class CorrectionOutcomePriors private constructor(
     private val storageFile: File?,
     private val nowProvider: () -> Long = { System.currentTimeMillis() },
 ) {
-    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    // SupervisorJob stops one failed child cancelling its siblings, but it does
+    // nothing about an exception nobody caught: that still reaches the thread's
+    // default handler and takes the process down. The fire-and-forget entry
+    // points here launch and return, so there is no caller to catch anything,
+    // and ensureLoadedLocked throws when the backing file will not parse. A
+    // half-written TSV therefore crashed the keyboard on the first word it
+    // tried to learn, and again on the next one, because a failed load leaves
+    // nothing cached to short-circuit the retry.
+    //
+    // A personal-dictionary cache that cannot read itself must degrade, not
+    // take typing with it. The suspending *AndAwait variants are unaffected:
+    // they still propagate to whoever called them.
+    private val ioExceptionHandler = CoroutineExceptionHandler { _, error ->
+        flogError(LogTopic.DICTIONARY) {
+            "Personal correction-outcome background work failed; continuing without it: ${error.message}"
+        }
+    }
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + ioExceptionHandler)
     private val entries = LinkedHashMap<String, OutcomeEntry>(MaxEntries, 0.75f, true)
     private val weeklyStats = LinkedHashMap<Long, WeeklyOutcomeEntry>(MaxWeeklyBuckets, 0.75f, true)
     private var loaded = storageFile == null

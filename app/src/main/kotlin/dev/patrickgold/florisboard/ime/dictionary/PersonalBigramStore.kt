@@ -14,6 +14,7 @@ import android.content.Context
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogWarning
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -23,6 +24,7 @@ import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import dev.patrickgold.florisboard.lib.devtools.flogError
 
 /**
  * Local on-device bigram counter that powers next-word suggestions. Bigrams
@@ -68,7 +70,24 @@ class PersonalBigramStore private constructor(private val context: Context) {
         }
     }
 
-    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    // SupervisorJob stops one failed child cancelling its siblings, but it does
+    // nothing about an exception nobody caught: that still reaches the thread's
+    // default handler and takes the process down. The fire-and-forget entry
+    // points here launch and return, so there is no caller to catch anything,
+    // and ensureLoadedLocked throws when the backing file will not parse. A
+    // half-written TSV therefore crashed the keyboard on the first word it
+    // tried to learn, and again on the next one, because a failed load leaves
+    // nothing cached to short-circuit the retry.
+    //
+    // A personal-dictionary cache that cannot read itself must degrade, not
+    // take typing with it. The suspending *AndAwait variants are unaffected:
+    // they still propagate to whoever called them.
+    private val ioExceptionHandler = CoroutineExceptionHandler { _, error ->
+        flogError(LogTopic.DICTIONARY) {
+            "Personal bigram background work failed; continuing without it: ${error.message}"
+        }
+    }
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + ioExceptionHandler)
     // ConcurrentHashMap (not HashMap): ensureLoaded() reads the top-level map outside
     // any lock for the fast path, while loads happen under loadGuard and reset/stats
     // iterate under synchronized(tablesByLocale) — two different lock regimes that do
@@ -123,9 +142,31 @@ class PersonalBigramStore private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Loads [localeTag]'s table, or returns null when it will not parse.
+     *
+     * For the aggregate read paths only. A single unreadable file used to
+     * propagate out of these, so one torn write took down the whole Learned
+     * entries screen and the typing-stats count rather than hiding the one
+     * locale it actually affected. Callers that act on a specific locale still
+     * see the failure.
+     */
+    private fun loadOrSkipLocked(localeTag: String): MutableMap<String, MutableMap<String, Int>>? {
+        return runCatching { ensureLoadedLocked(localeTag) }.getOrNull()
+    }
+
     /** Loads (or returns) the table for [localeTag]. Caller must hold [loadGuard]. */
     private fun ensureLoadedLocked(localeTag: String): MutableMap<String, MutableMap<String, Int>> {
         tablesByLocale[localeTag]?.let { return it }
+        // A load that already failed will fail the same way again: nothing has
+        // rewritten the file in between. Re-reading it on every learned word
+        // turned one unparseable file into disk traffic on the typing path.
+        if (loadStates[localeTag] == PersonalNgramPersistence.LoadState.UNREADABLE) {
+            throw PersonalNgramPersistence.LoadException(
+                fileFor(localeTag),
+                IllegalStateException("load previously failed for '$localeTag'"),
+            )
+        }
         val loadedTable: MutableMap<String, MutableMap<String, Int>> = HashMap()
         val recencyTable: MutableMap<String, MutableMap<String, Long>> = HashMap()
         val loadedRejectionTable: MutableMap<String, MutableMap<String, Int>> = HashMap()
@@ -378,7 +419,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
         val localeTags = knownLocaleTags()
         return loadGuard.withLock {
             localeTags.sumOf { localeTag ->
-                val table = ensureLoadedLocked(localeTag)
+                val table = loadOrSkipLocked(localeTag) ?: return@sumOf 0
                 synchronized(table) {
                     table.values.sumOf { nextMap -> nextMap.size }
                 }
@@ -392,7 +433,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
         val rows = loadGuard.withLock {
             buildList {
                 for (localeTag in localeTags) {
-                    val table = ensureLoadedLocked(localeTag)
+                    val table = loadOrSkipLocked(localeTag) ?: continue
                     val recencyTable = lastSeenByLocale[localeTag].orEmpty()
                     synchronized(table) {
                         for ((prev, nextMap) in table) {
