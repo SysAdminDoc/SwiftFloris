@@ -49,7 +49,7 @@ enum class GlideTrailTheme {
             FIRE -> {
                 // Deep crimson → red → orange → yellow → white-hot
                 val t = (timeMillis * 0.003f) // subtle shimmer
-                val shimmer = 0.97f + 0.03f * sin(p * 20f + t).toFloat()
+                val shimmer = 0.97f + 0.03f * sin(p * 20f + t)
                 when {
                     p < 0.25f -> lerp(Color(0xFF8B0000), Color(0xFFDD2200), p * 4f)
                     p < 0.50f -> lerp(Color(0xFFDD2200), Color(0xFFFF6600), (p - 0.25f) * 4f)
@@ -99,7 +99,7 @@ enum class GlideTrailTheme {
 
             NEON -> {
                 // Electric green with bright pulse animation.
-                val pulse = 0.75f + 0.25f * sin((timeMillis * 0.015).toDouble()).toFloat()
+                val pulse = 0.75f + 0.25f * sin(timeMillis * 0.015).toFloat()
                 val brightness = 0.6f + 0.4f * p
                 Color(
                     red = 0.1f * brightness * pulse,

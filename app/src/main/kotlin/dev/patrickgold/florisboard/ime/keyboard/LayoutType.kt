@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.ime.keyboard
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -54,7 +55,12 @@ enum class LayoutType(val id: String) {
     SYMBOLS2_MOD(LayoutTypeId.SYMBOLS2_MOD);
 }
 
-private class LayoutTypeSerializer : KSerializer<LayoutType> {
+/**
+ * Matches [LayoutType]'s own visibility. A private serializer for a public type
+ * resolves at some use sites and not others, which surfaces as "serializer not
+ * found" rather than as a compile error.
+ */
+class LayoutTypeSerializer : KSerializer<LayoutType> {
     override val descriptor = PrimitiveSerialDescriptor("LayoutType", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: LayoutType) {
@@ -62,6 +68,8 @@ private class LayoutTypeSerializer : KSerializer<LayoutType> {
     }
 
     override fun deserialize(decoder: Decoder): LayoutType {
-        return LayoutType.entries.find { it.id == decoder.decodeString() }!!
+        val id = decoder.decodeString()
+        return LayoutType.entries.find { it.id == id }
+            ?: throw SerializationException("Unknown layout type id '$id'")
     }
 }

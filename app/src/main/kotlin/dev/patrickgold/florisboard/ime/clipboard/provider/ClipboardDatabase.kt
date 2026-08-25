@@ -225,7 +225,7 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
     }
 
     @Composable
-    inline fun displayText(): String {
+    fun displayText(): String {
         val context = LocalContext.current
         return displayText(context)
     }

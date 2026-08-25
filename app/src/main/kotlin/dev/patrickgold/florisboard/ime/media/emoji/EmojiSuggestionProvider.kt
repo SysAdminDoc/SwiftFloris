@@ -76,7 +76,7 @@ class EmojiSuggestionProvider(private val context: Context) : SuggestionProvider
             prefs.emoji.suggestionCandidateAppendToWord.get() &&
             prefs.emoji.suggestionType.get() == EmojiSuggestionType.INLINE_TEXT
         ) {
-            content.composingText.toString()
+            content.composingText
         } else {
             ""
         }

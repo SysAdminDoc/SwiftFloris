@@ -210,7 +210,7 @@ class EditorVoiceCommandActions(
         // typed something the IME didn't see in between (rare given
         // dictation flow), and we fall back to a no-op + signal to
         // avoid corrupting the editor.
-        val before = content.textBeforeSelection.toString()
+        val before = content.textBeforeSelection
         val previous = diff.previousCommittedText
         if (previous.isNotEmpty() && before.endsWith(previous, ignoreCase = false)) {
             // Select the previously-committed slice + commit the new one.
