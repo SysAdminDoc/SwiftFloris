@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.ime.theme.snyggErrorForegroundFor
 import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.ui.SnyggBox
@@ -83,7 +84,7 @@ fun PinToGroupSheet(
     val errorStyle = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiPinSheetError.elementName)
     val foreground = tabStyle.foreground(default = windowStyle.foreground(default = Color.White))
     val background = panelStyle.background(default = windowStyle.background(default = Color(0xFF171923)))
-    val errorForeground = errorStyle.foreground(default = Color(0xFFFFB4AB))
+    val errorForeground = errorStyle.foreground(default = snyggErrorForegroundFor(background))
     val fieldBackground = foreground.copy(alpha = 0.10f)
     val actionBackground = foreground.copy(alpha = 0.16f)
 
