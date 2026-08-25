@@ -167,53 +167,56 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
             // lookup reads live manager state, so a delete that lands between
             // the two leaves an entry with no extension. Skip it and let the
             // next recomposition drop the row, rather than crashing Settings.
+            // A null check rather than an early return: `key` is inline, and a
+            // non-local return out of it cannot be represented in dex.
             val ext = extensionManager.getExtensionById(entry.extensionId)
-                ?: return@key
-            FlorisOutlinedBox(
-                modifier = Modifier.defaultFlorisOutlinedBox(),
-                title = entry.title,
-                onTitleClick = { navController.navigate(Routes.Ext.View(entry.extensionId)) },
-                subtitle = languagePackEntrySummary(entry),
-                onSubtitleClick = { navController.navigate(Routes.Ext.View(entry.extensionId)) },
-            ) {
-                Column(
-                    // Allowing horizontal scroll to fit translations in descriptions.
-                    Modifier
-                        .horizontalScroll(rememberScrollState())
-                        .width(intrinsicSize = IntrinsicSize.Max),
+            if (ext != null) {
+                FlorisOutlinedBox(
+                    modifier = Modifier.defaultFlorisOutlinedBox(),
+                    title = entry.title,
+                    onTitleClick = { navController.navigate(Routes.Ext.View(entry.extensionId)) },
+                    subtitle = languagePackEntrySummary(entry),
+                    onSubtitleClick = { navController.navigate(Routes.Ext.View(entry.extensionId)) },
                 ) {
-                    for (component in entry.components) key(entry.extensionId, component.id) {
-                        JetPrefListItem(
-                            modifier = Modifier.rippleClickable {
-                                navController.navigate(Routes.Ext.View(entry.extensionId))
-                            },
-                            text = component.label,
-                            secondaryText = languagePackComponentSummary(component),
-                        )
-                    }
-                }
-                val canDelete = LanguagePackManagerPolicy.canDelete(
-                    extensionCanBeDeleted = extensionManager.canDelete(ext),
-                    isDeleteInProgress = isDeleteInProgress,
-                )
-                if (action == LanguagePackManagerScreenAction.MANAGE && extensionManager.canDelete(ext)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 6.dp),
+                    Column(
+                        // Allowing horizontal scroll to fit translations in descriptions.
+                        Modifier
+                            .horizontalScroll(rememberScrollState())
+                            .width(intrinsicSize = IntrinsicSize.Max),
                     ) {
-                        FlorisTextButton(
-                            onClick = {
-                                languagePackExtToDelete = ext
-                            },
-                            icon = Icons.Default.Delete,
-                            text = stringRes(R.string.action__delete),
-                            enabled = canDelete,
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error,
-                            ),
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
+                        for (component in entry.components) key(entry.extensionId, component.id) {
+                            JetPrefListItem(
+                                modifier = Modifier.rippleClickable {
+                                    navController.navigate(Routes.Ext.View(entry.extensionId))
+                                },
+                                text = component.label,
+                                secondaryText = languagePackComponentSummary(component),
+                            )
+                        }
+                    }
+                    val canDelete = LanguagePackManagerPolicy.canDelete(
+                        extensionCanBeDeleted = extensionManager.canDelete(ext),
+                        isDeleteInProgress = isDeleteInProgress,
+                    )
+                    if (action == LanguagePackManagerScreenAction.MANAGE && extensionManager.canDelete(ext)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 6.dp),
+                        ) {
+                            FlorisTextButton(
+                                onClick = {
+                                    languagePackExtToDelete = ext
+                                },
+                                icon = Icons.Default.Delete,
+                                text = stringRes(R.string.action__delete),
+                                enabled = canDelete,
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }
