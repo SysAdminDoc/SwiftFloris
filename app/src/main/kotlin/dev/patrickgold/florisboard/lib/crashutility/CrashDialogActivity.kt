@@ -73,7 +73,14 @@ class CrashDialogActivity : ComponentActivity() {
         val toolbar = layout.findViewById<Toolbar>(R.id.crash_dialog_toolbar)
         setActionBar(toolbar)
 
-        stacktraces = CrashUtility.getUnhandledStacktraces(this)
+        // getUnhandledStacktraces deletes each file as it reads it, so the report
+        // built below is the only surviving copy. configChanges covers rotation
+        // but not a theme, font-scale or locale change, and nothing covers the
+        // system recreating this activity after killing the process, so reading
+        // again on every onCreate handed the user an empty report for the crash
+        // they were trying to send. Restore the previous report instead, and
+        // only consume the files on the run that has none.
+        val restoredReport = savedInstanceState?.getString(STATE_ERROR_REPORT)
         val versionName = buildString {
             append("[")
             append(BuildConfig.VERSION_NAME)
@@ -85,16 +92,25 @@ class CrashDialogActivity : ComponentActivity() {
             }
             append(")")
         }
-        if (stacktraces.isEmpty()) {
-            flogWarning(LogTopic.CRASH_UTILITY) {
-                "Stacktrace file list is empty."
+        errorReport = if (restoredReport != null) {
+            restoredReport
+        } else {
+            stacktraces = CrashUtility.getUnhandledStacktraces(this)
+            if (stacktraces.isEmpty()) {
+                flogWarning(LogTopic.CRASH_UTILITY) {
+                    "Stacktrace file list is empty."
+                }
             }
+            CrashReportFormatter.formatReport(
+                environment = CrashReportEnvironment.current(this, versionNameMarkdown = versionName),
+                debugLogHeader = Devtools.generateDebugLog(
+                    this@CrashDialogActivity,
+                    prefs,
+                    includeLogcat = false,
+                ),
+                stacktraces = stacktraces,
+            )
         }
-        errorReport = CrashReportFormatter.formatReport(
-            environment = CrashReportEnvironment.current(this, versionNameMarkdown = versionName),
-            debugLogHeader = Devtools.generateDebugLog(this@CrashDialogActivity, prefs, includeLogcat = false),
-            stacktraces = stacktraces,
-        )
         stacktrace.text = errorReport
 
         reportInstructions.text =
@@ -148,5 +164,14 @@ class CrashDialogActivity : ComponentActivity() {
         close.setOnClickListener {
             finish()
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(STATE_ERROR_REPORT, errorReport)
+    }
+
+    private companion object {
+        const val STATE_ERROR_REPORT = "error_report"
     }
 }
