@@ -34,10 +34,6 @@ Builds:
     output: app/build/outputs/apk/release/app-release-unsigned.apk
     binary: https://github.com/SysAdminDoc/SwiftFloris/releases/download/v%v/app-release.apk
 
-AntiFeatures:
-  KnownVuln:
-    en-US: None known.
-
 AllowedAPKSigningKeys: []
 
 ArchivePolicy: 6

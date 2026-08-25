@@ -18,6 +18,7 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.github.takahirom.roborazzi.AnnotationFilter
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import groovy.json.JsonSlurper
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.zip.ZipFile
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -263,9 +264,15 @@ configure<ApplicationExtension> {
             isMinifyEnabled = true
             isShrinkResources = true
 
-            // Use the release signing config when the env-driven keystore is present;
-            // otherwise fall back to debug signing so the build still produces an APK.
-            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            // Sign with the env-driven release key when it is configured, and
+            // otherwise ship no signature at all. Falling back to the debug key
+            // here used to hand F-Droid an APK signed by a key it did not make,
+            // under a filename its recipe does not name: AGP emits
+            // app-release-unsigned.apk only when the signing config is absent,
+            // and that is the artifact a reproducible-build comparison has to
+            // start from. An unsigned APK still builds; it just cannot be
+            // installed until somebody signs it, which is the point.
+            signingConfig = signingConfigs.findByName("release")
         }
 
         create("releaseRoborazzi") {
@@ -632,10 +639,16 @@ tasks.register("verifyReleaseDevtoolsIsolation") {
             throw GradleException("Release developer bridge must remain route-free and control-free.")
         }
 
-        val releaseApk = layout.buildDirectory.file("outputs/apk/release/app-release.apk").get().asFile
-        if (!releaseApk.isFile) {
-            throw GradleException("Release APK is missing: $releaseApk")
-        }
+        // Signed and unsigned release builds land under different names, and
+        // which one exists depends on whether a release keystore was configured
+        // for this build. Both must pass this scan.
+        val releaseApkDir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
+        val releaseApk = sequenceOf("app-release.apk", "app-release-unsigned.apk")
+            .map { name -> File(releaseApkDir, name) }
+            .firstOrNull { it.isFile }
+            ?: throw GradleException(
+                "Release APK is missing: expected app-release.apk or app-release-unsigned.apk in $releaseApkDir",
+            )
         val forbiddenMarkers = listOf(
             "Clipboard overlay",
             "Input state overlay",
