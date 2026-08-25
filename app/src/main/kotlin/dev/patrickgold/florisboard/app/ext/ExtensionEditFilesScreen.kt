@@ -290,6 +290,10 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
                     Spacer(modifier = Modifier.width(24.dp))
                 },
                 trailingContent = {
+                    val addLabel = stringRes(
+                        R.string.ext__editor__files__add_action,
+                        "section" to title,
+                    )
                     IconButton(
                         enabled = actionsEnabled,
                         onClick = {
@@ -298,7 +302,7 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
                             }
                         },
                     ) {
-                        Icon(Icons.Default.Add, null)
+                        Icon(Icons.Default.Add, contentDescription = addLabel)
                     }
                 },
             )

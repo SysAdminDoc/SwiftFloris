@@ -16,7 +16,6 @@
 
 package dev.patrickgold.florisboard.ime.core
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -60,9 +59,10 @@ fun SelectSubtypePanel(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SnyggText(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(false) {},
+                // The header is a caption, not a control. A disabled clickable
+                // still reaches TalkBack as an unusable button, so it carries no
+                // click modifier at all.
+                modifier = Modifier.fillMaxWidth(),
                 text = stringRes(R.string.select_subtype_panel__header),
             )
         }

@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -123,6 +124,9 @@ object BoxDefaults {
     val OutlinedBoxShape = RoundedCornerShape(8.dp)
 
     val ContentPadding = PaddingValues(all = 0.dp)
+
+    /** Painted height of the caption chip that straddles the outlined border. */
+    val CaptionChipHeight = 23.dp
 }
 
 @Composable
@@ -599,9 +603,16 @@ fun FlorisOutlinedBox(
                 Box(
                     modifier = Modifier
                         .padding(start = 10.dp, bottom = 4.dp)
-                        .rippleClickable(enabled = onSubtitleClick != null) {
-                            onSubtitleClick!!()
-                        },
+                        .then(
+                            if (onSubtitleClick != null) {
+                                Modifier
+                                    .defaultMinSize(minHeight = FlorisTouchTarget.MinSize)
+                                    .rippleClickable(role = Role.Button, onClick = onSubtitleClick)
+                            } else {
+                                Modifier
+                            }
+                        ),
+                    contentAlignment = Alignment.CenterStart,
                 ) {
                     subtitle()
                 }
@@ -614,18 +625,37 @@ fun FlorisOutlinedBox(
             )
         }
         if (title != null) {
-            Box(
-                modifier = Modifier
-                    .height(23.dp)
-                    .offset(x = 10.dp, y = (-12).dp)
-                    .background(MaterialTheme.colorScheme.background)
-                    .rippleClickable(enabled = onTitleClick != null) {
-                        onTitleClick!!()
-                    }
-                    .padding(horizontal = 6.dp),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                title()
+            // The caption chip is 23 dp so it can straddle the 1 dp border without
+            // covering the content. When it navigates it still has to be reachable,
+            // so the click and the ripple live on a 48 dp box centred on the chip.
+            // The extra half is subtracted back out of the offset, which keeps the
+            // painted chip in exactly the position a decorative caption occupies.
+            val touchInset = (FlorisTouchTarget.MinSize - BoxDefaults.CaptionChipHeight) / 2
+            val chip: @Composable () -> Unit = {
+                Box(
+                    modifier = Modifier
+                        .height(BoxDefaults.CaptionChipHeight)
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 6.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    title()
+                }
+            }
+            if (onTitleClick != null) {
+                Box(
+                    modifier = Modifier
+                        .offset(x = 10.dp, y = (-12).dp - touchInset)
+                        .height(FlorisTouchTarget.MinSize)
+                        .rippleClickable(role = Role.Button, onClick = onTitleClick),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    chip()
+                }
+            } else {
+                Box(modifier = Modifier.offset(x = 10.dp, y = (-12).dp)) {
+                    chip()
+                }
             }
         }
     }

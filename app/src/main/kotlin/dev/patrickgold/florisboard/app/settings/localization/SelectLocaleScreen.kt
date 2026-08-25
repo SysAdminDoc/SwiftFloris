@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
@@ -132,7 +133,7 @@ fun SelectLocaleScreen() = FlorisScreen {
             ) {
                 items(filteredSystemLocales) { systemLocale ->
                     JetPrefListItem(
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.clickable(role = Role.Button) {
                             navController.previousBackStackEntry
                                 ?.savedStateHandle
                                 ?.set(SelectLocaleScreenResultLanguageTag, systemLocale.languageTag())

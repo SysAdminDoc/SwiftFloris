@@ -61,6 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -694,7 +695,7 @@ private fun PropertyValueEditor(
                         )
                         files.forEach { file ->
                             JetPrefListItem(
-                                modifier = Modifier.clickable {
+                                modifier = Modifier.clickable(role = Role.Button) {
                                     val relPath = file.path.removePrefix(workspace.extDir.path)
                                     inputStr = "flex:" + Uri.encode(relPath, "/")
                                     onValueChange(SnyggUriValue(inputStr))

@@ -32,6 +32,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 
 /**
@@ -76,6 +82,14 @@ fun HoneycombHexButton(
         modifier = modifier
             .clip(HoneycombHexShape)
             .background(if (pressed) pressedBackgroundColor else backgroundColor)
+            .semantics {
+                // detectTapGestures leaves no semantics behind, so without this
+                // the whole grid is one unlabelled blank to a screen reader.
+                role = Role.Button
+                contentDescription = label
+                onClick(label = null) { onTap(); true }
+                onLongClick(label = null) { onLongPress(); true }
+            }
             .pointerInput(label) {
                 detectTapGestures(
                     onPress = {

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.lib.ext.Extension
@@ -41,7 +42,7 @@ fun <T : Extension> ExtensionList(
             JetPrefListItem(
                 icon = { },
                 modifier = Modifier
-                    .clickable {
+                    .clickable(role = Role.Button) {
                         navController.navigate(Routes.Ext.View(ext.meta.id))
                     },
                 text = ext.meta.title,

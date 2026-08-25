@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -302,7 +303,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                         if (suggestedPresets.isNotEmpty()) {
                             for (suggestedPreset in suggestedPresets) {
                                 JetPrefListItem(
-                                    modifier = Modifier.clickable {
+                                    modifier = Modifier.clickable(role = Role.Button) {
                                         subtypeEditor.applySubtype(suggestedPreset.toSubtype())
                                     },
                                     text = suggestedPreset.displayName(displayLanguageNamesIn),
@@ -323,7 +324,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                             )
                             for (bilingualPreset in bilingualSubtypePresets) {
                                 JetPrefListItem(
-                                    modifier = Modifier.clickable {
+                                    modifier = Modifier.clickable(role = Role.Button) {
                                         subtypeEditor.applySubtype(bilingualPreset.toSubtype())
                                     },
                                     text = bilingualPreset.displayName(displayLanguageNamesIn),
@@ -504,7 +505,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                     ) {
                         items(allSubtypePresets) { subtypePreset ->
                             JetPrefListItem(
-                                modifier = Modifier.clickable {
+                                modifier = Modifier.clickable(role = Role.Button) {
                                     subtypeEditor.applySubtype(subtypePreset.toSubtype())
                                     showSubtypePresetsDialog = false
                                 },
