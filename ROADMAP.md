@@ -12,13 +12,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: Every entry above is either reproduced and fixed with a regression test, or closed with a one-line note saying which existing guard makes it unreachable. Entries that survive triage but are too large get their own roadmap item.
   Complexity: L
 
-- [ ] P1: Route users and Android 16 directly to keyboard language setup
-  Why: Discussion #21 shows real confusion even though the requested Portuguese data is already bundled.
-  Evidence: https://github.com/SysAdminDoc/SwiftFloris/discussions/21; app/src/main/assets/ime/dict/pt.fldic; app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/localization/LocalizationScreen.kt:85-100; app/src/main/res/values/strings.xml:375-378; https://developer.android.com/reference/android/view/inputmethod/InputMethodInfo.
-  Touches: app/src/main/res/xml/method.xml, LocalizationScreen.kt, LanguagePackManagerScreen.kt, Routes.kt, strings.xml, navigation and Roborazzi tests.
-  Acceptance: Android 16's IME language-settings action opens the subtype list; the language-pack screen offers Add keyboard language and distinguishes built-in resources from imported extensions; a user can enable Portuguese without importing a file; navigation, RTL, and 200 percent font-scale captures pass.
-  Complexity: M
-
 - [ ] P1: Apply installed locale hints with explicit user choices first
   Why: Host apps can provide a conversation locale and Android 13 per-app locale, but SwiftFloris ignores both outside debug output.
   Evidence: https://developer.android.com/reference/android/view/inputmethod/EditorInfo; https://developer.android.com/reference/android/app/LocaleManager; https://github.com/futo-org/android-keyboard/pull/1892; app/src/main/kotlin/dev/patrickgold/florisboard/lib/util/DebugSummarizeUtils.kt:47-49; app/src/main/kotlin/dev/patrickgold/florisboard/ime/core/SubtypeManager.kt:191-238.

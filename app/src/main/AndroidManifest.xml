@@ -192,6 +192,25 @@
             </intent-filter>
         </activity-alias>
 
+        <!--
+             Android 16 asks an IME where its language settings live. Without an
+             activity answering this action the system keyboard settings offer no
+             way through to our subtype list, which is where a user adds the
+             language they want to type in. Aliased onto the same activity as the
+             launcher entry; FlorisAppActivity routes the action to the
+             localization screen.
+        -->
+        <activity-alias
+            android:name="dev.patrickgold.florisboard.ImeLanguageSettingsAlias"
+            android:label="@string/settings__localization__title"
+            android:targetActivity="dev.patrickgold.florisboard.app.FlorisAppActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.view.inputmethod.action.IME_LANGUAGE_SETTINGS"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity-alias>
+
         <!-- Crash Dialog Activity -->
         <activity
             android:name="dev.patrickgold.florisboard.lib.crashutility.CrashDialogActivity"

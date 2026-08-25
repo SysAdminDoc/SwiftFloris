@@ -246,6 +246,10 @@ class FlorisAppActivity : ComponentActivity() {
             intentToBeHandled = intent
             return
         }
+        if (intent.action == ACTION_IME_LANGUAGE_SETTINGS) {
+            intentToBeHandled = intent
+            return
+        }
         intentToBeHandled = null
     }
 
@@ -287,7 +291,15 @@ class FlorisAppActivity : ComponentActivity() {
         LaunchedEffect(intentToBeHandled) {
             val intent = intentToBeHandled
             if (intent != null) {
-                if (intent.action == Intent.ACTION_VIEW && intent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true) {
+                if (intent.action == ACTION_IME_LANGUAGE_SETTINGS) {
+                    // Land on the subtype list rather than the home screen: the
+                    // system sent the user here to add a keyboard language, and
+                    // making them find it again is the confusion this answers.
+                    navController.navigate(Routes.Settings.Localization)
+                } else if (
+                    intent.action == Intent.ACTION_VIEW &&
+                    intent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true
+                ) {
                     navController.handleDeepLink(intent)
                 } else {
                     val uris = intent.importUris()
@@ -305,6 +317,16 @@ class FlorisAppActivity : ComponentActivity() {
             }
             intentToBeHandled = null
         }
+    }
+
+    private companion object {
+        /**
+         * `InputMethodInfo.ACTION_IME_LANGUAGE_SETTINGS`, spelled out because
+         * the constant is API 36 and this activity supports API 26. The value is
+         * a stable intent action, checked against the compile SDK.
+         */
+        const val ACTION_IME_LANGUAGE_SETTINGS =
+            "android.view.inputmethod.action.IME_LANGUAGE_SETTINGS"
     }
 
     private fun Intent.importUris(): List<Uri> {
