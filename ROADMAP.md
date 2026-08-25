@@ -140,9 +140,3 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Where: app/src/main/kotlin/dev/patrickgold/florisboard/ime/popup/PopupSet.kt:99.
   Acceptance: The branch is gone and adding a hint mode fails the build rather than silently taking a fallback path; popup priority tests still pass for every existing mode pair.
   Complexity: S
-
-- [ ] P3: Re-evaluate reduced motion without waiting for a configuration change
-  Why: `rememberReducedMotion` keys its lookup on `LocalConfiguration`, but the animator duration scale is a `Settings.Global` value that does not produce a configuration change, so turning "Remove animations" on while the app is open has no effect until something else recomposes it.
-  Where: lib/compose/src/main/kotlin/org/florisboard/lib/compose/ReducedMotion.kt:30-44.
-  Acceptance: The value is observed through a settings observer like the other `Settings.Global` reads in `State.kt`, and toggling the system setting updates the running UI.
-  Complexity: S
