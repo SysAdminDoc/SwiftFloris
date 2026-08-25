@@ -18,26 +18,27 @@ package org.florisboard.lib.compose
 
 import android.provider.Settings
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.getValue
+import org.florisboard.lib.android.AndroidSettings
 
 /**
  * Returns `true` when the user has disabled system animations
  * ("Remove animations" accessibility setting / animator duration scale 0),
  * so decorative or spatial motion can be replaced with static equivalents.
+ *
+ * Observed rather than remembered. The animator duration scale lives in
+ * `Settings.Global`, and changing it produces no configuration change, so a
+ * value keyed on `LocalConfiguration` kept reporting whatever was true when the
+ * screen was composed. Somebody turning "Remove animations" on while the app is
+ * open is precisely the person who should see it take effect.
  */
 @Composable
 fun rememberReducedMotion(): Boolean {
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    return remember(configuration) {
-        runCatching {
-            Settings.Global.getFloat(
-                context.contentResolver,
-                Settings.Global.ANIMATOR_DURATION_SCALE,
-                1f,
-            )
-        }.getOrDefault(1f) == 0f
-    }
+    val scale by AndroidSettings.Global.observeAsState(
+        key = Settings.Global.ANIMATOR_DURATION_SCALE,
+        foregroundOnly = true,
+    )
+    // Absent, unparseable, or a value the platform did not set: assume motion is
+    // wanted, which is what every release did before this setting existed.
+    return scale?.toFloatOrNull() == 0f
 }

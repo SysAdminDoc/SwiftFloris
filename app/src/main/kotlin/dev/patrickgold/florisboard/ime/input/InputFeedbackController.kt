@@ -68,23 +68,62 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
     // was a val snapshotted at construction, and the controller lives as long as
     // the IME service, so a sound imported in Settings stayed inaudible and a
     // deleted one carried on playing from the handle already in the SoundPool.
+    //
+    // Each entry carries the file it was loaded from, so a change to one class
+    // does not throw away the other three, and a readiness flag, because
+    // SoundPool.load is asynchronous: playing an id that has not finished
+    // decoding is silent. Until a sample reports ready the system effect is
+    // used, which is what the user heard before they imported anything.
+    private data class LoadedSound(
+        val soundId: Int,
+        val stamp: String,
+        @Volatile var isReady: Boolean = false,
+    )
+
     // Volatile because performAudioFeedback reads this from the coroutine it
     // launches, on a different thread from the synchronized reload.
     @Volatile
-    private var customSoundIds: Map<KeypressSoundClass, Int> = emptyMap()
+    private var customSounds: Map<KeypressSoundClass, LoadedSound> = emptyMap()
     private var loadedSoundRevision: Long = -1L
+
+    init {
+        soundPool.setOnLoadCompleteListener { _, sampleId, status ->
+            val loaded = customSounds.values.firstOrNull { it.soundId == sampleId } ?: return@setOnLoadCompleteListener
+            loaded.isReady = status == 0
+        }
+    }
+
+    /** Identity of the file behind a class, so an unchanged one is left alone. */
+    private fun soundStamp(soundClass: KeypressSoundClass): String? {
+        val file = KeypressSoundStore.file(ims, soundClass)
+        if (!file.isFile) return null
+        return "${file.lastModified()}:${file.length()}"
+    }
 
     @Synchronized
     private fun syncCustomSounds() {
         val revision = KeypressSoundStore.revision.get()
         if (revision == loadedSoundRevision) return
-        customSoundIds.values.forEach { soundId -> runCatching { soundPool.unload(soundId) } }
-        customSoundIds = KeypressSoundClass.entries.mapNotNull { soundClass ->
-            val soundFile = KeypressSoundStore.file(ims, soundClass)
-            if (!soundFile.isFile) return@mapNotNull null
-            val soundId = runCatching { soundPool.load(soundFile.path, 1) }.getOrNull()
-            if (soundId == null || soundId == 0) null else soundClass to soundId
-        }.toMap()
+        val previous = customSounds
+        val next = HashMap<KeypressSoundClass, LoadedSound>(previous.size)
+        for (soundClass in KeypressSoundClass.entries) {
+            val stamp = soundStamp(soundClass)
+            val existing = previous[soundClass]
+            if (stamp != null && existing != null && existing.stamp == stamp) {
+                // Same bytes as last time; keep the handle and its readiness.
+                next[soundClass] = existing
+                continue
+            }
+            if (existing != null) runCatching { soundPool.unload(existing.soundId) }
+            if (stamp == null) continue
+            val soundId = runCatching {
+                soundPool.load(KeypressSoundStore.file(ims, soundClass).path, 1)
+            }.getOrNull()
+            if (soundId != null && soundId != 0) {
+                next[soundClass] = LoadedSound(soundId = soundId, stamp = stamp)
+            }
+        }
+        customSounds = next
         loadedSoundRevision = revision
     }
 
@@ -143,7 +182,7 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
         // moved. Cheap enough to sit here, which is what lets an import made
         // while the keyboard is on screen be audible on the next key.
         syncCustomSounds()
-        if (audioManager == null && customSoundIds.isEmpty()) return
+        if (audioManager == null && customSounds.isEmpty()) return
         if (!prefs.inputFeedback.audioEnabled.get()) return
         if (prefs.inputFeedback.audioActivationMode.get() ==
             InputFeedbackActivationMode.RESPECT_SYSTEM_SETTINGS && !systemAudioEnabled) return
@@ -152,7 +191,10 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
             val volume = (prefs.inputFeedback.audioVolume.get() * factor) / 100.0
             if (volume in 0.01..1.00) {
                 val soundClass = KeypressSoundClass.fromKeyCode(data.code)
-                val customSoundId = customSoundIds[soundClass]
+                // Only once the sample has finished decoding. Playing an id
+                // that has not is silent, and silence is worse than the system
+                // effect the user had before.
+                val customSoundId = customSounds[soundClass]?.takeIf { it.isReady }?.soundId
                 if (customSoundId != null) {
                     flogDebug { "Perform custom audio with volume=$volume and class=$soundClass" }
                     soundPool.play(

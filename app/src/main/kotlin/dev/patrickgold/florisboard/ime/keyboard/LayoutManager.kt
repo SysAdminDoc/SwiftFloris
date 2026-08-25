@@ -87,13 +87,39 @@ class LayoutManager(context: Context) {
     private val extensionManager by context.extensionManager()
     private val keyboardManager by context.keyboardManager()
 
-    private val layoutCache: HashMap<LTN, DeferredResult<CachedLayout>> = hashMapOf()
+    /**
+     * A cached parse plus the archive it came from.
+     *
+     * Keying on the component name alone was not enough. `anyChangedVersion`
+     * only fires when the extension index emits, and `MutableStateFlow`
+     * conflates an equal list: reinstalling a `.flex` with a changed layout but
+     * the same `extension.json` version produces no emission at all, so nothing
+     * invalidated and the old parse kept serving. Comparing the archive's own
+     * mtime and size makes the entry self-invalidating, which also closes the
+     * window where a load already in flight reinstates a stale entry just after
+     * a clear.
+     */
+    private data class StampedEntry<T>(val stamp: String?, val deferred: DeferredResult<T>)
+
+    private val layoutCache: HashMap<LTN, StampedEntry<CachedLayout>> = hashMapOf()
     private val layoutCacheGuard: Mutex = Mutex(locked = false)
-    private val popupMappingCache: HashMap<ExtensionComponentName, DeferredResult<CachedPopupMapping>> = hashMapOf()
+    private val popupMappingCache: HashMap<ExtensionComponentName, StampedEntry<CachedPopupMapping>> = hashMapOf()
     private val popupMappingCacheGuard: Mutex = Mutex(locked = false)
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     val debugLayoutComputationResultFlow = MutableStateFlow<DebugLayoutComputationResult?>(null)
+
+    /**
+     * Identity of the archive backing [extensionId], or null when it cannot be
+     * resolved. A null stamp is never treated as matching, so an unresolvable
+     * source reloads rather than serving something stale.
+     */
+    private fun sourceStamp(extensionId: String): String? {
+        val ref = extensionManager.getExtensionById(extensionId)?.sourceRef ?: return null
+        val file = runCatching { ref.absoluteFile(appContext) }.getOrNull() ?: return null
+        if (!file.isFile) return null
+        return "${file.lastModified()}:${file.length()}"
+    }
 
     /**
      * Drops every cached layout and popup mapping.
@@ -122,10 +148,11 @@ class LayoutManager(context: Context) {
             return@runCatchingAsync null
         }
         layoutCacheGuard.withLock {
+            val stamp = sourceStamp(ltn.name.extensionId)
             val cached = layoutCache[ltn]
-            if (cached != null) {
+            if (cached != null && stamp != null && cached.stamp == stamp) {
                 flogDebug(LogTopic.LAYOUT_MANAGER) { "Using cache for '${ltn.name}'" }
-                return@withLock cached
+                return@withLock cached.deferred
             } else {
                 flogDebug(LogTopic.LAYOUT_MANAGER) { "Loading '${ltn.name}'" }
                 val meta = keyboardManager.resources.layouts.value[ltn.type]?.get(ltn.name)
@@ -146,7 +173,7 @@ class LayoutManager(context: Context) {
                         CachedLayout(ltn.type, ltn.name, meta, arrangement)
                     }
                 }
-                layoutCache[ltn] = layout
+                layoutCache[ltn] = StampedEntry(stamp, layout)
                 return@withLock layout
             }
         }.let { deferred ->
@@ -158,7 +185,7 @@ class LayoutManager(context: Context) {
             // another caller in the meantime, is not the one thrown away.
             if (result.isFailure) {
                 layoutCacheGuard.withLock {
-                    if (layoutCache[ltn] === deferred) layoutCache.remove(ltn)
+                    if (layoutCache[ltn]?.deferred === deferred) layoutCache.remove(ltn)
                 }
             }
             result.getOrThrow()
@@ -168,10 +195,11 @@ class LayoutManager(context: Context) {
     private fun loadPopupMappingAsync(subtype: Subtype? = null) = ioScope.runCatchingAsync {
         val name = subtype?.popupMapping ?: extCorePopupMapping("default")
         popupMappingCacheGuard.withLock {
+            val stamp = sourceStamp(name.extensionId)
             val cached = popupMappingCache[name]
-            if (cached != null) {
+            if (cached != null && stamp != null && cached.stamp == stamp) {
                 flogDebug(LogTopic.LAYOUT_MANAGER) { "Using cache for '$name'" }
-                return@withLock cached
+                return@withLock cached.deferred
             } else {
                 flogDebug(LogTopic.LAYOUT_MANAGER) { "Loading '$name'" }
                 val meta = keyboardManager.resources.popupMappings.value[name]
@@ -192,14 +220,14 @@ class LayoutManager(context: Context) {
                         CachedPopupMapping(name, meta, mapping)
                     }
                 }
-                popupMappingCache[name] = popupMapping
+                popupMappingCache[name] = StampedEntry(stamp, popupMapping)
                 return@withLock popupMapping
             }
         }.let { deferred ->
             val result = deferred.await()
             if (result.isFailure) {
                 popupMappingCacheGuard.withLock {
-                    if (popupMappingCache[name] === deferred) popupMappingCache.remove(name)
+                    if (popupMappingCache[name]?.deferred === deferred) popupMappingCache.remove(name)
                 }
             }
             result.getOrThrow()

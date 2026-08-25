@@ -17,6 +17,8 @@
 package dev.patrickgold.florisboard.ime.input
 
 import android.content.Context
+import java.io.File
+import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
@@ -73,6 +75,40 @@ class KeypressSoundRevisionTest {
             KeypressSoundStore.revision.get() > before,
             "a running keyboard has to be told the samples are gone",
         )
+    }
+
+    @Test
+    fun importingAdvancesTheRevision() {
+        // The path the whole fix exists for, and the one with no coverage until
+        // now: a user picking a sound in Settings while the keyboard is up.
+        val source = File.createTempFile("keypress-source", ".wav").apply {
+            writeBytes(ByteArray(64) { 9 })
+        }
+        val before = KeypressSoundStore.revision.get()
+
+        KeypressSoundStore.import(context, KeypressSoundClass.RETURN, Uri.fromFile(source))
+
+        assertTrue(
+            KeypressSoundStore.revision.get() > before,
+            "a running keyboard has to be told a new sample landed",
+        )
+        assertTrue(KeypressSoundStore.file(context, KeypressSoundClass.RETURN).isFile)
+        source.delete()
+    }
+
+    @Test
+    fun replacingOneClassLeavesTheOthersAlone() {
+        // The controller reloads per class by comparing each file's identity, so
+        // the store must not disturb classes the user did not touch.
+        writeSample(KeypressSoundClass.STANDARD)
+        writeSample(KeypressSoundClass.DELETE)
+        val untouched = KeypressSoundStore.file(context, KeypressSoundClass.DELETE)
+        val stampBefore = untouched.lastModified() to untouched.length()
+
+        KeypressSoundStore.delete(context, KeypressSoundClass.STANDARD)
+
+        assertTrue(untouched.isFile)
+        assertEquals(stampBefore, untouched.lastModified() to untouched.length())
     }
 
     @Test
