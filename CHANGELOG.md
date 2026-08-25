@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.9.64 (2026-08-25)
+
+- Stop curly placeholder substitution from rescanning its own output. A substituted value that carried the same placeholder was substituted into itself until the heap ran out, and ZipUtils echoes a rejected archive entry name into the message RestoreScreen interpolates, so a crafted backup archive took Settings down through the guard that caught it. Both overloads now scan the template once and never re-examine what they inserted.
+- Stop settings captions announcing as unusable buttons. `FlorisOutlinedBox` attached a clickable modifier unconditionally, so the 92 boxes with a decorative title reached TalkBack as disabled buttons, while the one that navigates carried no button role and only a 23 dp target. List rows that navigate or apply a preset gained a button role, the extension add-file icon gained a label, and the subtype panel header lost a `clickable(false)` no-op.
+- Make emoji sheet validation errors readable on light themes. `media-emoji-pin-sheet-error` is defined in none of the 21 bundled stylesheets, so the hardcoded Material 3 dark-scheme tone was what every user saw, at roughly 2:1 on the light themes. The tone is now chosen against the resolved sheet background.
+- Keep a single failure from disabling a subsystem for the session. `SubtypeManager` and the Latin pre-warm scope were the only long-lived scopes in `ime/` without a `SupervisorJob`, so one throw left language switching or index pre-warming silently dead until the process restarted.
+- Stop the crash dialog losing the report it exists to send. Reading the stacktraces deletes them, and the activity handles only rotation, so a theme, font-scale or locale change rebuilt an empty report. The report now survives recreation.
+- Stop glide trails growing for the whole keyboard session. The shared fade buffer was never pruned, so retained memory and the per-frame scan grew with every word typed, and each in-flight trace was rebuilt per motion event rather than appended to.
+- Stop the setup screen relaunching itself twice a second. Its captured state stays frozen for one effect run, so the relaunch condition stayed true until the settings observer caught up; the poll now stops once it has acted and never starts when it cannot.
+- Say what the language pack screen is for. Discussion #21 is a user hunting for Portuguese there while `pt.fldic` was already bundled, guided by copy that read like the place to add a language and a button labelled "Add subtype".
+- Count things correctly. Six strings ran every quantity through one English form, so a single item read "1 triggers", "1 apps" and "Keep 1 verified archives".
+- Give every neutral hairline one opacity. Dividers and container borders drew `outlineVariant` at five different alphas across thirteen call sites.
+- Stop tracking generated Python bytecode, and reject it in the hygiene gate.
+- Fix nine awkward or ungrammatical user-facing strings, an incognito toast that claimed a manual toggle changed a default, nine em dashes against the project style, four spellings of "spacebar", and British spellings in the en-US default.
+- Cut Kotlin compiler warnings from 30 to 22, and match `LayoutTypeSerializer`'s visibility to the type it serializes so it cannot fail to resolve at a use site.
+
 ## v1.9.63 (2026-08-22)
 
 - Fail closed across Android backup transports. Android 8 exports nothing, encrypted cloud backup and Android 12 device transfer use the portable inventory, and Android 16 QPR2 cross-platform transfer exports nothing. Persisted-store discovery, selected-resource parsing, and transport-policy tests guard the boundary.

@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.63-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.64-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.63 | Privacy posture |
+| Area | What's in v1.9.64 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Typing safety** | All-offensive and slurs-only suggestion filters, plus a 50% to 100% autocorrect confidence threshold selected from the local replay scorecard | On-device |
@@ -196,7 +196,7 @@ before publication.
 For an independent rebuild, use an exact tag and a clean checkout:
 
 ```bash
-git clone --branch v1.9.63 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
+git clone --branch v1.9.64 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
 cd SwiftFloris
 bash scripts/verify-reproducible-apk.sh
 ```
@@ -468,6 +468,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.64** (2026-08-25): A crafted backup archive could hang or exhaust memory in Settings, because a rejected entry name was echoed into an error message that then got substituted into itself. Settings captions no longer reach TalkBack as unusable buttons, emoji sheet validation errors are readable on light themes, glide trails stop growing for the whole session, the crash dialog keeps its report across a theme or font-size change, and one failure can no longer leave language switching dead until restart. Counts read correctly for a single item, and the language pack screen says what it is actually for.
 - **v1.9.63** (2026-08-22): Adaptive touch refinement and learning now stop in password, incognito, and app-declared no-personalized-learning sessions. Raw-content developer screens and routes now compile only into debug builds, where privacy-sensitive sessions clear and hide diagnostic content. Release APK, build-variant, and focused privacy tests enforce the boundaries.
 - **v1.9.62** (2026-08-21): Evaluated offline rule-based proofreading without shipping an engine. A debug-only English agreement rule now proves that the existing Android spell-checker service can return grammar-error attributes on a physical Android 16 device, while the documented release decision keeps LanguageTool, Harper, and handwritten rules out of the production APK.
 - **v1.9.61** (2026-08-20): Settings search now covers every preference the screens declare, up from 103 of 276, and follows a result to its matching row with a brief highlight, so Input Feedback, Addons, MCP and most of Gestures are findable at all; glide typing works with a second finger on the keyboard; the Settings UI language is offered for all 43 shipped translations and appears under Android Settings -> Apps -> Language; Settings -> About can start a bug report carrying the details the issue templates ask for; clipboard search no longer copies the whole history on every keystroke; the MCP screen says that no daemon runs in this build; and the Compose BOM, not a transitive dependency, decides the Compose versions.
@@ -694,7 +695,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.63** (2026-08-22). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.64** (2026-08-25). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

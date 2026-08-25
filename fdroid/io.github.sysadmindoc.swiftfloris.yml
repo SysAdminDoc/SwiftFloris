@@ -21,9 +21,9 @@ RepoType: git
 Repo: https://github.com/SysAdminDoc/SwiftFloris.git
 
 Builds:
-  - versionName: "1.9.63"
-    versionCode: 2112
-    commit: v1.9.63
+  - versionName: "1.9.64"
+    versionCode: 2113
+    commit: v1.9.64
     submodules: true
     sudo:
       - apt-get update
@@ -43,5 +43,5 @@ AllowedAPKSigningKeys: []
 ArchivePolicy: 6
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: "1.9.63"
-CurrentVersionCode: 2112
+CurrentVersion: "1.9.64"
+CurrentVersionCode: 2113
