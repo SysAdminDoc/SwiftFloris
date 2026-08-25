@@ -148,23 +148,27 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
             }
         }
         if (languagePackCatalog.isEmpty()) {
+            // Import already has its own row above this state, so the empty
+            // state points at what people are usually actually after when they
+            // land here: adding a language they can type in. Discussion #21 was
+            // someone hunting for Portuguese on this screen while pt.fldic was
+            // already bundled.
             FlorisEmptyState(
                 modifier = Modifier.padding(16.dp),
                 icon = Icons.Default.Language,
                 title = stringRes(R.string.settings__localization__language_pack_empty_title),
                 message = stringRes(R.string.settings__localization__language_pack_empty_message),
-                actionLabel = stringRes(R.string.action__import),
-                onAction = if (LanguagePackManagerPolicy.canTriggerImport(isDeleteInProgress)) {
-                    {
-                        navController.navigate(Routes.Ext.Import(ExtensionImportScreenType.EXT_LANGUAGEPACK, null))
-                    }
-                } else {
-                    null
-                },
+                actionLabel = stringRes(R.string.settings__localization__subtype_add_title),
+                onAction = { navController.navigate(Routes.Settings.SubtypeAdd) },
             )
         }
         for (entry in languagePackCatalog) key(entry.extensionId) {
-            val ext = extensionManager.getExtensionById(entry.extensionId)!!
+            // The catalog is derived from a remembered snapshot while this
+            // lookup reads live manager state, so a delete that lands between
+            // the two leaves an entry with no extension. Skip it and let the
+            // next recomposition drop the row, rather than crashing Settings.
+            val ext = extensionManager.getExtensionById(entry.extensionId)
+                ?: return@key
             FlorisOutlinedBox(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 title = entry.title,
@@ -210,13 +214,6 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                             ),
                         )
                         Spacer(modifier = Modifier.weight(1f))
-//                        FlorisTextButton(
-//                            onClick = {
-//                                navController.navigate(Routes.Ext.Edit(ext.meta.id))
-//                            },
-//                            icon = painterResource(R.drawable.ic_edit),
-//                            text = stringRes(R.string.action__edit),
-//                        )
                     }
                 }
             }

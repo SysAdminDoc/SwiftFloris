@@ -244,7 +244,9 @@
 
     <!-- Incognito mode strings -->
     <string name="incognito_mode__toast_after_enabled">Incognito mode is now enabled\n\n{app_name} will not learn words from your input while this mode is active</string>
-    <string name="incognito_mode__toast_after_disabled">Incognito mode is now disabled by default</string>
+    <string name="incognito_mode__toast_after_disabled">Incognito mode is now off
+
+{app_name} will learn from your input again</string>
     <string name="autocorrect_toggle__toast_after_enabled">Autocorrect is on</string>
     <string name="autocorrect_toggle__toast_after_disabled">Autocorrect is off</string>
 
@@ -326,7 +328,7 @@
     <string name="settings__home__dictionary_summary" comment="Home screen preference summary">Personal words used by suggestions, correction, and spell checking</string>
     <string name="settings__home__extensions_summary" comment="Home screen preference summary">Manage keyboard, theme, and language extensions</string>
     <string name="settings__home__sync_summary" comment="Home screen preference summary">Pair devices and choose a local sync folder or manual export flow</string>
-    <string name="settings__home__mcp_summary" comment="Home screen preference summary">On-device bridge to local MCP tool servers — never opens a network connection</string>
+    <string name="settings__home__mcp_summary" comment="Home screen preference summary">On-device bridge to local MCP tool servers. Never opens a network connection</string>
     <string name="settings__home__addons_summary" comment="Home screen preference summary">Installed dictionary, language, theme, layout, and popup-mapping addon APKs</string>
     <string name="settings__home__backup_summary" comment="Home screen preference summary">Export preferences, themes, keyboards, and optional clipboard data</string>
     <string name="settings__home__restore_summary" comment="Home screen preference summary">Inspect and restore data from a SwiftFloris backup archive</string>
@@ -347,7 +349,7 @@
     </plurals>
     <string name="settings__search__browse_all" comment="Settings search no results action">Browse all settings</string>
     <string name="settings__search__no_results_hint" comment="Settings search no results helper text">Try another term or browse the full settings list.</string>
-    <string name="settings__search__result_summary" comment="Settings search result summary with destination screen and setting summary">{screen_title} — {summary}</string>
+    <string name="settings__search__result_summary" comment="Settings search result summary with destination screen and setting summary">{screen_title} · {summary}</string>
     <string name="settings__search__result_a11y" comment="Settings search result accessibility label with setting title, destination screen, result position, and summary">Result {result_position} of {result_count}: {setting_title}, in {screen_title}. {setting_summary}</string>
     <string name="settings__search__result_a11y_no_summary" comment="Settings search result accessibility label with setting title, destination screen, and result position">Result {result_position} of {result_count}: {setting_title}, in {screen_title}.</string>
     <string name="settings__search__highlight_title" comment="Settings search target highlight title">Search result: {setting_title}</string>
@@ -366,16 +368,19 @@
     <string name="settings__per_app_language__enabled">Remember keyboard language per app</string>
     <string name="settings__per_app_language__enabled_summary">When enabled, manual language switches are stored by app package and restored the next time that app receives focus.</string>
     <string name="settings__per_app_language__clear">Clear remembered apps</string>
-    <string name="settings__per_app_language__clear_summary">Currently remembering {count} apps.</string>
+    <plurals name="settings__per_app_language__clear_summary" comment="Summary under the clear action; {count} = remembered app count">
+        <item quantity="one">Currently remembering 1 app.</item>
+        <item quantity="other">Currently remembering {count} apps.</item>
+    </plurals>
     <string name="settings__per_app_language__group_behavior">Behavior</string>
     <string name="settings__per_app_language__privacy_title">Local package-name map</string>
     <string name="settings__per_app_language__privacy_summary">SwiftFloris stores only app package names and subtype IDs in local preferences. This feature does not request app-locale permissions.</string>
     <string name="settings__localization__group_subtypes__label" comment="Label of subtypes group">Active keyboard languages</string>
-    <string name="settings__localization__subtype_add_title" comment="Title of subtype dialog when adding a new subtype">Add subtype</string>
+    <string name="settings__localization__subtype_add_title" comment="Title of subtype dialog when adding a new subtype">Add keyboard language</string>
     <string name="settings__localization__language_pack_title" comment="Title of the language pack manager screen for managing installed and custom language packs">Manage installed language packs</string>
-    <string name="settings__localization__language_pack_summary" comment="Summary of preference item for adding a new language pack">Install and manage language extensions for layouts, dictionaries, and language-specific input</string>
+    <string name="settings__localization__language_pack_summary" comment="Summary of preference item for adding a new language pack">Optional extras for scripts that need them, such as Chinese shape-based input. To type in another language, add a keyboard language instead.</string>
     <string name="settings__localization__language_pack_empty_title">No language packs installed</string>
-    <string name="settings__localization__language_pack_empty_message">Import a trusted language-pack extension to add dictionaries, layouts, or language-specific input data. Built-in language resources remain available.</string>
+    <string name="settings__localization__language_pack_empty_message">You do not need one to type in another language. Most languages, including their layouts and dictionaries, are already built in, so add a keyboard language and you are done. Language packs cover the few scripts that need extra input data, such as Chinese shape-based input.</string>
     <string name="settings__localization__language_pack_kind_han">Han shape-based</string>
     <string name="settings__localization__language_pack_kind_generic">Generic</string>
     <string name="settings__localization__language_pack_extension_active_summary">{active}/{total} matching current keyboard languages; {kind} pack loads only for active matching subtypes.</string>
@@ -385,8 +390,8 @@
         <item quantity="one">{total} component; generic pack is visible in Settings and ignored by Han shape-based startup loading.</item>
         <item quantity="other">{total} components; generic pack is visible in Settings and ignored by Han shape-based startup loading.</item>
     </plurals>
-    <string name="settings__localization__language_pack_component_active_summary">{locale} — active for a current keyboard language</string>
-    <string name="settings__localization__language_pack_component_standby_summary">{locale} — installed, not active for current keyboard languages</string>
+    <string name="settings__localization__language_pack_component_active_summary">{locale} · active for a current keyboard language</string>
+    <string name="settings__localization__language_pack_component_standby_summary">{locale} · installed, not active for current keyboard languages</string>
     <string name="settings__localization__language_pack_delete_in_progress">Deleting language pack</string>
     <string name="settings__localization__language_pack_delete_in_progress_summary">Keep this screen open while SwiftFloris removes the selected language pack and refreshes the installed list.</string>
     <string name="settings__localization__language_pack_delete_success">Language pack deleted</string>
@@ -631,7 +636,7 @@
     <string name="settings__localization__suggested_subtype_presets" comment="Suggested presets title">Suggested subtype presets</string>
     <string name="settings__localization__subtype_bilingual_presets" comment="Bilingual subtype presets section title">Bilingual presets</string>
     <string name="settings__localization__subtype_bilingual_summary" comment="Short summary prefix for bilingual subtype presets">Bilingual</string>
-    <string name="settings__localization__suggested_subtype_presets_none_found" comment="Suggested presets none found">No suggested presets available. Use below button to view all subtype presets.</string>
+    <string name="settings__localization__suggested_subtype_presets_none_found" comment="Suggested presets none found">No suggested presets yet. Use the button below to see every subtype preset.</string>
     <string name="settings__localization__subtype_presets" comment="Subtype presets dialog title">Subtype presets</string>
     <string name="settings__localization__subtype_presets_view_all" comment="View all presets button">Show all</string>
     <string name="settings__localization__subtype_no_subtypes_configured_warning" comment="Warning message that no subtype has been defined">No language subtypes are configured. SwiftFloris will use English/QWERTY until you add one.</string>
@@ -995,7 +1000,7 @@
     <string name="pref__keyboard__stylus_handwriting__summary" comment="Preference summary">Android 14+ devices with a compatible stylus can write directly into text fields. Install a handwriting recognizer addon for recognition support.</string>
     <string name="handwriting__no_recognizer" comment="Toast shown when stylus handwriting starts but no recognizer addon is installed">No handwriting recognizer installed. Install a recognizer addon from Settings → Addons.</string>
     <string name="pref__keyboard__utility_key_enabled__label" comment="Preference title">Show utility key</string>
-    <string name="pref__keyboard__utility_key_enabled__summary" comment="Preference summary">Shows a configurable utility key next to space bar</string>
+    <string name="pref__keyboard__utility_key_enabled__summary" comment="Preference summary">Shows a configurable utility key next to spacebar</string>
     <string name="pref__keyboard__utility_key_action__label" comment="Preference title">Utility key action</string>
     <string name="pref__keyboard__space_bar_mode__label" comment="Preference title">Spacebar label</string>
     <string name="pref__keyboard__capitalization_behavior__label" comment="Preference title">Capitalization behavior</string>
@@ -1047,7 +1052,7 @@
     <string name="pref__keyboard__merge_hint_popups_enabled__label" comment="Preference title">Accents include symbol popups</string>
     <string name="pref__keyboard__merge_hint_popups_enabled__summary" comment="Preference summary">Adds symbol popups to the default layout\'s accents</string>
     <string name="pref__keyboard__long_press_delay__label" comment="Preference title">Long key press delay</string>
-    <string name="pref__keyboard__space_bar_switches_to_characters__label" comment="Preference title">Space bar switches to characters</string>
+    <string name="pref__keyboard__space_bar_switches_to_characters__label" comment="Preference title">Spacebar switches to characters</string>
     <string name="pref__keyboard__space_bar_switches_to_characters__summary" comment="Preference summary">Automatically switches back to characters when in symbols or numeric</string>
     <string name="pref__keyboard__auto_return_after_apostrophe__label" comment="Preference title">Return to letters after apostrophe</string>
     <string name="pref__keyboard__auto_return_after_apostrophe__summary" comment="Preference summary">After tapping the apostrophe in the symbols panel, automatically switch back to the letter keyboard so contractions finish without a manual mode change</string>
@@ -1113,7 +1118,7 @@
     <string name="pref__suggestion__next_word_prediction__label" comment="Preference title">Predict the next word</string>
     <string name="pref__suggestion__next_word_prediction__summary" comment="Preference summary">Show predicted next words in the suggestion strip after a space. Learns from your typing history, all on-device.</string>
     <string name="pref__correction__multilingual_suggestions__label" comment="Preference title">Multilingual suggestions</string>
-    <string name="pref__correction__multilingual_suggestions__summary" comment="Preference summary">When a subtype has secondary languages, score the typed word against every enabled language and prefer the language that recognises it.</string>
+    <string name="pref__correction__multilingual_suggestions__summary" comment="Preference summary">When a subtype has secondary languages, score the typed word against every enabled language and prefer the language that recognizes it.</string>
     <string name="pref__correction__heuristic_smart_compose__label" comment="Preference title">Inline next-word hint</string>
     <string name="pref__correction__heuristic_smart_compose__summary" comment="Preference summary">Show a grey inline hint for the likely next word, predicted from your own typing history on this device. No model download, no network. Off by default.</string>
     <string name="pref__spelling__title" comment="Preference group title">Spelling</string>
@@ -1130,7 +1135,7 @@
     <string name="settings__dictionary__local_import_summary" comment="Dictionary settings intro card summary">Import SwiftKey JSON, Gboard XML or ZIP, FlorisBoard CSV, .flbackup, .fldic, or an encrypted SwiftFloris export. Files are parsed on this device.</string>
     <string name="settings__typing__dictionary_summary" comment="Typing screen shortcut summary">Manage personal words used by suggestions, corrections, and spell checking</string>
     <string name="settings__typing_stats__title" comment="Title of the Typing stats screen">Typing stats</string>
-    <string name="settings__typing_stats__summary" comment="Summary of the Typing stats entry on the Typing screen">See how much SwiftFloris has learned from your typing — local, never uploaded</string>
+    <string name="settings__typing_stats__summary" comment="Summary of the Typing stats entry on the Typing screen">See how much SwiftFloris has learned from your typing. It stays local and is never uploaded</string>
     <string name="settings__typing_stats__group_corpus" comment="Section header on the Typing stats screen">Learned corpus</string>
     <string name="settings__typing_stats__group_top_words" comment="Section header on the Typing stats screen">Your top 10 words</string>
     <string name="settings__typing_stats__group_actions" comment="Section header on the Typing stats screen">Actions</string>
@@ -1195,8 +1200,8 @@
     <string name="settings__privacy_posture__group_profiles" comment="Preference group title">Profiles</string>
     <string name="settings__privacy_posture__network_title" comment="Preference title">Network permission</string>
     <string name="settings__privacy_posture__advanced_protection_title" comment="Preference title on the privacy posture screen for Android Advanced Protection Mode">Advanced Protection</string>
-    <string name="settings__privacy_posture__advanced_protection_on" comment="Preference summary when the system Advanced Protection Mode is enabled. Lists what the keyboard withholds while it is on.">On. Learning from what you type, clipboard history and new add-on enrolment are paused while this system setting is enabled.</string>
-    <string name="settings__privacy_posture__advanced_protection_off" comment="Preference summary when the system Advanced Protection Mode is available but not enabled">Off. Turn on Advanced Protection in system settings to pause learning, clipboard history and new add-on enrolment.</string>
+    <string name="settings__privacy_posture__advanced_protection_on" comment="Preference summary when the system Advanced Protection Mode is enabled. Lists what the keyboard withholds while it is on.">On. Learning from what you type, clipboard history and new addon enrollment are paused while this system setting is enabled.</string>
+    <string name="settings__privacy_posture__advanced_protection_off" comment="Preference summary when the system Advanced Protection Mode is available but not enabled">Off. Turn on Advanced Protection in system settings to pause learning, clipboard history and new addon enrollment.</string>
     <string name="settings__privacy_posture__network_absent" comment="Preference summary when INTERNET permission is not declared">No Internet permission declared in the installed app.</string>
     <string name="settings__privacy_posture__network_declared" comment="Preference summary when INTERNET permission is declared">Internet permission is declared. Review the installed build source before typing sensitive data.</string>
     <string name="settings__privacy_posture__learning_title" comment="Preference title">Learning surfaces</string>
@@ -1324,7 +1329,7 @@
     <string name="settings__privacy_posture__off" comment="Short disabled label">off</string>
     <string name="settings__privacy_audit__title" comment="Screen + preference title">Local audit log</string>
     <string name="settings__privacy_audit__home_summary" comment="Home preference summary">Review every on-device addon, MCP and translation call</string>
-    <string name="settings__privacy_audit__intro" comment="Explainer at the top of the audit log screen">Every routed cross-process call SwiftFloris makes on your behalf is recorded here, on this device only. Smart compose and translation use this audited path. MCP daemon binding and tool dispatch are paused until a live audited keyboard action exists, so no auditable MCP invocation can occur yet. Nothing is uploaded, and no typed text, suggestions or translated content is ever stored — only the app, the language pair, or the tool name. The log is kept in memory rather than written to disk, so it covers the current keyboard session and is empty again after the keyboard restarts.</string>
+    <string name="settings__privacy_audit__intro" comment="Explainer at the top of the audit log screen">Every routed cross-process call SwiftFloris makes on your behalf is recorded here, on this device only. Smart compose and translation use this audited path. MCP daemon binding and tool dispatch are paused until a live audited keyboard action exists, so no auditable MCP invocation can occur yet. Nothing is uploaded, and no typed text, suggestions or translated content is ever stored. The log keeps only the app, the language pair, or the tool name. The log is kept in memory rather than written to disk, so it covers the current keyboard session and is empty again after the keyboard restarts.</string>
     <string name="settings__privacy_audit__group_summary" comment="Preference group title">Summary</string>
     <string name="settings__privacy_audit__group_actions" comment="Preference group title">Actions</string>
     <string name="settings__privacy_audit__group_records" comment="Preference group title">Recent activity</string>
@@ -1347,7 +1352,7 @@
     <string name="settings__privacy_audit__empty" comment="Shown when no records exist">No recorded activity yet.</string>
     <string name="settings__privacy_audit__empty_message" comment="Empty-state body shown when no audit records exist">SwiftFloris hasn\'t made any routed cross-process calls on this device yet. Smart compose and translation activity will appear here as it happens; no auditable MCP invocation can occur until a live keyboard action is connected.</string>
     <string name="settings__privacy_audit__export" comment="Action title">Copy log as JSON</string>
-    <string name="settings__privacy_audit__export__summary" comment="Action summary">Copies the full audit bundle to the clipboard so you can paste it anywhere — it never leaves the device on its own.</string>
+    <string name="settings__privacy_audit__export__summary" comment="Action summary">Copies the full audit bundle to the clipboard so you can paste it anywhere. It never leaves the device on its own.</string>
     <string name="settings__privacy_audit__export_toast" comment="Toast after copying">Audit log copied to the clipboard.</string>
     <string name="settings__privacy_audit__save" comment="Action title">Save JSON file</string>
     <string name="settings__privacy_audit__save__summary" comment="Action summary">Creates a local application/json document that you choose. SwiftFloris does not upload it.</string>
@@ -1508,7 +1513,7 @@
     <string name="pref__glide__enabled__label" comment="Preference title">Enable glide typing</string>
     <string name="pref__glide__enabled__summary" comment="Preference summary">Type in a word by sliding your finger through its letters</string>
     <string name="pref__glide__show_trail__label" comment="Preference title">Show glide trail</string>
-    <string name="pref__glide__show_trail__summary" comment="Preference summary">Will disappear after each word</string>
+    <string name="pref__glide__show_trail__summary" comment="Preference summary">The trail fades once you finish a word</string>
     <string name="pref__glide__trail_theme__label" comment="Preference title">Trail theme</string>
     <string name="pref__glide__trail_theme__summary" comment="Preference summary">Visual style for the glide trail</string>
     <string name="enum__glide_trail_theme__accent">Accent (theme color)</string>
@@ -1526,7 +1531,7 @@
     <string name="pref__glide__immediate_backspace_deletes_word__label">Always delete word</string>
     <string name="pref__glide__immediate_backspace_deletes_word__summary">Pressing delete right after a glide deletes the whole word</string>
     <string name="pref__glide__flow_through_space__label">Flow through space</string>
-    <string name="pref__glide__flow_through_space__summary">Continue gliding across the space bar to start the next word without lifting your finger</string>
+    <string name="pref__glide__flow_through_space__summary">Continue gliding across the spacebar to start the next word without lifting your finger</string>
     <string name="pref__glide__languages_title" comment="Preference group title">Swipe languages</string>
     <string name="pref__glide__language_enabled__label" comment="Preference title">Enable swipe for {language}</string>
     <string name="pref__glide__language_enabled__summary" comment="Preference summary">Use the bundled {language} dictionary for glide typing</string>
@@ -1536,35 +1541,35 @@
     <string name="pref__glide__quality__unsupported" comment="Glide typing quality label">Unsupported</string>
     <string name="pref__glide__engine__statistical" comment="Glide typing engine label">Statistical</string>
     <string name="pref__glide__engine__unsupported" comment="Glide typing engine label">Unavailable</string>
-    <string name="settings__gestures__intro">Configure glide typing and keyboard swipe actions. Space bar and delete key gestures stay available even when glide typing is on.</string>
+    <string name="settings__gestures__intro">Configure glide typing and keyboard swipe actions. Spacebar and delete key gestures stay available even when glide typing is on.</string>
     <string name="settings__gestures__glide_conflict_notice">General key swipes and symbol flicks are paused for languages where glide typing is enabled so swipe-to-type remains predictable.</string>
     <string name="settings__gestures__glide_unavailable_title" comment="Card title shown when glide typing cannot run on this device">Glide typing unavailable</string>
     <string name="settings__gestures__glide_unavailable_low_ram" comment="Card summary shown on Android low-RAM devices">This device reports limited memory, so SwiftFloris does not build the glide word list or gesture models. Tap typing, suggestions and autocorrect are unaffected.</string>
     <string name="settings__gestures__glide_unavailable_memory" comment="Card summary shown after glide data could not be allocated">Glide typing data could not be loaded into memory and was released, so glide is off for now. Close some apps and reopen the keyboard to try again.</string>
     <string name="settings__gestures__symbol_flick_ready">Symbol flicks are active for keys with hinted symbols. Flick a hinted key in any cardinal direction to enter its symbol.</string>
     <string name="settings__gestures__symbol_flick_needs_hints">Symbol flicks need hinted symbols. Enable Keyboard > Hinted symbols to use them.</string>
-    <string name="settings__gestures__spacebar_cursor_ready">Space bar cursor movement is active. Set each space bar swipe to No action to disable it.</string>
+    <string name="settings__gestures__spacebar_cursor_ready">Spacebar cursor movement is active. Set each spacebar swipe to No action to disable it.</string>
     <string name="settings__gestures__delete_swipe_ready">Delete-key swipe is active. Set Delete key swipe left to No action to disable it.</string>
     <string name="pref__gestures__general_title" comment="Preference group title">General gestures</string>
     <string name="pref__gestures__symbol_flick_enabled__label" comment="Preference title">Symbol flicks from hinted keys</string>
     <string name="pref__gestures__symbol_flick_enabled__summary" comment="Preference summary">When hinted symbols are shown and glide typing is off, flick a key to enter its hinted symbol</string>
-    <string name="pref__gestures__space_bar_title" comment="Preference group title">Space bar gestures</string>
+    <string name="pref__gestures__space_bar_title" comment="Preference group title">Spacebar gestures</string>
     <string name="pref__gestures__other_title" comment="Preference group title">Delete key &amp; thresholds</string>
     <string name="pref__gestures__swipe_up__label" comment="Preference title">Swipe up</string>
     <string name="pref__gestures__swipe_down__label" comment="Preference title">Swipe down</string>
     <string name="pref__gestures__swipe_left__label" comment="Preference title">Swipe left</string>
     <string name="pref__gestures__swipe_right__label" comment="Preference title">Swipe right</string>
     <string name="pref__gestures__language_switch_swipe_sensitivity__label" comment="Preference title">Language switch sensitivity</string>
-    <string name="pref__gestures__space_bar_swipe_up__label" comment="Preference title">Space bar swipe up</string>
-    <string name="pref__gestures__space_bar_swipe_down__label" comment="Preference title">Space bar swipe down</string>
-    <string name="pref__gestures__space_bar_swipe_left__label" comment="Preference title">Space bar swipe left</string>
-    <string name="pref__gestures__space_bar_swipe_right__label" comment="Preference title">Space bar swipe right</string>
+    <string name="pref__gestures__space_bar_swipe_up__label" comment="Preference title">Spacebar swipe up</string>
+    <string name="pref__gestures__space_bar_swipe_down__label" comment="Preference title">Spacebar swipe down</string>
+    <string name="pref__gestures__space_bar_swipe_left__label" comment="Preference title">Spacebar swipe left</string>
+    <string name="pref__gestures__space_bar_swipe_right__label" comment="Preference title">Spacebar swipe right</string>
     <string name="pref__gestures__space_bar_touchpad_mode__label" comment="Preference title">Touchpad cursor mode</string>
     <string name="pref__gestures__space_bar_touchpad_mode__summary" comment="Preference summary">Slide on the spacebar to move the cursor. Vertical slides select text.</string>
     <string name="pref__gestures__space_bar_touchpad_ratio__label" comment="Preference title">Touchpad cursor movement ratio</string>
     <string name="pref__gestures__space_bar_swipe_sensitivity__label" comment="Preference title">Spacebar cursor sensitivity</string>
     <string name="settings__gestures__touchpad_cursor_ready" comment="Info card shown when touchpad cursor mode is on">Touchpad cursor mode is active. Slide horizontally on the spacebar to move the cursor, or vertically to select text.</string>
-    <string name="pref__gestures__space_bar_long_press__label" comment="Preference title">Space bar long press</string>
+    <string name="pref__gestures__space_bar_long_press__label" comment="Preference title">Spacebar long press</string>
     <string name="pref__gestures__delete_key_swipe_left__label" comment="Preference title">Delete key swipe left</string>
     <string name="pref__gestures__delete_key_swipe_sensitivity__label" comment="Preference title">Delete swipe sensitivity</string>
     <string name="pref__gestures__delete_key_long_press__label" comment="Preference title">Delete key long press</string>
@@ -1584,7 +1589,7 @@
     </string>
     <string name="pref__other__settings_language__label" comment="Label of Settings language preference in Other">Settings language</string>
     <string name="pref__other__show_app_icon__label" comment="Label of Show app icon preference in Other">Show app icon in launcher</string>
-    <string name="pref__other__show_app_icon__summary_atleast_q" comment="Summary of Show app icon preference in Other for Android 10+">Always enabled on Android 10+ due to restrictions of the system</string>
+    <string name="pref__other__show_app_icon__summary_atleast_q" comment="Summary of Show app icon preference in Other for Android 10+">Always enabled on Android 10 and newer because of a system restriction</string>
     <string name="settings__other__physical_keyboard_summary" comment="Preference summary">Configure attached hardware keyboards and on-screen keyboard behavior</string>
     <string name="settings__other__devtools_summary" comment="Preference summary">Diagnostics and debugging tools for advanced troubleshooting</string>
 
@@ -1605,7 +1610,7 @@
     <string name="about__signing_fingerprint__summary_unavailable" comment="Preference summary when fingerprint cannot be obtained">Fingerprint unavailable on this build</string>
     <string name="about__signing_fingerprint__copied" comment="Toast confirming fingerprint was copied">Fingerprint copied to clipboard</string>
     <string name="about__whats_new__title" comment="Preference title">What\'s new</string>
-    <string name="about__whats_new__summary" comment="Preference summary, {version} is the app version like 1.8.198">v{version} — see what changed in this release</string>
+    <string name="about__whats_new__summary" comment="Preference summary, {version} is the app version like 1.8.198">v{version} · see what changed in this release</string>
     <string name="about__whats_new__dialog_title" comment="Dialog title, {version} is the app version like 1.8.198">What\'s new in v{version}</string>
     <string name="about__whats_new__full_changelog" comment="Dialog button that opens the full online changelog">Full changelog</string>
     <string name="about__release_history__title" comment="Preference title and dialog title for offline release history">Release history</string>
@@ -1694,7 +1699,7 @@
     <string name="physical_keyboard__system_group_title">System</string>
     <string name="physical_keyboard__system_settings__title">System physical keyboard settings</string>
     <string name="physical_keyboard__system_settings__summary">Layouts, keyboard shortcuts and modifier keys</string>
-    <string name="physical_keyboard__system_settings__summary_not_attached">Only available when keyboard is attached</string>
+    <string name="physical_keyboard__system_settings__summary_not_attached">Available once a physical keyboard is attached</string>
     <string name="physical_keyboard__system_settings__unavailable_title" comment="Error card title shown when the system hardware-keyboard settings screen cannot be opened">System keyboard settings unavailable</string>
     <string name="physical_keyboard__system_settings__unavailable_summary" comment="Error card summary shown when the system hardware-keyboard settings screen cannot be opened">This device has no hardware keyboard settings screen, or it is blocked for this user. SwiftFloris layout settings below still apply.</string>
     <string name="physical_keyboard__show_on_screen_keyboard__title">Show on-screen keyboard</string>
@@ -1796,7 +1801,7 @@
     <string name="backup_omission__phrase_predictions" comment="Store name in the list of things a backup archive does not carry">phrase predictions</string>
     <string name="backup_omission__autocorrect_history" comment="Store name in the list of things a backup archive does not carry">autocorrect history</string>
     <string name="backup_omission__sync_identity" comment="Store name in the list of things a backup archive does not carry">the sync identity</string>
-    <string name="backup_omission__tasker_auth" comment="Store name in the list of things a backup archive does not carry">the Tasker authorisation secret</string>
+    <string name="backup_omission__tasker_auth" comment="Store name in the list of things a backup archive does not carry">the Tasker authorization secret</string>
     <string name="backup_omission__typing_traces" comment="Store name in the list of things a backup archive does not carry">recorded typing traces</string>
     <string name="backup_omission__clipboard_keys" comment="Store name in the list of things a backup archive does not carry">clipboard encryption keys</string>
     <string name="backup_omission__clipboard_file_records" comment="Store name in the list of things a backup archive does not carry">clipboard file records</string>
@@ -1838,7 +1843,10 @@
     <string name="scheduled_backup__daily_summary">Keep one encrypted archive per day.</string>
     <string name="scheduled_backup__weekly">Every week</string>
     <string name="scheduled_backup__weekly_summary">Keep one encrypted archive per week.</string>
-    <string name="scheduled_backup__retention_option">Keep %1$d verified archives</string>
+    <plurals name="scheduled_backup__retention_option" comment="Retention choice label; the count is how many verified archives are kept">
+        <item quantity="one">Keep 1 verified archive</item>
+        <item quantity="other">Keep %1$d verified archives</item>
+    </plurals>
     <string name="scheduled_backup__retention_default_summary">Default retention</string>
     <string name="scheduled_backup__choose_folder_first">Choose a backup folder first.</string>
     <string name="scheduled_backup__set_passphrase_first">Set an encryption passphrase first.</string>
@@ -1913,7 +1921,7 @@
     <!-- Crash Dialog strings -->
     <string name="crash_dialog__title" comment="Title of crash dialog">SwiftFloris error report</string>
     <string name="crash_dialog__description" comment="Description of crash dialog">SwiftFloris stopped unexpectedly. The details below can help diagnose what happened.</string>
-    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">If you wish to report this error, first check out the issue tracker on GitHub if your crash has not already been reported.\nIf it hasn\'t, copy the generated crash log and open a new issue. Use the \"%s\" template and fill out the description, the steps to reproduce, and paste the generated crash log at the end. This helps in making SwiftFloris better and more stable for everyone. Thank you!</string>
+    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">If you want to report this error, check the GitHub issue tracker first to see whether someone has already reported it.\nIf it hasn\'t, copy the generated crash log and open a new issue. Use the \"%s\" template and fill out the description, the steps to reproduce, and paste the generated crash log at the end. This helps in making SwiftFloris better and more stable for everyone. Thank you!</string>
     <string name="crash_dialog__redaction_warning" translatable="false">Before copying or sharing, remove typed text, clipboard content, personal dictionary content, private APK paths, and unrelated device logs from the report.</string>
     <string name="crash_dialog__bug_report_template" comment="Name of the template to use in the GitHub issue tracker (is always in English)" translatable="false">Crash report</string>
     <string name="crash_dialog__copy_to_clipboard" comment="Label of Copy to clipboard button in crash dialog">Copy to system clipboard</string>
@@ -1943,7 +1951,7 @@
     <string name="clipboard__search_empty__message">Clear the search or copy matching text to keep it here.</string>
     <string name="clipboard__search_filter_empty__message">Clear the search, turn off a filter, or copy matching text to keep it here.</string>
     <string name="clipboard__filter_empty__title">No clips match these filters</string>
-    <string name="clipboard__filter_empty__message">Turn off a filter or copy a matching text, image, or video clip.</string>
+    <string name="clipboard__filter_empty__message">Turn off a filter, or copy text, an image, or a video clip that matches.</string>
     <string name="clipboard__locked__title">Your clipboard is locked</string>
     <string name="clipboard__locked__message">To access your clipboard history, please first unlock your device.</string>
     <string name="clipboard__group_pinned">Pinned</string>
@@ -2165,7 +2173,7 @@
     <string name="ext__editor__title_edit_any">Edit extension</string>
     <string name="ext__editor__title_edit_keyboard">Edit keyboard extension</string>
     <string name="ext__editor__title_edit_theme">Edit theme extension</string>
-    <string name="ext__editor__metadata__title">Manage meta data</string>
+    <string name="ext__editor__metadata__title">Manage metadata</string>
     <string name="ext__editor__metadata__title_invalid">Invalid metadata</string>
     <string name="ext__editor__metadata__message_invalid">Review this extension\'s metadata before saving.</string>
     <string name="ext__editor__dependencies__title">Manage dependencies</string>
@@ -2192,6 +2200,7 @@
     <string name="ext__editor__files__import_failure_summary">The draft file list was not changed. Review the error, then retry or choose a different file. Details: {error_message}</string>
     <string name="ext__editor__files__action_in_progress">Updating extension files</string>
     <string name="ext__editor__files__action_in_progress_summary">Keep this screen open while SwiftFloris copies, renames, or removes the selected archive file.</string>
+    <string name="ext__editor__files__add_action" comment="Accessibility label for the add-file button in an extension file section; {section} is a section title like Fonts">Add file to {section}</string>
     <string name="ext__editor__files__type_fonts">Fonts</string>
     <string name="ext__editor__files__type_images">Images</string>
     <string name="ext__editor__save_in_progress">Saving extension</string>
@@ -2206,7 +2215,7 @@
     <string name="ext__editor__create_component__title_theme">Create theme</string>
     <string name="ext__editor__create_component__from_empty">Empty</string>
     <string name="ext__editor__create_component__from_existing">From existing</string>
-    <string name="ext__editor__create_component__from_empty_warning">Creating and configuring an empty component may be hard if you are new to {app_name} or if you are unfamiliar with the specifics. Consider copying an existing component and modifying it to your likings if that is the case.</string>
+    <string name="ext__editor__create_component__from_empty_warning">Creating and configuring an empty component may be hard if you are new to {app_name} or if you are unfamiliar with the specifics. If that sounds like you, copy an existing component and change it to suit.</string>
     <string name="ext__editor__edit_component__title">Edit component</string>
     <string name="ext__editor__edit_component__title_theme">Edit theme component</string>
     <string name="ext__export__success">Extension exported.</string>
@@ -2285,15 +2294,15 @@
     <string name="ext__validation__enter_positive_number">Please enter a positive number (>=0)</string>
     <string name="ext__validation__enter_percent_size">Please enter a percent size</string>
     <string name="ext__validation__enter_number_between_0_100">Please enter a positive number between 0 and 100</string>
-    <string name="ext__validation__hint_value_above_50_percent" formatted="false">Any value above 50% will behave as if you set 50%, consider lowering your percent size</string>
+    <string name="ext__validation__hint_value_above_50_percent" formatted="false">Anything above 50% behaves the same as 50%. Try a smaller percentage.</string>
     <string name="ext__update_box__internet_permission_hint">Since this app does not have Internet permission, updates for installed extensions must be checked manually.</string>
     <string name="ext__update_box__title">Extension updates</string>
     <string name="ext__update_box__search_for_updates">Check for updates</string>
     <string name="ext__addon_management_box__managing_placeholder">Managing {extensions}</string>
     <string name="ext__addon_management_box__addon_manager_info">All tasks related to importing, exporting, creating, customizing, and removing extensions can be handled through the centralized addon manager.</string>
     <string name="ext__addon_management_box__go_to_page">Go to {ext_home_title}</string>
-    <string name="ext__home__info">Install trusted extensions from the SwiftFloris add-ons store or import an extension archive you already have.</string>
-    <string name="ext__home__visit_store">Visit add-ons store</string>
+    <string name="ext__home__info">Install trusted extensions from the SwiftFloris addons store or import an extension archive you already have.</string>
+    <string name="ext__home__visit_store">Visit addons store</string>
     <string name="ext__home__manage_extensions">Manage installed extensions</string>
     <string name="ext__home__installed_section">Installed extension types</string>
     <string name="ext__home__theme_summary">Keyboard styles, color systems, and visual packages</string>
@@ -2416,7 +2425,7 @@
     <string name="enum__display_language_names_in__system_locale" comment="Enum value label">System locale</string>
     <string name="enum__display_language_names_in__system_locale__description" comment="Enum value description">Language names across the app and keyboard UI are displayed in the locale which is set for the whole device</string>
     <string name="enum__display_language_names_in__native_locale" comment="Enum value label">Native locale</string>
-    <string name="enum__display_language_names_in__native_locale__description" comment="Enum value description">Language names across the app and keyboard UI are displayed in the locale referred by itself</string>
+    <string name="enum__display_language_names_in__native_locale__description" comment="Enum value description">Each language name is shown in that language</string>
 
     <string name="enum__emoji_history_update_strategy__auto_sort_prepend" comment="Enum value label">Auto sort (prepend)</string>
     <string name="enum__emoji_history_update_strategy__auto_sort_prepend__description" comment="Enum value description">Automatically reorder emojis on emoji usage. New emojis are added to the start.</string>
@@ -2804,18 +2813,30 @@
     <string name="settings__snippet__clear_all_confirm_title" comment="Title for confirming removal of every snippet file">Clear all snippets?</string>
     <string name="settings__snippet__clear_all_confirm_message" comment="Message for confirming removal of every snippet file">Delete every imported snippet file and loaded trigger? This cannot be undone.</string>
     <string name="settings__snippet__clear_all__toast" comment="Toast after clearing all snippets">All snippets cleared.</string>
-    <string name="settings__snippet__file_triggers" comment="Summary for a snippet file row; {count} = number of triggers">{count} triggers</string>
+    <plurals name="settings__snippet__file_triggers" comment="Summary for a snippet file row; {count} = number of triggers">
+        <item quantity="one">1 trigger</item>
+        <item quantity="other">{count} triggers</item>
+    </plurals>
     <string name="settings__snippet__delete_file_a11y" comment="Accessibility label for deleting an imported snippet file">Delete {filename}</string>
     <string name="settings__snippet__file_removed__toast" comment="Toast after removing a snippet file">Snippet file removed.</string>
     <string name="settings__snippet__file_remove_failed__toast" comment="Toast when a snippet file could not be removed">Snippet file could not be removed.</string>
     <string name="settings__snippet__clear_failed__toast" comment="Toast when one or more snippet files could not be cleared">Some snippet files could not be removed.</string>
     <string name="settings__snippet__load_warning_title" comment="Warning title when snippet files could not be loaded">Some snippet files were skipped</string>
-    <string name="settings__snippet__load_warning_summary" comment="Warning summary when snippet files could not be loaded; {count} = skipped file count">{count} snippet files could not be loaded. Check their contents and try again.</string>
-    <string name="settings__snippet__import_success__toast" comment="Toast after successful import; {count} = triggers imported">{count} triggers imported.</string>
-    <string name="settings__snippet__import_failed__toast" comment="Toast when import yields zero triggers or fails">Import failed — no valid triggers found in file.</string>
+    <plurals name="settings__snippet__load_warning_summary" comment="Warning summary when snippet files could not be loaded; {count} = skipped file count">
+        <item quantity="one">1 snippet file could not be loaded. Check its contents and try again.</item>
+        <item quantity="other">{count} snippet files could not be loaded. Check their contents and try again.</item>
+    </plurals>
+    <plurals name="settings__snippet__import_success__toast" comment="Toast after successful import; {count} = triggers imported">
+        <item quantity="one">1 trigger imported.</item>
+        <item quantity="other">{count} triggers imported.</item>
+    </plurals>
+    <string name="settings__snippet__import_failed__toast" comment="Toast when import yields zero triggers or fails">Import failed. No valid triggers were found in the file.</string>
     <string name="settings__snippet__import_read_error__toast" comment="Toast when the file cannot be read">Could not read the selected file.</string>
     <string name="settings__snippet__import_success_title" comment="Title of successful snippet import notice">Snippet file imported</string>
-    <string name="settings__snippet__import_success_summary" comment="Summary of successful snippet import notice; {count} = triggers imported">{count} triggers loaded.</string>
+    <plurals name="settings__snippet__import_success_summary" comment="Summary of successful snippet import notice; {count} = triggers imported">
+        <item quantity="one">1 trigger loaded.</item>
+        <item quantity="other">{count} triggers loaded.</item>
+    </plurals>
     <string name="settings__snippet__import_warning_title" comment="Title of partial snippet import notice">Snippet file imported with warnings</string>
     <string name="settings__snippet__import_warning_summary" comment="Summary of partial snippet import notice; {count} = triggers imported, {details} = skipped-entry diagnostics">{count} triggers loaded. Skipped entries:\n{details}</string>
     <string name="settings__snippet__import_failed_title" comment="Title when snippet import found no usable triggers">No valid snippets found</string>

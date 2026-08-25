@@ -114,6 +114,30 @@ fun pluralsRes(
     return formatString(string, args)
 }
 
+/**
+ * Captures the localized resources during composition and hands back a resolver
+ * for [id] that can run later.
+ *
+ * Toasts and undo actions fire after composition, when the count is finally
+ * known, so they cannot call [pluralsRes] directly. Resolving one quantity form
+ * up front and patching the number into it is not a substitute: English happens
+ * to have two forms, but Arabic, Polish and Russian pick a different form for
+ * counts this code cannot predict.
+ */
+@Composable
+fun rememberPluralsResolver(
+    @PluralsRes id: Int,
+): (quantity: Int, args: List<CurlyArg>) -> String {
+    val resources = LocalResourcesContext.current.resources
+    val appName = LocalAppNameString.current
+    return remember(resources, id, appName) {
+        { quantity, args ->
+            resources.getQuantityString(id, quantity)
+                .curlyFormat(listOf<CurlyArg>("app_name" to appName) + args)
+        }
+    }
+}
+
 @Composable
 private fun formatString(
     string: String,

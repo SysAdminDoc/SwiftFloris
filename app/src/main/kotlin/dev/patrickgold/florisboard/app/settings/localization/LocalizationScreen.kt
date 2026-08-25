@@ -36,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -165,7 +166,7 @@ fun LocalizationScreen() = FlorisScreen {
                         )),
                     )
                     JetPrefListItem(
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.clickable(role = Role.Button) {
                             navController.navigate(
                                 Routes.Settings.SubtypeEdit(subtype.id)
                             )

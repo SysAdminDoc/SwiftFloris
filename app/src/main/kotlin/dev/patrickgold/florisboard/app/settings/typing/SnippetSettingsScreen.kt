@@ -57,6 +57,8 @@ import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisWarningCard
+import org.florisboard.lib.compose.pluralsRes
+import org.florisboard.lib.compose.rememberPluralsResolver
 import org.florisboard.lib.compose.stringRes
 
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
@@ -72,7 +74,7 @@ fun SnippetSettingsScreen() = FlorisScreen {
     val fileStates by snippetManager.fileStates.collectAsState()
     val loadReport by snippetManager.loadReport.collectAsState()
 
-    val importSuccessTemplate = stringRes(R.string.settings__snippet__import_success__toast)
+    val importSuccessToast = rememberPluralsResolver(R.plurals.settings__snippet__import_success__toast)
     val importFailedText = stringRes(R.string.settings__snippet__import_failed__toast)
     val importReadErrorText = stringRes(R.string.settings__snippet__import_read_error__toast)
     val fileRemovedText = stringRes(R.string.settings__snippet__file_removed__toast)
@@ -113,7 +115,10 @@ fun SnippetSettingsScreen() = FlorisScreen {
                     )
                     Toast.makeText(
                         context,
-                        importSuccessTemplate.replace("{count}", importResult.importedCount.toString()),
+                        importSuccessToast(
+                            importResult.importedCount,
+                            listOf("count" to importResult.importedCount.toString()),
+                        ),
                         Toast.LENGTH_SHORT,
                     ).show()
                 } else {
@@ -164,8 +169,9 @@ fun SnippetSettingsScreen() = FlorisScreen {
                 FlorisWarningCard(
                     modifier = Modifier.padding(8.dp),
                     text = stringRes(R.string.settings__snippet__load_warning_title),
-                    secondaryText = stringRes(
-                        R.string.settings__snippet__load_warning_summary,
+                    secondaryText = pluralsRes(
+                        R.plurals.settings__snippet__load_warning_summary,
+                        loadReport.skippedFileCount,
                         "count" to loadReport.skippedFileCount,
                     ),
                 )
@@ -173,8 +179,9 @@ fun SnippetSettingsScreen() = FlorisScreen {
             for (fileState in fileStates) {
                 JetPrefListItem(
                     text = fileState.filename,
-                    secondaryText = stringRes(
-                        R.string.settings__snippet__file_triggers,
+                    secondaryText = pluralsRes(
+                        R.plurals.settings__snippet__file_triggers,
+                        fileState.triggerCount,
                         "count" to fileState.triggerCount,
                     ),
                     trailing = {
@@ -295,8 +302,9 @@ private fun SnippetImportNoticeCard(
                 FlorisSuccessCard(
                     modifier = modifier,
                     text = stringRes(R.string.settings__snippet__import_success_title),
-                    secondaryText = stringRes(
-                        R.string.settings__snippet__import_success_summary,
+                    secondaryText = pluralsRes(
+                        R.plurals.settings__snippet__import_success_summary,
+                        notice.importedCount,
                         "count" to notice.importedCount,
                     ),
                 )

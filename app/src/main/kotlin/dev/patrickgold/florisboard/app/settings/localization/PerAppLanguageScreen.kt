@@ -35,6 +35,7 @@ import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
 import kotlinx.coroutines.launch
+import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
 @Composable
@@ -64,8 +65,9 @@ fun PerAppLanguageScreen() = FlorisScreen {
             Preference(
                 icon = Icons.Default.Delete,
                 title = stringRes(R.string.settings__per_app_language__clear),
-                summary = stringRes(
-                    R.string.settings__per_app_language__clear_summary,
+                summary = pluralsRes(
+                    R.plurals.settings__per_app_language__clear_summary,
+                    rememberedAppCount,
                     "count" to rememberedAppCount.toString(),
                 ),
                 enabledIf = { rememberedAppCount > 0 },

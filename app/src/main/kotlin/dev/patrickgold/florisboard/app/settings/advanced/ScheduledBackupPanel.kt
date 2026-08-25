@@ -180,7 +180,11 @@ internal fun ScheduledBackupPanel(context: Context) {
                     refresh()
                 },
                 selected = settings.retentionCount == retention,
-                text = context.getString(R.string.scheduled_backup__retention_option, retention),
+                text = context.resources.getQuantityString(
+                    R.plurals.scheduled_backup__retention_option,
+                    retention,
+                    retention,
+                ),
                 secondaryText = if (retention == ScheduledBackupPolicy.DefaultRetentionCount) {
                     stringRes(R.string.scheduled_backup__retention_default_summary)
                 } else {
