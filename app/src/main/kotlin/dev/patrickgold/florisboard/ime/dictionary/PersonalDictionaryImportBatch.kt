@@ -99,6 +99,14 @@ object PersonalDictionaryImportBatch {
             val locale = entry.locale?.takeIf { it.isNotBlank() }
             val shortcut = entry.shortcut?.takeIf { it.isNotBlank() }
             val parsedLocale = locale?.let { runCatching { FlorisLocale.fromTag(it) }.getOrNull() }
+            // Store the spelling the query binds, not the one the file used.
+            // `locale` is persisted as a raw string, while queryExact takes a
+            // FlorisLocale that Room converts through localeTag(), which joins
+            // with '_'. A SwiftKey export supplies BCP-47, so "en-GB" went in
+            // and "en_GB" was looked up: the row was never found, and every
+            // re-import inserted another copy instead of updating the one
+            // already there.
+            val storedLocale = parsedLocale?.localeTag() ?: locale
             val existing = dao.queryExact(word, parsedLocale)
             if (existing.isNotEmpty()) {
                 dao.update(
@@ -106,7 +114,7 @@ object PersonalDictionaryImportBatch {
                         id = existing.first().id,
                         word = word,
                         freq = clampedFreq,
-                        locale = locale,
+                        locale = storedLocale,
                         shortcut = shortcut,
                     ),
                 )
@@ -117,11 +125,11 @@ object PersonalDictionaryImportBatch {
                         id = 0,
                         word = word,
                         freq = clampedFreq,
-                        locale = locale,
+                        locale = storedLocale,
                         shortcut = shortcut,
                     ),
                 )
-                insertedKeys += word to locale
+                insertedKeys += word to storedLocale
             }
         }
         // Identify newly-inserted ids by diffing against the before-set, but

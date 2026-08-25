@@ -42,6 +42,63 @@ class PersonalDictionaryImportBatchTest : FunSpec({
         dao.queryAll().size shouldBe 1
     }
 
+    test("a BCP-47 locale tag is stored the way the lookup spells it") {
+        // The column is a raw string; queryExact takes a FlorisLocale that Room
+        // converts through localeTag(), which joins with '_'. A SwiftKey export
+        // supplies BCP-47, so storing the tag verbatim wrote "en-GB" and looked
+        // up "en_GB".
+        val dao = FakeUserDictionaryDao()
+
+        PersonalDictionaryImportBatch.import(
+            parsedEntries = listOf(
+                PersonalDictionaryEntry(word = "colour", frequency = 200, shortcut = null, locale = "en-GB"),
+            ),
+            dao = dao,
+            format = DictionaryImportFormat.JSON,
+        )
+
+        dao.queryAll().single().locale shouldBe "en_GB"
+        dao.queryExact("colour", FlorisLocale.fromTag("en-GB")).size shouldBe 1
+    }
+
+    test("re-importing the same BCP-47 entry updates it instead of duplicating") {
+        val dao = FakeUserDictionaryDao()
+        val entry = PersonalDictionaryEntry(word = "colour", frequency = 200, shortcut = null, locale = "en-GB")
+
+        val first = PersonalDictionaryImportBatch.import(
+            parsedEntries = listOf(entry),
+            dao = dao,
+            format = DictionaryImportFormat.JSON,
+        )
+        val second = PersonalDictionaryImportBatch.import(
+            parsedEntries = listOf(entry.copy(frequency = 240)),
+            dao = dao,
+            format = DictionaryImportFormat.JSON,
+        )
+
+        first.insertedCount shouldBe 1
+        second.insertedCount shouldBe 0
+        second.updatedExistingCount shouldBe 1
+        dao.queryAll().size shouldBe 1
+        dao.queryAll().single().freq shouldBe 240
+    }
+
+    test("a locale tag that does not parse is still stored as given") {
+        // Nothing can be canonicalised without a parse, and dropping the value
+        // would lose what the file said.
+        val dao = FakeUserDictionaryDao()
+
+        PersonalDictionaryImportBatch.import(
+            parsedEntries = listOf(
+                PersonalDictionaryEntry(word = "word", frequency = 100, shortcut = null, locale = "  "),
+            ),
+            dao = dao,
+            format = DictionaryImportFormat.JSON,
+        )
+
+        dao.queryAll().single().locale shouldBe null
+    }
+
     test("new entries are inserted and reported as rollback-eligible") {
         val dao = FakeUserDictionaryDao()
 

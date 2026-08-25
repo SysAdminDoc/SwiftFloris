@@ -220,16 +220,20 @@ interface UserDictionaryDatabase {
         val dao = mutableUserDictionaryDao()
             ?: error("This user dictionary is read-only.")
         for (entry in entries) {
-            val locale = entry.locale
-            val alreadyExistingEntries = dao.queryExact(
-                entry.word,
-                locale?.let { FlorisLocale.fromTag(it) },
-            )
+            val parsedLocale = entry.locale?.let { runCatching { FlorisLocale.fromTag(it) }.getOrNull() }
+            // Persist the spelling the lookup binds. `locale` is a raw string
+            // column while queryExact takes a FlorisLocale that Room converts
+            // through localeTag(), which joins with '_'. Storing an imported
+            // BCP-47 tag verbatim meant "en-GB" was written and "en_GB" was
+            // searched for, so the row was never found and a re-import stacked
+            // up duplicates.
+            val storedLocale = parsedLocale?.localeTag() ?: entry.locale
+            val alreadyExistingEntries = dao.queryExact(entry.word, parsedLocale)
             val row = UserDictionaryEntry(
                 id = alreadyExistingEntries.firstOrNull()?.id ?: 0,
                 word = entry.word,
                 freq = entry.frequency,
-                locale = locale,
+                locale = storedLocale,
                 shortcut = entry.shortcut,
             )
             if (alreadyExistingEntries.isNotEmpty()) {
