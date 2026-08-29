@@ -116,7 +116,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:enableOnBackInvokedCallback="true"
-        android:roundIcon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/FlorisAppTheme"
         tools:targetApi="tiramisu">
@@ -152,7 +152,7 @@
             android:icon="@mipmap/ic_launcher"
             android:label="@string/settings__title"
             android:launchMode="singleTask"
-            android:roundIcon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/FlorisAppTheme.Splash"
             android:exported="true">
@@ -182,7 +182,7 @@
             android:name="dev.patrickgold.florisboard.SettingsLauncherAlias"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
             android:targetActivity="dev.patrickgold.florisboard.app.FlorisAppActivity"
             android:exported="true">
             <intent-filter>

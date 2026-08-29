@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.9.66 (2026-08-29)
+
+- New app icon: adaptive, themed (monochrome) and legacy variants regenerated from the 2026-08 icon set.
+
 ## v1.9.65 (2026-08-25)
 
 - Respect "Remove animations" as soon as it is switched on. The animator duration scale lives in `Settings.Global` and changing it produces no configuration change, so a value keyed on the configuration kept reporting whatever was true when the screen was composed. It is observed now, like the other global settings this app reads.

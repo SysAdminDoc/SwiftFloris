@@ -82,7 +82,7 @@ internal object ScheduledBackupNotifications {
         manager.notify(
             NotificationId,
             NotificationCompat.Builder(appContext, ChannelId)
-                .setSmallIcon(R.drawable.ic_floris_monochrome)
+                .setSmallIcon(R.mipmap.ic_launcher_monochrome)
                 .setContentTitle(title)
                 .setContentText(message)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(message))
