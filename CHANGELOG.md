@@ -3,6 +3,7 @@
 ## v1.9.66 (2026-08-29)
 
 - New app icon: adaptive, themed (monochrome) and legacy variants regenerated from the 2026-08 icon set.
+- Keep the release-front-door fixture current with the developer-verification freshness check so the full local release gate can run on Windows.
 
 ## v1.9.65 (2026-08-25)
 

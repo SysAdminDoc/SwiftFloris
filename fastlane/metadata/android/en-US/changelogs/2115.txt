@@ -1,1 +1,2 @@
 New app icon: adaptive, themed (monochrome) and legacy variants regenerated from the 2026-08 icon set.
+The local release checks now cover the current developer-verification freshness rule.

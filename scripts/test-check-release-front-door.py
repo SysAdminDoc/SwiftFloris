@@ -67,6 +67,7 @@ def write_fixture(root: Path, *, version: str = "1.9.54", code: str = "2103", re
             ![Version](https://img.shields.io/badge/version-v{readme_claim}-blue)
             - **v{readme_claim}** (2026-07-02) - Fixture release.
             Current release: **v{readme_claim}**
+            Developer verification guidance (reassess Q4 2026).
             """
         ).strip()
         + "\n",
