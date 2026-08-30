@@ -24,6 +24,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -38,6 +39,7 @@ import kotlin.test.assertTrue
  * exactly when a user changes these.
  */
 @RunWith(AndroidJUnit4::class)
+@Config(sdk = [35])
 class KeypressSoundRevisionTest {
 
     private val context: Context get() = ApplicationProvider.getApplicationContext()

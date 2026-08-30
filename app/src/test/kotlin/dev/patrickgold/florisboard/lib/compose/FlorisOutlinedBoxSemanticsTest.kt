@@ -36,6 +36,7 @@ import org.florisboard.lib.compose.FlorisTouchTarget
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 /**
  * [FlorisOutlinedBox] backs 90+ settings surfaces. Its title and subtitle are
@@ -49,6 +50,7 @@ import org.junit.runner.RunWith
  * plain text.
  */
 @RunWith(AndroidJUnit4::class)
+@Config(sdk = [35])
 class FlorisOutlinedBoxSemanticsTest {
 
     @get:Rule

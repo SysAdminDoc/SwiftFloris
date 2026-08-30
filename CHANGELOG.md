@@ -4,6 +4,7 @@
 
 - New app icon: adaptive, themed (monochrome) and legacy variants regenerated from the 2026-08 icon set.
 - Keep the release-front-door fixture current with the developer-verification freshness check so the full local release gate can run on Windows.
+- Pin the remaining Robolectric tests to API 35 so the target SDK 37 shadow gate can exercise them with the newest SDK Robolectric currently supports.
 
 ## v1.9.65 (2026-08-25)
 
