@@ -896,7 +896,7 @@ class FlorisImeService : LifecycleInputMethodService() {
             return null
         }
         val maxSize = InlineSuggestionSizePolicy.presentationMaxSize(
-            displayWidthPx = resources.displayMetrics.widthPixels,
+            keyboardWidthPx = NlpInlineAutofill.suggestionsChipMaxWidthPx,
             chipHeightPx = NlpInlineAutofill.suggestionsChipHeightPx,
         )
         val spec = InlinePresentationSpec.Builder(

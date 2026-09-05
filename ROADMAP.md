@@ -145,15 +145,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-09-04)
 
-### P0
-
-- [ ] P0: Stop the preference migration from overwriting settings the user chose
-  Why: `FlorisPreferenceModel.migrate()` permanently pins eight shipped preferences to fork-preferred values. jetpref calls `migrate()` from `DataStore.loadAndUpdate`, which runs for both `Event.Init` (every process start) and `Event.Import` (backup restore), with no version gate — verified by decompiling `jetpref-datastore-model` 0.3.0. Every value being forced away is still a selectable option, so a user cannot keep: number row off, hinted number row on, hinted symbols on, the dynamic language/emoji utility key, the current-language space bar, a scrollable candidate row, Follow-system theming, or the `floris_day`/`floris_night` themes. This is issue #22 exactly, including the reporter's observation that a backup restore does not bring the settings back.
-  Evidence: https://github.com/SysAdminDoc/SwiftFloris/issues/22; app/src/main/kotlin/dev/patrickgold/florisboard/app/AppPrefs.kt:297-354; commit 722fe491e "Match default keyboard to SwiftKey layout"; app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/RestoreRollbackSnapshot.kt:260; ime/theme/ThemeMode.kt:27; ime/keyboard/SpaceBarMode.kt:21; ime/smartbar/CandidatesDisplayMode.kt:25; ime/text/key/UtilityKeyAction.kt:26; app/src/main/assets/ime/theme/org.florisboard.themes/extension.json.
-  Touches: AppPrefs.kt, app/prefs/KeyboardPrefs.kt, app/prefs/ThemePrefs.kt, app/prefs/SuggestionPrefs.kt, FlorisPreferenceModelImpl.kt, app/src/test/kotlin/dev/patrickgold/florisboard/app/AppPrefsMigrationTest.kt.
-  Acceptance: The eight forced rewrites are gone from `migrate()`. Any default the fork wants for NEW installs is expressed as the `PreferenceData` default plus, where an existing install must be moved once, a version-stamped one-shot keyed on the existing `internal.versionOnInstall` / `internal.versionLastUse` entries — never an unconditional rule. `AppPrefsMigrationTest` asserts KEEP_AS_IS for every one of the eight keys at every currently-selectable value (its current cases at :137-151 assert the defect and must be inverted). A test drives a stored datastore through two consecutive `Event.Init` loads and one `Event.Import` and proves each of the eight values survives all three unchanged. Legitimate value renames (`clipboard__sync_to_*`, `theme__editor_display_colors_as`, the `keyboard__one_handed_mode` OFF reset) keep working.
-  Complexity: M
-
 ### P1
 
 - [ ] P1: Fix the resize gesture so dragging a handle does not amplify itself
@@ -168,20 +159,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowEditorHandles.kt:427 and :432-455; FlorisImeSizing.rowCountAsState()/smartbarRowCountAsState().
   Touches: ImeWindowEditorHandles.kt.
   Acceptance: The gesture reads the current row counts and current callbacks at gesture time, via `rememberUpdatedState` or by keying `pointerInput` on the values it depends on. A test composes the handle, changes the smartbar row count, then drags, and asserts the resulting spec uses the new count — reverting the fix makes it fail. A grep-based or lint-based check flags any other `pointerInput(Unit)` in `ime/` that closes over composition state.
-  Complexity: S
-
-- [ ] P1: Size inline autofill chips to the keyboard, not to the display
-  Why: The `InlinePresentationSpec` max width and the `InlineSuggestion.inflate()` size both come from `resources.displayMetrics.widthPixels`, which is the full display. Passing that as the inflate size makes every chip exactly display-width, so a keyboard narrower than the display — floating, one-handed, split, or resized — renders chips that run off its own edge. This is issue #23's autofill half, with a screenshot attached to the report.
-  Evidence: https://github.com/SysAdminDoc/SwiftFloris/issues/23; app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt:898-901; app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpInlineAutofill.kt:75-79 and :142-179; app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowConstraints.kt.
-  Touches: FlorisImeService.kt, NlpInlineAutofill.kt, InlineSuggestionsUi.kt, FlorisImeSizing.kt, InlineSuggestionSizePolicy tests.
-  Acceptance: Both the presentation spec and the inflate call derive their width from the current IME window width owned by `ImeWindowConstraints`/`FlorisImeSizing`, not from `displayMetrics`. The inflate width is a wrap-content or window-bounded value rather than the spec maximum, so a provider's chip cannot exceed the smartbar. `InlineSuggestionSizePolicy` tests cover a window narrower than the display, a window equal to it, and a zero/unmeasured window falling back safely. A Roborazzi capture of the smartbar with inline suggestions at a reduced window width shows no chip crossing the keyboard edge.
-  Complexity: M
-
-- [ ] P1: Pin the release signing certificate and repair the F-Droid binary URL
-  Why: The recipe's `binary:` URL returns HTTP 404 — it names `app-release.apk` while the published asset is `SwiftFloris-v1.9.66-release.apk` — so F-Droid's binary comparison has nothing to compare against, and `AllowedAPKSigningKeys` is still empty. Both blockers that parked this work have cleared: v1.9.66 shipped a signed APK on 2026-08-30, and its certificate SHA-256 is `dba1aa88e37b90155fca3135ca3b781de92c225107e47c9806e75bf88055fdd8` (`CN=SysAdminDoc Sideload`, RSA 4096, v2+v3 schemes), read from the published artifact with `apksigner verify --print-certs`. 94 people have already installed under that key, so it is permanent unless every user reinstalls.
-  Evidence: fdroid/io.github.sysadmindoc.swiftfloris.yml; https://github.com/SysAdminDoc/SwiftFloris/releases/tag/v1.9.66; `curl -I .../v1.9.66/app-release.apk` returns 404 while `.../SwiftFloris-v1.9.66-release.apk` returns 200; Roadmap_Blocked.md "Finish F-Droid reproducible-build verification (remainder)" and "Publish a fork-provenance proof"; https://f-droid.org/en/docs/Build_Metadata_Reference/.
-  Touches: fdroid/io.github.sysadmindoc.swiftfloris.yml, scripts/check-fdroid-recipe.py, scripts/check-release-front-door.sh, README fork-provenance section, docs/REPRODUCIBLE_BUILDS.md, Roadmap_Blocked.md.
-  Acceptance: `AllowedAPKSigningKeys` carries the verified certificate SHA-256; the `binary:` URL resolves to the actual published asset name for the declared version; the fork-provenance section publishes the same fingerprint with the command that reproduces it. `check-fdroid-recipe.py` gains a fourth invariant that resolves the `binary:` URL for the current version and fails on a non-200, with a self-test fixture carrying a wrong asset name. The two matching items move out of `Roadmap_Blocked.md`.
   Complexity: S
 
 - [ ] P1: Move to AGP 9.3.2 or later so lint does not crash the F-Droid build

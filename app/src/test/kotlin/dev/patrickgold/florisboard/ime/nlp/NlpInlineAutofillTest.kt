@@ -25,7 +25,7 @@ class NlpInlineAutofillTest : FunSpec({
         InlineSuggestionSizePolicy.presentationMinDimensions.heightPx shouldBe 1
 
         val size = InlineSuggestionSizePolicy.presentationMaxDimensions(
-            displayWidthPx = Int.MAX_VALUE,
+            keyboardWidthPx = Int.MAX_VALUE,
             chipHeightPx = Int.MAX_VALUE,
         )
 
@@ -36,7 +36,7 @@ class NlpInlineAutofillTest : FunSpec({
 
     test("inline suggestion inflate size replaces invalid runtime dimensions with stable fallbacks") {
         val size = InlineSuggestionSizePolicy.inflateSize(
-            displayWidthPx = 0,
+            keyboardWidthPx = 0,
             chipHeightPx = -1,
         )
 
@@ -47,12 +47,55 @@ class NlpInlineAutofillTest : FunSpec({
 
     test("inline suggestion inflate size preserves valid keyboard dimensions") {
         val size = InlineSuggestionSizePolicy.inflateSize(
-            displayWidthPx = 1080,
+            keyboardWidthPx = 1080,
             chipHeightPx = 56,
         )
 
         size.widthPx shouldBe 1080
         size.heightPx shouldBe 56
+        InlineSuggestionSizePolicy.isValidInlineDimensions(size) shouldBe true
+    }
+
+    // Issue #23: the chip width used to come from the display, so a keyboard
+    // narrower than the display (floating, one-handed, split, or resized) got
+    // chips inflated wider than itself and they ran off the edge.
+    test("inline suggestion width follows a keyboard narrower than the display") {
+        val displayWidthPx = 1440
+        val keyboardWidthPx = 900
+
+        val inflate = InlineSuggestionSizePolicy.inflateSize(
+            keyboardWidthPx = keyboardWidthPx,
+            chipHeightPx = 56,
+        )
+        val presentation = InlineSuggestionSizePolicy.presentationMaxDimensions(
+            keyboardWidthPx = keyboardWidthPx,
+            chipHeightPx = 56,
+        )
+
+        inflate.widthPx shouldBe keyboardWidthPx
+        presentation.widthPx shouldBe keyboardWidthPx
+        (inflate.widthPx < displayWidthPx) shouldBe true
+        (presentation.widthPx < displayWidthPx) shouldBe true
+    }
+
+    test("inline suggestion width matches the keyboard when it fills the display") {
+        val widthPx = 1080
+
+        InlineSuggestionSizePolicy.inflateSize(
+            keyboardWidthPx = widthPx,
+            chipHeightPx = 56,
+        ).widthPx shouldBe widthPx
+    }
+
+    // The width is published from composition, so it is 0 until the first layout
+    // pass. An unmeasured keyboard must fall back rather than inflate at zero.
+    test("inline suggestion width falls back while the keyboard is unmeasured") {
+        val size = InlineSuggestionSizePolicy.inflateSize(
+            keyboardWidthPx = 0,
+            chipHeightPx = 56,
+        )
+
+        size.widthPx shouldBe 320
         InlineSuggestionSizePolicy.isValidInlineDimensions(size) shouldBe true
     }
 

@@ -75,7 +75,7 @@ SwiftFloris ships through GitHub Releases (canonical), Obtainium for GitHub-back
 - **F-Droid channel:** prepared for fdroiddata submission with local reproducible-build and no-network gates. If accepted, the F-Droid build/signature is a separate Android install channel; stay on one channel unless you back up, uninstall, reinstall, and restore.
 - **Permission proof:** the local release evidence command fails if the merged app manifest declares a permission outside the explicit enrollment allowlist shared with addon/MCP runtime trust checks; network and unknown permissions fail closed.
 - **Reproducibility proof:** `scripts/release-evidence.ps1` runs the build-twice APK verifier and records APK hash evidence before publication.
-- **Fork provenance:** the [provenance section below](#fork-provenance) lists the package identity, exact manifest permission surface, certificate capture commands, and third-party reproduction checklist. The official release fingerprint stays pending until a signed release APK is published.
+- **Fork provenance:** the [provenance section below](#fork-provenance) lists the package identity, exact manifest permission surface, certificate capture commands, and third-party reproduction checklist. The official release certificate SHA-256 is published there and pinned in the F-Droid recipe.
 
 ### Option A: Obtainium (recommended for auto-updates)
 
@@ -156,18 +156,31 @@ does not treat an unsigned or debug-signed local build as the published app.
 | Network permission | No `android.permission.INTERNET` permission |
 
 The `.debug` build uses `io.github.sysadmindoc.swiftfloris.debug` and must not
-be compared with the release package. There is no signed SwiftFloris release
-APK currently attached to GitHub, and the private release keystore is not in
-the repository. The official release certificate SHA-256 is therefore pending
-until a signed release artifact exists.
+be compared with the release package.
 
-The local debug APK inspected on 2026-08-20 had this separate certificate:
-`f9c07b3eda90b2a06096d2ff904b3020c79eecdd19fe7cb9a91c753994fbd56a`.
-Capture the official release value with:
+Every published SwiftFloris APK is signed with this certificate:
+
+| Fact | Value |
+|------|-------|
+| Certificate SHA-256 | `dba1aa88e37b90155fca3135ca3b781de92c225107e47c9806e75bf88055fdd8` |
+| Subject | `CN=SysAdminDoc Sideload, O=SysAdminDoc, C=US` |
+| Key | RSA 4096 |
+| Signature schemes | APK Signature Scheme v2 and v3 |
+| First published under this key | v1.9.66, 2026-08-30 |
+
+Read it from the published release and compare for yourself:
 
 ```powershell
-apksigner verify --print-certs .\app-release.apk
+apksigner verify --print-certs .\SwiftFloris-v1.9.66-release.apk
 ```
+
+An APK reporting any other certificate did not come from this repository,
+whatever its package name or icon says. The same value is pinned as
+`AllowedAPKSigningKeys` in `fdroid/io.github.sysadmindoc.swiftfloris.yml`.
+
+The local debug APK inspected on 2026-08-20 had this separate certificate:
+`f9c07b3eda90b2a06096d2ff904b3020c79eecdd19fe7cb9a91c753994fbd56a`. Debug
+builds are signed with a throwaway key and are not the published app.
 
 The merged release manifest declares these user or package permissions:
 

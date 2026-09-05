@@ -40,16 +40,12 @@ import dev.patrickgold.florisboard.app.prefs.SyncPrefs
 import dev.patrickgold.florisboard.app.prefs.ThemePrefs
 import dev.patrickgold.florisboard.app.prefs.VoicePrefs
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
-import dev.patrickgold.florisboard.ime.keyboard.SpaceBarMode
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistory
-import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickAction
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionArrangement
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionJsonConfig
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
-import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
-import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.jetpref.datastore.jetprefDataStoreOf
 import dev.patrickgold.jetpref.datastore.model.PreferenceMigrationEntry
 import dev.patrickgold.jetpref.datastore.model.PreferenceModel
@@ -295,63 +291,19 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                     entry.keepAsIs()
                 }
             }
-            "keyboard__number_row" -> {
-                if (entry.rawValue.equals("false", ignoreCase = true)) {
-                    entry.transform(rawValue = "true")
-                } else {
-                    entry.keepAsIs()
-                }
-            }
-            "keyboard__hinted_number_row_enabled",
-            "keyboard__hinted_symbols_enabled" -> {
-                if (entry.rawValue.equals("true", ignoreCase = true)) {
-                    entry.transform(rawValue = "false")
-                } else {
-                    entry.keepAsIs()
-                }
-            }
-            "keyboard__utility_key_action" -> {
-                if (entry.rawValue == UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS.name) {
-                    entry.transform(rawValue = UtilityKeyAction.SWITCH_TO_EMOJIS.name)
-                } else {
-                    entry.keepAsIs()
-                }
-            }
-            "keyboard__space_bar_display_mode" -> {
-                if (entry.rawValue == SpaceBarMode.CURRENT_LANGUAGE.name) {
-                    entry.transform(rawValue = SpaceBarMode.NOTHING.name)
-                } else {
-                    entry.keepAsIs()
-                }
-            }
-            "suggestion__display_mode" -> {
-                if (entry.rawValue == CandidatesDisplayMode.DYNAMIC_SCROLLABLE.name) {
-                    entry.transform(rawValue = CandidatesDisplayMode.CLASSIC.name)
-                } else {
-                    entry.keepAsIs()
-                }
-            }
-            "theme__mode" -> {
-                if (entry.rawValue == ThemeMode.FOLLOW_SYSTEM.name) {
-                    entry.transform(rawValue = ThemeMode.ALWAYS_NIGHT.name)
-                } else {
-                    entry.keepAsIs()
-                }
-            }
-            "theme__day_theme_id" -> {
-                if (entry.rawValue == "org.florisboard.themes:floris_day") {
-                    entry.transform(rawValue = "org.florisboard.themes:swiftkey_pure_light")
-                } else {
-                    entry.keepAsIs()
-                }
-            }
-            "theme__night_theme_id" -> {
-                if (entry.rawValue == "org.florisboard.themes:floris_night") {
-                    entry.transform(rawValue = "org.florisboard.themes:swiftkey_pure_dark")
-                } else {
-                    entry.keepAsIs()
-                }
-            }
+            // The fork's preferred starting point (number row on, hints off,
+            // SwiftKey themes, classic candidates) is expressed by the `default`
+            // of each PreferenceData, which is what a fresh install gets. It must
+            // NOT be re-asserted here. jetpref calls migrate() from
+            // DataStore.loadAndUpdate on every Event.Init AND on every
+            // Event.Import, with no version gate, so a rule here runs on every
+            // process start and on every backup restore. Rules that used to force
+            // keyboard__number_row, keyboard__hinted_{number_row,symbols}_enabled,
+            // keyboard__utility_key_action, keyboard__space_bar_display_mode,
+            // suggestion__display_mode and theme__{mode,day_theme_id,night_theme_id}
+            // therefore discarded the user's own choice on each launch and made
+            // those settings unrestorable from a backup (issue #22). A stored
+            // value exists only because someone set it, so it is kept.
 
             // Default: keep entry
             else -> entry.keepAsIs()

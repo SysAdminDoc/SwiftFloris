@@ -32,9 +32,13 @@ Builds:
     gradle:
       - yes
     output: app/build/outputs/apk/release/app-release-unsigned.apk
-    binary: https://github.com/SysAdminDoc/SwiftFloris/releases/download/v%v/app-release.apk
+    binary: https://github.com/SysAdminDoc/SwiftFloris/releases/download/v%v/SwiftFloris-v%v-release.apk
 
-AllowedAPKSigningKeys: []
+# SHA-256 of the release signing certificate, read from the published v1.9.66
+# APK with `apksigner verify --print-certs`. Every published SwiftFloris APK
+# must verify against this key; F-Droid rejects the binary comparison otherwise.
+AllowedAPKSigningKeys:
+  - dba1aa88e37b90155fca3135ca3b781de92c225107e47c9806e75bf88055fdd8
 
 ArchivePolicy: 6
 AutoUpdateMode: Version

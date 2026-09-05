@@ -26,9 +26,17 @@ import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionJsonConfi
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
+import dev.patrickgold.florisboard.ime.theme.extCoreTheme
+import dev.patrickgold.jetpref.datastore.jetprefDataStoreOf
 import dev.patrickgold.jetpref.datastore.model.PreferenceMigrationEntry
 import dev.patrickgold.jetpref.datastore.model.PreferenceType
+import dev.patrickgold.jetpref.datastore.runtime.DataStoreReader
+import dev.patrickgold.jetpref.datastore.runtime.DataStoreWriter
+import dev.patrickgold.jetpref.datastore.runtime.ImportStrategy
+import dev.patrickgold.jetpref.datastore.runtime.LoadStrategy
+import dev.patrickgold.jetpref.datastore.runtime.PersistStrategy
 import dev.patrickgold.jetpref.material.ui.ColorRepresentation
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
@@ -134,51 +142,6 @@ class AppPrefsMigrationTest : FunSpec({
                 legacyRawValue = "false",
                 expectedRawValue = ClipboardSyncBehavior.NO_EVENTS.name,
             ),
-            ValueRewriteCase(
-                key = "keyboard__number_row",
-                legacyRawValue = "false",
-                expectedRawValue = "true",
-            ),
-            ValueRewriteCase(
-                key = "keyboard__hinted_number_row_enabled",
-                legacyRawValue = "true",
-                expectedRawValue = "false",
-            ),
-            ValueRewriteCase(
-                key = "keyboard__hinted_symbols_enabled",
-                legacyRawValue = "true",
-                expectedRawValue = "false",
-            ),
-            ValueRewriteCase(
-                key = "keyboard__utility_key_action",
-                legacyRawValue = UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS.name,
-                expectedRawValue = UtilityKeyAction.SWITCH_TO_EMOJIS.name,
-            ),
-            ValueRewriteCase(
-                key = "keyboard__space_bar_display_mode",
-                legacyRawValue = SpaceBarMode.CURRENT_LANGUAGE.name,
-                expectedRawValue = SpaceBarMode.NOTHING.name,
-            ),
-            ValueRewriteCase(
-                key = "suggestion__display_mode",
-                legacyRawValue = CandidatesDisplayMode.DYNAMIC_SCROLLABLE.name,
-                expectedRawValue = CandidatesDisplayMode.CLASSIC.name,
-            ),
-            ValueRewriteCase(
-                key = "theme__mode",
-                legacyRawValue = ThemeMode.FOLLOW_SYSTEM.name,
-                expectedRawValue = ThemeMode.ALWAYS_NIGHT.name,
-            ),
-            ValueRewriteCase(
-                key = "theme__day_theme_id",
-                legacyRawValue = "org.florisboard.themes:floris_day",
-                expectedRawValue = "org.florisboard.themes:swiftkey_pure_light",
-            ),
-            ValueRewriteCase(
-                key = "theme__night_theme_id",
-                legacyRawValue = "org.florisboard.themes:floris_night",
-                expectedRawValue = "org.florisboard.themes:swiftkey_pure_dark",
-            ),
         )
 
         valueRewriteCases.forEach { case ->
@@ -206,21 +169,98 @@ class AppPrefsMigrationTest : FunSpec({
         prefs.migrate(
             migrationEntry("keyboard__key_spacing_vertical", "100", PreferenceType.integer()),
         ).actionName() shouldBe "KEEP_AS_IS"
+    }
 
-        val keepCases = listOf(
-            "keyboard__number_row" to "true",
-            "keyboard__hinted_number_row_enabled" to "false",
-            "keyboard__hinted_symbols_enabled" to "false",
-            "keyboard__utility_key_action" to UtilityKeyAction.SWITCH_TO_EMOJIS.name,
-            "keyboard__space_bar_display_mode" to SpaceBarMode.NOTHING.name,
-            "suggestion__display_mode" to CandidatesDisplayMode.CLASSIC.name,
-            "theme__mode" to ThemeMode.ALWAYS_NIGHT.name,
-            "theme__day_theme_id" to "org.florisboard.themes:swiftkey_pure_light",
-            "theme__night_theme_id" to "org.florisboard.themes:swiftkey_pure_dark",
-        )
-        keepCases.forEach { (key, rawValue) ->
-            prefs.migrate(migrationEntry(key, rawValue)).actionName() shouldBe "KEEP_AS_IS"
+    // Regression guard for issue #22. These nine keys used to be rewritten
+    // unconditionally by migrate(), which jetpref runs on every datastore load
+    // and on every import, so a user could not keep any of these settings. The
+    // fork's preferred starting point is carried by each PreferenceData default
+    // instead, so migration must leave a stored value alone whatever it is.
+    test("preferences a user can choose are never rewritten by migration") {
+        val everySelectableValue = buildList {
+            for (rawValue in listOf("true", "false")) {
+                add("keyboard__number_row" to rawValue)
+                add("keyboard__hinted_number_row_enabled" to rawValue)
+                add("keyboard__hinted_symbols_enabled" to rawValue)
+            }
+            UtilityKeyAction.entries.forEach { add("keyboard__utility_key_action" to it.name) }
+            SpaceBarMode.entries.forEach { add("keyboard__space_bar_display_mode" to it.name) }
+            CandidatesDisplayMode.entries.forEach { add("suggestion__display_mode" to it.name) }
+            ThemeMode.entries.forEach { add("theme__mode" to it.name) }
+            for (themeId in BUNDLED_CORE_THEME_IDS) {
+                add("theme__day_theme_id" to "org.florisboard.themes:$themeId")
+                add("theme__night_theme_id" to "org.florisboard.themes:$themeId")
+            }
         }
+
+        everySelectableValue.forEach { (key, rawValue) ->
+            val migrated = prefs.migrate(migrationEntry(key, rawValue))
+            withClue("$key=$rawValue must survive migration") {
+                migrated.actionName() shouldBe "KEEP_AS_IS"
+                migrated.key shouldBe key
+                migrated.rawValue shouldBe rawValue
+            }
+        }
+    }
+
+    // Issue #22's second symptom: the settings were not restored from a backup
+    // either. jetpref applies migrate() inside DataStore.loadAndUpdate, which
+    // runs for Event.Init (every process start) and for Event.Import (restore),
+    // so a rule there survives neither. This drives one stored blob through two
+    // loads and one import and compares against the values that were chosen,
+    // never against the previous trip.
+    test("chosen preferences survive two datastore loads and a restore") {
+        fun FlorisPreferenceModel.assertChosenValues(stage: String) {
+            val model = this@assertChosenValues
+            withClue(stage) {
+                model.keyboard.numberRow.get() shouldBe false
+                model.keyboard.hintedNumberRowEnabled.get() shouldBe true
+                model.keyboard.hintedSymbolsEnabled.get() shouldBe true
+                model.keyboard.utilityKeyAction.get() shouldBe UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS
+                model.keyboard.spaceBarMode.get() shouldBe SpaceBarMode.CURRENT_LANGUAGE
+                model.suggestion.displayMode.get() shouldBe CandidatesDisplayMode.DYNAMIC_SCROLLABLE
+                model.theme.mode.get() shouldBe ThemeMode.FOLLOW_SYSTEM
+                model.theme.dayThemeId.get() shouldBe extCoreTheme("floris_day")
+                model.theme.nightThemeId.get() shouldBe extCoreTheme("floris_night")
+            }
+        }
+
+        val chosenStore = jetprefDataStoreOf(FlorisPreferenceModel::class)
+        val chosen by chosenStore
+        chosenStore.init(LoadStrategy.Disabled, PersistStrategy.Disabled).getOrThrow()
+        chosen.keyboard.numberRow.set(false).getOrThrow()
+        chosen.keyboard.hintedNumberRowEnabled.set(true).getOrThrow()
+        chosen.keyboard.hintedSymbolsEnabled.set(true).getOrThrow()
+        chosen.keyboard.utilityKeyAction.set(UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS).getOrThrow()
+        chosen.keyboard.spaceBarMode.set(SpaceBarMode.CURRENT_LANGUAGE).getOrThrow()
+        chosen.suggestion.displayMode.set(CandidatesDisplayMode.DYNAMIC_SCROLLABLE).getOrThrow()
+        chosen.theme.mode.set(ThemeMode.FOLLOW_SYSTEM).getOrThrow()
+        chosen.theme.dayThemeId.set(extCoreTheme("floris_day")).getOrThrow()
+        chosen.theme.nightThemeId.set(extCoreTheme("floris_night")).getOrThrow()
+
+        val backup = InMemoryDatastoreBlob()
+        chosenStore.export(backup).getOrThrow()
+
+        // First Event.Init: the process the user changed the settings in restarts.
+        val firstRestart = jetprefDataStoreOf(FlorisPreferenceModel::class)
+        val firstRestartModel by firstRestart
+        firstRestart.init(LoadStrategy.UseReader(backup), PersistStrategy.Disabled).getOrThrow()
+        firstRestartModel.assertChosenValues("after the first load")
+
+        // Second Event.Init, from what the first generation would have persisted.
+        val secondGeneration = InMemoryDatastoreBlob()
+        firstRestart.export(secondGeneration).getOrThrow()
+        val secondRestart = jetprefDataStoreOf(FlorisPreferenceModel::class)
+        val secondRestartModel by secondRestart
+        secondRestart.init(LoadStrategy.UseReader(secondGeneration), PersistStrategy.Disabled).getOrThrow()
+        secondRestartModel.assertChosenValues("after the second load")
+
+        // Event.Import: restoring the backup archive onto a default install.
+        val restored = jetprefDataStoreOf(FlorisPreferenceModel::class)
+        val restoredModel by restored
+        restored.init(LoadStrategy.Disabled, PersistStrategy.Disabled).getOrThrow()
+        restored.import(ImportStrategy.Erase, backup).getOrThrow()
+        restoredModel.assertChosenValues("after restoring a backup")
     }
 
     test("fixture catalog covers every retained legacy migration key") {
@@ -251,15 +291,6 @@ class AppPrefsMigrationTest : FunSpec({
             "clipboard__clear_primary_clip_deletes_last_item",
             "keyboard__key_spacing_horizontal",
             "keyboard__key_spacing_vertical",
-            "keyboard__number_row",
-            "keyboard__hinted_number_row_enabled",
-            "keyboard__hinted_symbols_enabled",
-            "keyboard__utility_key_action",
-            "keyboard__space_bar_display_mode",
-            "suggestion__display_mode",
-            "theme__mode",
-            "theme__day_theme_id",
-            "theme__night_theme_id",
         )
     }
 })
@@ -300,16 +331,29 @@ private val TESTED_LEGACY_MIGRATION_KEYS = setOf(
     "clipboard__clear_primary_clip_deletes_last_item",
     "keyboard__key_spacing_horizontal",
     "keyboard__key_spacing_vertical",
-    "keyboard__number_row",
-    "keyboard__hinted_number_row_enabled",
-    "keyboard__hinted_symbols_enabled",
-    "keyboard__utility_key_action",
-    "keyboard__space_bar_display_mode",
-    "suggestion__display_mode",
-    "theme__mode",
-    "theme__day_theme_id",
-    "theme__night_theme_id",
 )
+
+private val BUNDLED_CORE_THEME_IDS = listOf(
+    "floris_day",
+    "floris_night",
+    "floris_pure_night",
+    "swiftkey_pure_light",
+    "swiftkey_pure_dark",
+    "swiftkey_high_contrast",
+    "swift_glacier",
+    "swift_slate",
+)
+
+/** Captures what a datastore exports so it can be read back verbatim. */
+private class InMemoryDatastoreBlob : DataStoreReader, DataStoreWriter {
+    private var blob: String = ""
+
+    override suspend fun read(): String = blob
+
+    override suspend fun write(content: String) {
+        blob = content
+    }
+}
 
 private fun migrationEntry(
     key: String,

@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
@@ -154,6 +155,13 @@ fun ProvideKeyboardRowBaseHeight(content: @Composable () -> Unit) {
             InlineSuggestionsChipMargin.calculateBottomPadding()
         NlpInlineAutofill.suggestionsChipHeightPx = with(density) {
             (smartbarRowHeight - marginV).roundToPx()
+        }
+        val marginH = InlineSuggestionsChipMargin.calculateLeftPadding(LayoutDirection.Ltr) +
+            InlineSuggestionsChipMargin.calculateRightPadding(LayoutDirection.Ltr)
+        NlpInlineAutofill.suggestionsChipMaxWidthPx = with(density) {
+            (windowSpec.props.keyboardWidth(windowSpec.constraints) - marginH)
+                .coerceAtLeast(0.dp)
+                .roundToPx()
         }
     }
 

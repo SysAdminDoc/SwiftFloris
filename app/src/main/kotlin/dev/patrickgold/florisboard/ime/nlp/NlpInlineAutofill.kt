@@ -63,6 +63,14 @@ object NlpInlineAutofill {
 
     var suggestionsChipHeightPx: Int = 0
 
+    /**
+     * Width the keyboard can actually show a chip in, published by
+     * `FlorisImeSizing` from the live window spec. The display width is not a
+     * substitute: a floating, one-handed, split or resized keyboard is narrower
+     * than the display, and a chip inflated at display width runs off its edge.
+     */
+    var suggestionsChipMaxWidthPx: Int = 0
+
     @RequiresApi(Build.VERSION_CODES.R)
     fun showInlineSuggestions(context: Context, rawSuggestions: List<InlineSuggestion>): Boolean {
         val sequenceId = generateSequenceId()
@@ -74,7 +82,7 @@ object NlpInlineAutofill {
 
         scope.launch {
             val size = InlineSuggestionSizePolicy.inflateSize(
-                displayWidthPx = context.resources.displayMetrics.widthPixels,
+                keyboardWidthPx = suggestionsChipMaxWidthPx,
                 chipHeightPx = suggestionsChipHeightPx,
             ).toAndroidSize()
             val latch = CountDownLatch(rawSuggestions.size)
@@ -150,19 +158,19 @@ object InlineSuggestionSizePolicy {
     val presentationMinSize: Size
         get() = presentationMinDimensions.toAndroidSize()
 
-    fun presentationMaxDimensions(displayWidthPx: Int, chipHeightPx: Int): InlineSuggestionDimensions {
+    fun presentationMaxDimensions(keyboardWidthPx: Int, chipHeightPx: Int): InlineSuggestionDimensions {
         return InlineSuggestionDimensions(
-            sanitizeDimension(displayWidthPx, fallback = FallbackWidthPx, max = MaxWidthPx),
+            sanitizeDimension(keyboardWidthPx, fallback = FallbackWidthPx, max = MaxWidthPx),
             sanitizeDimension(chipHeightPx, fallback = FallbackHeightPx, max = MaxHeightPx),
         )
     }
 
-    fun presentationMaxSize(displayWidthPx: Int, chipHeightPx: Int): Size {
-        return presentationMaxDimensions(displayWidthPx, chipHeightPx).toAndroidSize()
+    fun presentationMaxSize(keyboardWidthPx: Int, chipHeightPx: Int): Size {
+        return presentationMaxDimensions(keyboardWidthPx, chipHeightPx).toAndroidSize()
     }
 
-    fun inflateSize(displayWidthPx: Int, chipHeightPx: Int): InlineSuggestionDimensions {
-        return presentationMaxDimensions(displayWidthPx, chipHeightPx)
+    fun inflateSize(keyboardWidthPx: Int, chipHeightPx: Int): InlineSuggestionDimensions {
+        return presentationMaxDimensions(keyboardWidthPx, chipHeightPx)
     }
 
     internal fun isValidInlineDimensions(size: InlineSuggestionDimensions): Boolean {

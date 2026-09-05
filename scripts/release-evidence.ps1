@@ -282,6 +282,10 @@ Invoke-EvidenceCommand "trust-capability-gate" $python @("scripts/check-trust-ca
 Invoke-EvidenceCommand "security-dependency-freshness" $python @("scripts/check-security-dependency-freshness.py")
 Invoke-EvidenceCommand "runblocking-allowlist" $python @("scripts/check-runblocking-allowlist.py")
 Invoke-EvidenceCommand "live-doc-integrity" $python @("scripts/check-live-doc-integrity.py")
+# --check-published resolves the recipe binary URL against the real GitHub
+# release. Release time is exactly when that asset is supposed to exist, and
+# a 404 there means F-Droid downloads nothing and compares nothing.
+Invoke-EvidenceCommand "fdroid-recipe" $python @("scripts/check-fdroid-recipe.py", ".", "--check-published")
 Invoke-EvidenceCommand "root-crash-logs" $bash @((Convert-ToGitBashPath "scripts\check-no-root-crash-logs.sh"))
 Invoke-EvidenceCommand "repo-hygiene" $bash @((Convert-ToGitBashPath "scripts\check-repo-hygiene.sh"))
 Invoke-EvidenceCommand "kotlin-build-cache-cve-guard" $python (Get-KotlinBuildCacheGuardArguments "gradle-local-gates" $gradleReleaseEvidenceArgs)

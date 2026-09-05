@@ -132,7 +132,7 @@ Builds:
     gradle:
       - yes
     output: app/build/outputs/apk/release/app-release-unsigned.apk
-    binary: https://github.com/SysAdminDoc/SwiftFloris/releases/download/v%v/app-release.apk
+    binary: https://github.com/SysAdminDoc/SwiftFloris/releases/download/v%v/SwiftFloris-v%v-release.apk
 
 ArchivePolicy: 6
 AutoUpdateMode: Version
