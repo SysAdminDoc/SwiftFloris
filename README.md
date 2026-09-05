@@ -285,6 +285,14 @@ Public project information is available in this README, [Security](docs/SECURITY
 - Kotest 6.2.4 unit-test runner; Roborazzi 1.72.0 and Robolectric 4.16.1
   for screenshot/JVM Android regressions.
 - minSdk **26** (Android 8.0); targetSdk **36** (Android 16); compileSdk **37** (Android 17 APIs available behind behavior gates).
+  Targeting 36 while compiling against 37 is deliberate. Compiling against 37 is what makes the Android 17 APIs
+  reachable behind version guards, which is how the CJK selected-candidate accessibility attribute already ships.
+  Raising the target is a behavioural change, not a number: it opts the app into the API 37 enforcement set, and this
+  project has no CI to catch a regression in it. `python scripts/verify-targetsdk37-shadow.py` therefore runs the
+  manifest, unit-test and assemble lanes at `-PprojectTargetSdk=37` on demand and leaves the shipped pin alone.
+  The target moves to 37 when that preflight is green on a device-backed run rather than a shadow one, and when there
+  is a reason to move beyond keeping the number current; SwiftFloris is not distributed through Google Play, so no
+  policy deadline forces it.
 - Crowdin for translations, synced locally with the Crowdin CLI (this project
   runs no CI); see CONTRIBUTING.md. Translated resources are reviewed and
   promoted independently from typing-language subtype coverage.

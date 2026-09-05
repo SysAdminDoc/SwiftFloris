@@ -178,13 +178,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: Both artifacts are bumped, the instrumented sources compile against the 2.4.0 API, deep-link handling still resolves every declared Settings route, `:app:assembleDebugAndroidTest` succeeds, and the full local gate is green. If the uiautomator rewrite proves larger than the value it returns, the item records that finding and pins 2.3.0 deliberately with a written reason rather than leaving it as unexamined drift.
   Complexity: M
 
-- [ ] P2: Decide and record whether SwiftFloris targets API 37
-  Why: Android 17 shipped stable on 2026-06-16 and the project already compiles against API 37 while targeting 36, so the target is a deliberate choice that is nowhere written down. This pass verified that the usual API 37 breakers do not apply here — no `System.load`, no static-final reflection, no manifest orientation or resizability constraints, no `setContentCaptureEnabled` — so the move is cheap, but it should be made and documented rather than drifting.
-  Evidence: https://android-developers.googleblog.com/2026/06/Android-17.html; https://developer.android.com/about/versions/17/behavior-changes-17; gradle.properties (projectTargetSdk=36, projectCompileSdk=37).
-  Touches: gradle.properties, docs/REPRODUCIBLE_BUILDS.md, README, scripts/check-public-doc-version-pins.py, trust-capabilities.json.
-  Acceptance: Either `projectTargetSdk` moves to 37 with the full local gate green and the pinned docs updated, or the repo records in one named place why it stays at 36 and what would change that. Whichever is chosen, the public doc pin checker asserts the target SDK claim matches `gradle.properties`.
-  Complexity: S
-
 ### P3
 
 - [ ] P3: Find out whether Android 17 hides passwords from physical keyboards without IME help
