@@ -79,13 +79,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: Either the widgets are wired to Snygg and given a stated production role, or they and their capture are removed; `HoneycombTessellation` and `HoneycombHexShape` stay either way because `TextKeyboard.kt` and `TextKeyboardLayout.kt` use them.
   Complexity: S
 
-- [ ] P2: Preserve reproducible-build output when the container build fails
-  Why: The current script copies output only after success and removes the failed container before its evidence is collected.
-  Evidence: utils/repr_build/run.sh:90-108.
-  Touches: utils/repr_build/run.sh, reproducible-build shell tests, output manifest and log handling.
-  Acceptance: Success and failure both copy available logs, manifests, and partial outputs before container removal; the script returns the original assembly exit code; cleanup runs once; a fake failing container test proves evidence survives.
-  Complexity: S
-
 - [ ] P2: Balance the candidate-row benchmark trace on every exit
   Why: The current comment accepts an open Perfetto section if composition throws.
   Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/CandidatesRow.kt:97-109 and :217-222.

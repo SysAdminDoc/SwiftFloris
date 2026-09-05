@@ -23,6 +23,7 @@ read_property() {
   echo "$2 = $version"
 }
 
+prepare_image() {
 read_property projectCompileSdk     PROJECT_COMPILE_SDK
 read_property cmdlineTools          CMDLINE_TOOLS_VERSION
 read_property cmdlineToolsChecksum  CMDLINE_TOOLS_CHECKSUM
@@ -47,6 +48,7 @@ docker build -t "$IMAGE_NAME:$IMAGE_TAG" -f "utils/repr_build/Dockerfile" . \
   || exit 1
 
 docker volume inspect "$GRADLE_CACHE_VOLUME_NAME" > /dev/null 2>&1 || docker volume create "$GRADLE_CACHE_VOLUME_NAME"
+}
 
 docker_run() {
   docker_run_with_env() {
@@ -98,14 +100,38 @@ docker_run_assemble() {
   local final_out_dir="${2:-out}"
   mkdir -p "$tmp_out_dir" || exit 1
   mkdir -p "$final_out_dir" || exit 1
-  docker_run --name "$container" "$IMAGE" ./utils/repr_build/scripts/assemble.sh "$track" && {
-    # TODO: also copy on failure?
-    docker cp "$container:$REPO_MOUNT/out" "$tmp_out_dir"
-    cp -r "$tmp_out_dir/out"/* "$final_out_dir"
-    rm -r "$tmp_out_dir"
-  }
-  docker rm "$container"
+  # Copy on failure too. A failed build is exactly when the logs and partial
+  # outputs are worth keeping, and the container is the only place they exist:
+  # the `docker rm` below is what destroys them. The copy is best-effort,
+  # because a container that died early may have no out/ directory at all.
+  local assemble_status=0
+  docker_run --name "$container" "$IMAGE" ./utils/repr_build/scripts/assemble.sh "$track" \
+    || assemble_status=$?
+
+  if docker cp "$container:$REPO_MOUNT/out" "$tmp_out_dir" 2>/dev/null; then
+    if [ -d "$tmp_out_dir/out" ] && [ -n "$(ls -A "$tmp_out_dir/out" 2>/dev/null)" ]; then
+      cp -r "$tmp_out_dir/out/." "$final_out_dir"
+    fi
+  else
+    echo "warning: no out/ directory to copy from $container (assemble exited $assemble_status)"
+  fi
+  rm -rf "$tmp_out_dir"
+
+  docker rm "$container" >/dev/null
+
+  # Report what the assembly did, not what `docker rm` did. This used to return
+  # the removal's status, so a failed reproducible build looked like a pass.
+  return "$assemble_status"
 }
+
+# Sourcing this file defines the helpers without building an image or running an
+# action, which is what utils/repr_build/test_run.sh needs so it can exercise the
+# assemble failure path against a stubbed docker.
+if [ "${BASH_SOURCE[0]}" != "${0}" ]; then
+  return 0
+fi
+
+prepare_image
 
 action="$1"
 shift

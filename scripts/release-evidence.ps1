@@ -292,6 +292,9 @@ Invoke-EvidenceCommand "live-doc-integrity" $python @("scripts/check-live-doc-in
 Invoke-EvidenceCommand "fdroid-recipe" $python @("scripts/check-fdroid-recipe.py", ".", "--check-published")
 Invoke-EvidenceCommand "root-crash-logs" $bash @((Convert-ToGitBashPath "scripts\check-no-root-crash-logs.sh"))
 Invoke-EvidenceCommand "repo-hygiene" $bash @((Convert-ToGitBashPath "scripts\check-repo-hygiene.sh"))
+# The reproducible-build wrapper is the one gate whose own failure path used to
+# destroy the evidence it exists to produce, so its self-test runs here too.
+Invoke-EvidenceCommand "repr-build-run-selftest" $bash @((Convert-ToGitBashPath "utils\repr_build\test_run.sh"))
 Invoke-EvidenceCommand "kotlin-build-cache-cve-guard" $python (Get-KotlinBuildCacheGuardArguments "gradle-local-gates" $gradleReleaseEvidenceArgs)
 Invoke-EvidenceCommand "targetsdk37-shadow" $python @("scripts/verify-targetsdk37-shadow.py", "--shadow-target", "37")
 
