@@ -280,7 +280,7 @@ Public project information is available in this README, [Security](docs/SECURITY
 **Language and build**
 
 - Kotlin 2.4.10, Compose BOM 2026.08.00, Material 3 + material-kolor 5.0.0.
-- AGP 9.3.1, Gradle 9.7.1, JDK 21.
+- AGP 9.3.2, Gradle 9.7.1, JDK 21.
 - KSP 2.3.11, Room 2.8.4, SQLCipher 4.18.0, Tink Android 1.23.0.
 - Kotest 6.2.4 unit-test runner; Roborazzi 1.72.0 and Robolectric 4.16.1
   for screenshot/JVM Android regressions.

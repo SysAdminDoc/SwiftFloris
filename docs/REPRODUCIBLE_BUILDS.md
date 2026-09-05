@@ -15,7 +15,7 @@ verify it matches the official Release artifact.
 | Input | Pin location | Current version | SHA-256 / verification |
 |---|---|---|---|
 | Gradle distribution | `gradle/wrapper/gradle-wrapper.properties` | 9.7.1 | `distributionSha256Sum=acd53f1e...` |
-| Android Gradle Plugin | `gradle/libs.versions.toml` `[versions] android-gradle-plugin` | 9.3.1 | resolves to a fixed Maven artifact |
+| Android Gradle Plugin | `gradle/libs.versions.toml` `[versions] android-gradle-plugin` | 9.3.2 | resolves to a fixed Maven artifact |
 | Kotlin | `gradle/libs.versions.toml` `[versions] kotlin` | 2.4.10 | fixed Maven artifact |
 | KSP | `gradle/libs.versions.toml` `[versions] ksp` | 2.3.11 | fixed Maven artifact (KSP 2.x has its own release cadence; version no longer tracks Kotlin 1:1) |
 | Build Tools | `gradle/tools.versions.toml` `buildTools` | 37.0.0 | fixed Android SDK component |
