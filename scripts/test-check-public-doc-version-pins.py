@@ -130,7 +130,6 @@ def write_fixture(root: Path) -> None:
         "fallbackToOlderReleases": True,
         "trackOnly": False,
         "versionDetection": True,
-        "apkFilterRegEx": r"app-release.*\.apk",
     }
     (root / "fastlane" / "obtainium" / "stable.json").write_text(
         json.dumps(
@@ -142,6 +141,7 @@ def write_fixture(root: Path) -> None:
                 "additionalSettings": json.dumps({
                     **obtainium_settings,
                     "includePrereleases": False,
+                    "apkFilterRegEx": r"SwiftFloris-.*-release\.apk",
                 }, separators=(",", ":")),
             },
             indent=2,
@@ -159,6 +159,7 @@ def write_fixture(root: Path) -> None:
                 "additionalSettings": json.dumps({
                     **obtainium_settings,
                     "includePrereleases": True,
+                    "apkFilterRegEx": r"SwiftFloris-.*\.apk",
                 }, separators=(",", ":")),
             },
             indent=2,
@@ -261,6 +262,21 @@ def main() -> int:
         if failing.returncode != 1 or "stable.json" not in failing.stdout:
             print(failing.stdout)
             print("expected stale Obtainium stable manifest to fail")
+            return 1
+
+        write_fixture(fixture)
+        stable = fixture / "fastlane" / "obtainium" / "stable.json"
+        stable.write_text(
+            stable.read_text(encoding="utf-8").replace(
+                r"SwiftFloris-.*-release\\\\.apk",
+                r"app-release.*\\\\.apk",
+            ),
+            encoding="utf-8",
+        )
+        failing = run_checker(fixture)
+        if failing.returncode != 1 or "apkFilterRegEx" not in failing.stdout:
+            print(failing.stdout)
+            print("expected an Obtainium filter matching no published asset to fail")
             return 1
 
     print("public doc version pin checker self-test: PASS")

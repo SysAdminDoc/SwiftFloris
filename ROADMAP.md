@@ -154,20 +154,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: The gesture computes `current - initial` from `positionInRoot()` captured via `onGloballyPositioned`, not from accumulated node-local deltas. A test replays a synthetic drag of N dp against a controller that actually applies each intermediate spec, and asserts the final spec differs from the initial one by N dp within one dp — the current code fails that test. Every handle (all four edges and four corners, fixed and floating) is covered. Dragging to a constraint boundary and back returns the window to its starting size.
   Complexity: M
 
-- [ ] P1: Stop the resize gesture reading layout state frozen at first composition
-  Why: Both gesture blocks are `pointerInput(Unit)`, so the lambda is remembered from the first composition and never restarts. `rowCount`, `smartbarRowCount`, and all four gesture callbacks are captured once, so a resize performed after the row count changes computes against a stale layout. This is the second, independent contributor to issue #23's overshoot.
-  Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowEditorHandles.kt:427 and :432-455; FlorisImeSizing.rowCountAsState()/smartbarRowCountAsState().
-  Touches: ImeWindowEditorHandles.kt.
-  Acceptance: The gesture reads the current row counts and current callbacks at gesture time, via `rememberUpdatedState` or by keying `pointerInput` on the values it depends on. A test composes the handle, changes the smartbar row count, then drags, and asserts the resulting spec uses the new count — reverting the fix makes it fail. A grep-based or lint-based check flags any other `pointerInput(Unit)` in `ime/` that closes over composition state.
-  Complexity: S
-
-- [ ] P1: Move to AGP 9.3.2 or later so lint does not crash the F-Droid build
-  Why: AGP 9.3.2 (2026-08-24) fixes lint dying on JDK 17 with `NoSuchMethodError: java.util.List.removeLast()` in the bundled intellij-core. The F-Droid recipe installs `openjdk-17-jdk-headless`, so the build F-Droid runs is on the affected JDK even though the host build on JDK 21 is green. AGP 9.4.0 (2026-09-01) is also available and requires Gradle 9.6.0 or newer, which the pinned 9.7.1 already satisfies.
-  Evidence: https://developer.android.com/build/releases/agp-9-4-0-release-notes; fdroid/io.github.sysadmindoc.swiftfloris.yml sudo block; gradle/libs.versions.toml (AGP 9.3.1); gradle/tools.versions.toml (jdk = "17").
-  Touches: gradle/libs.versions.toml, app/src/main/config/trust-capabilities.json, docs/REPRODUCIBLE_BUILDS.md, scripts/check-public-doc-version-pins.py.
-  Acceptance: AGP is at 9.3.2 or 9.4.0; `:app:lintDebug` passes under JDK 17 as well as JDK 21; the trust registry and public doc pins carry the new version and their self-tests pass; the full local gate (unit, Roborazzi verify, lint, release assemble) is green.
-  Complexity: S
-
 ### P2
 
 - [ ] P2: Make the keyboard resize handles usable without a drag gesture
@@ -214,9 +200,3 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: The behaviour is checked on an Android 17 device or emulator with a physical keyboard attached and a password field focused, with both settings toggled. Either the IME is changed to honour the settings and a test covers it, or the threat model records that the platform owns this below the IME and names the check that established it.
   Complexity: S
 
-- [ ] P3: Sweep for other gesture handlers frozen by `pointerInput(Unit)`
-  Why: The resize handle proved the pattern silently freezes composition state and callbacks at first composition. It is worth knowing whether any other gesture surface in `ime/` has the same shape before a user finds it.
-  Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowEditorHandles.kt:427 and :432; cross-reference the existing P2 item "Make the keyboard layout controller reachable from unit tests", which covers the glide pointer bookkeeping in TextKeyboardLayout separately.
-  Touches: ime/ gesture call sites, a lint rule or repository-hygiene check.
-  Acceptance: Every `pointerInput(Unit)` in `app/src/main` is either shown to close over nothing that changes, or re-keyed / wrapped in `rememberUpdatedState`. A check fails on a fixture that introduces a new `pointerInput(Unit)` closing over a `State` read.
-  Complexity: S

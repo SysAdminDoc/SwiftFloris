@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import urllib.error
+import urllib.request
 import re
 import sys
 from dataclasses import dataclass
@@ -25,6 +27,15 @@ class Expectation:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Check public README/security/reproducible-build and F-Droid metadata pins against Gradle metadata.",
+    )
+    parser.add_argument(
+        "--check-published",
+        action="store_true",
+        help=(
+            "Also resolve the newest GitHub release and require at least one of its "
+            "assets to match each Obtainium apkFilterRegEx. Off by default so the "
+            "gate stays deterministic offline."
+        ),
     )
     parser.add_argument(
         "--root",
@@ -387,8 +398,53 @@ def check_obtainium_manifest(root: Path, path: str, expected: dict[str, object])
     return errors
 
 
+def check_published_assets_match(root: Path, manifests: tuple[str, ...]) -> list[str]:
+    """Require the newest release to carry an asset each Obtainium filter matches.
+
+    An apkFilterRegEx that matches nothing does not error in Obtainium; the app
+    simply never offers an update. That is invisible from inside the repository,
+    which is how `app-release.*\.apk` survived every release the project ever cut
+    while no published asset was ever named that.
+    """
+    url = "https://api.github.com/repos/SysAdminDoc/SwiftFloris/releases/latest"
+    request = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json"})
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            release = json.loads(response.read().decode("utf-8"))
+    except (OSError, ValueError) as exc:
+        return [f"could not resolve the newest release from {url}: {exc}"]
+
+    names = [asset.get("name", "") for asset in release.get("assets", [])]
+    tag = release.get("tag_name", "?")
+    errors: list[str] = []
+    for path in manifests:
+        try:
+            manifest = read_json(root / path)
+        except ValueError as exc:
+            errors.append(str(exc))
+            continue
+        if not isinstance(manifest, dict):
+            continue
+        raw_settings = manifest.get("additionalSettings")
+        if not isinstance(raw_settings, str):
+            continue
+        try:
+            settings = json.loads(raw_settings)
+        except json.JSONDecodeError:
+            continue
+        pattern = settings.get("apkFilterRegEx")
+        if not pattern:
+            continue
+        if not any(re.search(pattern, name) for name in names):
+            errors.append(
+                f"{path}: apkFilterRegEx {pattern!r} matches no asset on release {tag} "
+                f"({', '.join(names) or 'no assets'}); Obtainium would offer no update."
+            )
+    return errors
+
 def main() -> int:
-    root = Path(parse_args().root).resolve()
+    args = parse_args()
+    root = Path(args.root).resolve()
     expectations, errors = build_expectations(root)
     for expectation in expectations:
         error = check_expectation(root, expectation)
@@ -402,7 +458,6 @@ def main() -> int:
             "fallbackToOlderReleases": True,
             "trackOnly": False,
             "versionDetection": True,
-            "apkFilterRegEx": r"app-release.*\.apk",
         },
     }
     errors.extend(check_obtainium_manifest(root, "fastlane/obtainium/stable.json", {
@@ -412,6 +467,10 @@ def main() -> int:
         "additionalSettings": {
             **obtainium_common["additionalSettings"],
             "includePrereleases": False,
+            # Every published release asset is SwiftFloris-v<version>-release.apk.
+            # The old app-release.*\.apk matched nothing that has ever shipped, so
+            # Obtainium found no APK and silently never offered an update.
+            "apkFilterRegEx": r"SwiftFloris-.*-release\.apk",
         },
     }))
     errors.extend(check_obtainium_manifest(root, "fastlane/obtainium/preview.json", {
@@ -421,8 +480,17 @@ def main() -> int:
         "additionalSettings": {
             **obtainium_common["additionalSettings"],
             "includePrereleases": True,
+            # Broader than the stable filter on purpose: no prerelease has ever
+            # been cut, so the beta asset's exact name is not established yet.
+            "apkFilterRegEx": r"SwiftFloris-.*\.apk",
         },
     }))
+
+    if args.check_published:
+        errors.extend(check_published_assets_match(
+            root,
+            ("fastlane/obtainium/stable.json", "fastlane/obtainium/preview.json"),
+        ))
 
     if errors:
         for error in errors:

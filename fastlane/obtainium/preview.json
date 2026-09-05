@@ -3,5 +3,5 @@
   "url": "https://github.com/SysAdminDoc/SwiftFloris",
   "author": "SysAdminDoc",
   "name": "SwiftFloris Preview",
-  "additionalSettings": "{\"includePrereleases\":true,\"fallbackToOlderReleases\":true,\"trackOnly\":false,\"versionDetection\":true,\"apkFilterRegEx\":\"app-release.*\\\\.apk\"}"
+  "additionalSettings": "{\"includePrereleases\":true,\"fallbackToOlderReleases\":true,\"trackOnly\":false,\"versionDetection\":true,\"apkFilterRegEx\":\"SwiftFloris-.*\\\\.apk\"}"
 }
