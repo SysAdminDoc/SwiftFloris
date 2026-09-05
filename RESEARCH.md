@@ -1,238 +1,191 @@
 # Research: SwiftFloris
 
-Date: 2026-08-23. Replaces the 2026-08-22 report after a fresh repository, tracker, ecosystem, platform, dependency, security, community, and research review.
+Date: 2026-09-04. Replaces the 2026-08-23 report after a fresh repository, tracker, ecosystem, platform, dependency, security, community, and literature review.
 
 ## Executive Summary
 
-SwiftFloris v1.9.63 has a coherent product identity: a local-first Android keyboard with no `INTERNET` permission, encrypted sensitive stores, explicit import and export, signed addon boundaries, and unusually deep local release evidence. The current source tree is far ahead of the public install path, however. GitHub's latest release is v1.9.59, it has no downloadable assets, and master was 52 commits ahead at the start of this pass. The existing blocked release item remains the right owner for that distribution problem.
+Two things changed since the last pass, and both change the priorities. First, **v1.9.66 was published on 2026-08-30 with a signed APK** (94 downloads by 2026-09-04), which ends the distribution drought and clears the blocker under three items that had been parked on "no release keystore on this host". Second, **the project has real users filing real bugs for the first time**: issues #22 and #23, both opened 2026-09-02 against the shipped build on a Samsung S25 Ultra running Android 16.
 
-This pass found four net-new implementation gaps. Two are release or data-safety failures and belong at P0. Two weaken the backup and privacy contracts and belong at P1. Every other candidate was already represented, blocked by external evidence, fixed in v1.9.63, or too speculative to displace verified work.
+Issue #22 traces to the most serious product defect this pass found. `FlorisPreferenceModel.migrate()` does not migrate — it **permanently pins eight shipped preferences to fork-preferred values on every datastore load and on every backup import**. A user who turns the number row off, enables symbol hints, picks Follow-system theming, or chooses a scrollable candidate row has that choice silently reverted the next time the process starts. The reporter described exactly this and also noticed that restoring a backup does not bring the settings back, which is the same code path. The migration test asserts the broken behaviour, so the suite is currently defending the bug.
 
-Top findings:
+Everything else in the 2026-08-23 report still holds. The strategic direction is unchanged: local quality, understandable recovery, verifiable distribution. Nothing found this pass argues for a cloud service, an account, or a second language engine in `:app`.
 
-1. **Verified: the clean-checkout trust gate fails against its own live pins.** `trust-capabilities.json` declares Build Tools 36.0.0 and SQLCipher 4.17.0, while the Gradle catalogs declare 37.0.0 and 4.18.0. Both `scripts/check-trust-capabilities.py` and its self-test fail before release evidence can complete (app/src/main/config/trust-capabilities.json:7 and :46, gradle/tools.versions.toml:2, gradle/libs.versions.toml, scripts/check-trust-capabilities.py:340 and :449-451, scripts/release-evidence.ps1:281).
-2. **Verified: Android 16 QPR2 added a backup mode that the app does not govern.** The manifest enables backup and the active rules define cloud and device transfer only. Android's current documentation says a missing mode is fully enabled except for no-backup and cache locations. Exact transport behavior still needs API 36.1 validation, but an absent cross-platform policy is already a fail-open configuration defect (app/src/main/AndroidManifest.xml:111-113, app/src/main/res/xml/data_extraction_rules.xml:33-237).
-3. **Verified: the advertised no-cloud posture is broader than the implementation.** Android Auto Backup can upload selected preferences and customization data to the user's Google Drive. SwiftFloris itself has no network permission, account, telemetry, or cloud learning, but README and Settings use an unqualified “No cloud” claim (README.md:364-384, app/src/main/res/values/strings.xml:276 and :290, app/src/main/res/xml/data_extraction_rules.xml).
-4. **Verified: adaptive-touch state is missing from the canonical persisted-data inventory.** `AdaptiveTouchModel` stores per-subtype offsets in `adaptive_touch_model.xml`, but `BackupDataInventory` does not classify that store even though it claims every persisted store is listed. Current allowlists normally keep the file out of Android backup, but omission UI and parity tests cannot describe or protect an entry they do not know exists (AdaptiveTouchModel.kt:36-47 and :83-92, BackupDataInventory.kt:89-101).
-5. **Verified: adaptive-touch runtime privacy was fixed, while the public description was not.** v1.9.63 prevents learning in password, incognito, and host-declared no-learning sessions. `docs/PRIVACY_AND_AI.md` still says the model updates after every key press and sees every tap coordinate (docs/PRIVACY_AND_AI.md:97-106, TextKeyboardLayout.kt, SuggestionPrivacyPolicy.kt).
-6. **Verified: an interactive backup is reported as successful without reading the SAF document back.** The scheduled path compares the local archive and destination digest before publication and authenticates old encrypted archives before rotation. The interactive path writes once, closes its workspace, and shows success. It does not prove that a provider stored the complete document or that the archive can be parsed (BackupScreen.kt:392-405, ScheduledBackupSaf.kt:74-80 and :164-213).
-7. **Verified: two threat-model facts are stale.** The document pins SQLCipher 4.17.0 and says the base APK ships zero native code. The app now uses SQLCipher 4.18.0, whose AAR contains native libraries. The existing documentation-drift roadmap item should absorb these new facts (docs/THREAT_MODEL.md:190-194 and :243-250, gradle/libs.versions.toml).
-8. **Verified: the most important previously researched items remain valid.** Release-only devtools, language setup, the Android 16 writing-tools opt-out, Advanced Protection callbacks, a truly unsigned F-Droid artifact, final-APK 16 KB verification, locale hints, critical coverage floors, subtype-cycle control, and precise documentation gates are still incomplete (ROADMAP.md).
+Top findings, priority order:
 
-The best product direction remains local quality, understandable recovery, language reach, and verifiable distribution. A cloud account, a second monolithic language engine, or a broad assistant surface would spend trust and maintenance budget without fixing the current release and data contracts.
+1. **Verified: eight preferences cannot be kept.** `AppPrefs.kt:297-354` rewrites `keyboard__number_row` false→true, `keyboard__hinted_number_row_enabled` and `keyboard__hinted_symbols_enabled` true→false, `keyboard__utility_key_action` DYNAMIC_SWITCH_LANGUAGE_EMOJIS→SWITCH_TO_EMOJIS, `keyboard__space_bar_display_mode` CURRENT_LANGUAGE→NOTHING, `suggestion__display_mode` DYNAMIC_SCROLLABLE→CLASSIC, `theme__mode` FOLLOW_SYSTEM→ALWAYS_NIGHT, and both `theme__*_theme_id` floris_*→swiftkey_*. Every value being forced away is still a selectable, shipping option (`ThemeMode.kt:27`, `SpaceBarMode.kt:21`, `CandidatesDisplayMode.kt:25`, `UtilityKeyAction.kt:26`, and `floris_day`/`floris_night` in the bundled theme `extension.json`). Introduced by commit `722fe491e` "Match default keyboard to SwiftKey layout", which implemented a change of *defaults* as a *migration rule*. Reported as issue #22.
+2. **Verified: `migrate()` runs on every load, not once.** Decompiling `jetpref-datastore-model` 0.3.0 shows `PreferenceModel.migrate()` is invoked from the private `DataStore.loadAndUpdate(...)`, which `handleEvent` calls for both `Event.Init` (every datastore load, so every process start) and `Event.Import`. There is no version gate. `RestoreRollbackSnapshot.kt:260` and `RestoreScreen.kt` both reach it through `FlorisPreferenceStore.import(ImportStrategy...)`, which is why backup restore cannot recover the pinned values either.
+3. **Verified: the migration test blesses the defect.** `AppPrefsMigrationTest.kt:137-151` asserts each forced rewrite as expected behaviour and `:211-213` asserts the forced values are then kept. Any fix must invert those cases, or the suite fails on the correct code.
+4. **Likely: the resize gesture amplifies its own movement.** `ImeWindowEditorHandles.kt:444-448` accumulates `dragAmount` from `detectDragGestures`, whose deltas are measured in the pointer-input node's own coordinate space. The node is the resize handle, which is repositioned by the resize it is driving, so a stationary finger still produces non-zero deltas in the direction of growth. The in-file TODO at `:433` already suspects the approach. This matches issue #23's "quite janky and makes the keyboard bigger than intended".
+5. **Verified: the resize gesture reads stale layout state.** The same block is `pointerInput(Unit)`, so the `rowCount` and `smartbarRowCount` values read at `:447`, and all four gesture callbacks, are captured from the first composition and never refreshed (`ImeWindowEditorHandles.kt:427-455`).
+6. **Verified: inline autofill chips are sized from the display, not the keyboard.** `FlorisImeService.kt:898-901` builds the `InlinePresentationSpec` max size from `resources.displayMetrics.widthPixels`, and `NlpInlineAutofill.kt:75-79` then passes that same full-display width to `InlineSuggestion.inflate()` as the exact inflate size. A keyboard that is narrower than the display — floating, one-handed, split, or resized — gets chips wider than itself. This is issue #23's second half, with the attached screenshot.
+7. **Verified: the F-Droid recipe cannot complete a binary comparison.** `fdroid/io.github.sysadmindoc.swiftfloris.yml` declares `binary: .../releases/download/v%v/app-release.apk`, which returns **HTTP 404**; the published asset is `SwiftFloris-v1.9.66-release.apk` (HTTP 200). `AllowedAPKSigningKeys` is still `[]`. Neither `scripts/check-fdroid-recipe.py` nor `scripts/check-release-front-door.sh` validates the binary URL against a real release asset.
+8. **Verified: the release signing certificate now exists and can be pinned.** `apksigner verify --print-certs` on the published v1.9.66 APK (SHA-256 `d8ac3114…b644b`, matching the release asset digest) reports one signer, `CN=SysAdminDoc Sideload, O=SysAdminDoc, C=US`, RSA 4096, certificate SHA-256 **`dba1aa88e37b90155fca3135ca3b781de92c225107e47c9806e75bf88055fdd8`**, signed with v2 and v3 schemes. That value is exactly what `AllowedAPKSigningKeys` and the fork-provenance page need, so both blocked items can move back to active work.
+9. **Verified: AGP 9.3.1 has a lint crash on JDK 17, and F-Droid builds on JDK 17.** AGP 9.3.2 (2026-08-24) fixes lint dying with `NoSuchMethodError: java.util.List.removeLast()` in the bundled intellij-core. The recipe installs `openjdk-17-jdk-headless`, so this is a live risk to the F-Droid build even though the host build on JDK 21 is green.
+10. **Verified: the eight resize handles have no accessibility semantics at all.** `ImeWindowEditorHandles.kt` contains no `contentDescription`, `semantics`, `stateDescription`, or `Role`. A drag-only control with no announced identity and no non-gesture alternative is unreachable for TalkBack and switch access, in a repo that otherwise enforces a 48 dp touch-target floor and a theme-contrast gate.
 
 ## Product Map
 
-- **Verified: product and stack.** SwiftFloris is a Kotlin and Jetpack Compose input method for Android API 26 and newer. It targets API 36, compiles against API 37, and is organized into `:app`, `:benchmark`, `:addons:dictionary-pack-sample`, and reusable library modules (gradle.properties, settings.gradle.kts, app/build.gradle.kts).
-- **Verified: core workflows.** The shipped path covers tap and glide typing, local suggestions and correction, multilingual Latin subtypes, emoji and stickers, encrypted clipboard history, personal dictionaries, themes, per-app profiles, explicit backup and restore, migration tools, Settings search, and local voice-IME handoff (README.md, app/src/main/kotlin/dev/patrickgold/florisboard/ime).
-- **Likely: primary users.** The product is best matched to privacy-conscious Android users, people leaving SwiftKey who need user-owned migration, multilingual users, and people who customize keyboard layouts or dictionaries. README positioning, importers, and discussion #21 support this reading.
-- **Verified: app-owned data path.** The base manifest declares no `INTERNET`, `ACCESS_NETWORK_STATE`, or `ACCESS_WIFI_STATE` permission. Typing, learning, rewrite routing, and addon enrollment stay local unless another explicitly chosen app handles an exported file or voice request (app/src/main/AndroidManifest.xml, docs/PRIVACY_AND_AI.md, docs/THREAT_MODEL.md).
-- **Verified: operating-system backup is a separate data path.** `android:allowBackup="true"` lets Android move allowlisted app data through cloud backup or device transfer without the app opening a network connection. This distinction must be visible in policy and product copy (app/src/main/AndroidManifest.xml:111-113, app/src/main/res/xml/backup_rules.xml, app/src/main/res/xml/data_extraction_rules.xml).
-- **Verified: manual recovery is mature but asymmetric.** Users can create plain or passphrase-encrypted archives, select sections, schedule verified SAF backups, and restore through versioned metadata. The interactive publication path does not yet share the scheduled path's destination verification (BackupArchiveBuilder.kt, BackupScreen.kt, ScheduledBackupSaf.kt, PortableBackupEnvelope.kt).
-- **Verified: public distribution is not current.** Source identifies as v1.9.63. The latest GitHub release is v1.9.59, published on 2026-08-12, with no assets. The F-Droid recipe is not published and its unsigned-output contract is still wrong. The release keystore blocker already records the necessary next step (Roadmap_Blocked.md).
-- **Verified: extensibility is designed, not yet proven by a production third-party pack.** Typed addon metadata, certificate enrollment, package verification, dictionary mounting, and a sample Esperanto pack exist. Production translation, local voice recognition, model-backed rewrite, handwriting recognition, and broad CJK engines remain blocked providers or external addon concepts (app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon, addons/dictionary-pack-sample, Roadmap_Blocked.md).
-- **Verified: visual coverage is broad.** Existing Roborazzi baselines cover light, dark, AMOLED, high contrast, RTL, compact and wide layouts, 200 percent font scale, loading, error, empty, setup, backup, voice, and keyboard surfaces. Representative snapshots show consistent hierarchy and state treatment. This pass found no evidence for another generic polish item (app/src/test/snapshots, docs/ACCESSIBILITY.md).
+- **Verified: product and stack.** Kotlin and Jetpack Compose input method for Android API 26+, `projectTargetSdk=36`, `projectCompileSdk=37`, versionName 1.9.66 / versionCode 2115 (`gradle.properties`). Modules `:app`, `:benchmark`, `:addons:dictionary-pack-sample`, plus `lib/*` (`settings.gradle.kts`). 1,896 tracked files; 564 main Kotlin sources, 352 JVM/Robolectric test sources, 10 instrumented.
+- **Verified: core workflows.** Tap and glide typing, local suggestion and correction, multilingual Latin subtypes, emoji and stickers, encrypted clipboard history, personal dictionaries, themes, per-app profiles, explicit backup and restore, migration importers, Settings search, local voice handoff (`app/src/main/kotlin/dev/patrickgold/florisboard/ime`, README).
+- **Verified: distribution is now current.** GitHub Release v1.9.66 published 2026-08-30 with a signed APK and a `SHA256SUMS` file. The prior report's "source far ahead of the public install path" finding is resolved. The F-Droid recipe is written but not submitted, and its binary URL is wrong.
+- **Verified: the app-owned data path is unchanged.** No `INTERNET`, `ACCESS_NETWORK_STATE`, or `ACCESS_WIFI_STATE` in the base manifest; `verifyNoInternetPermission` runs as part of `preBuild`. README's posture section correctly separates the app's own network surface from Android-managed backup.
+- **Verified: personas.** Privacy-conscious Android users, people leaving SwiftKey who need user-owned migration, multilingual users, and layout customizers. Both 2026-09-02 issues came from a flagship Samsung user customizing layout and using a password manager, which is the second and fourth of those at once.
+- **Verified: extensibility is designed but unproven in production.** Typed addon metadata, certificate enrollment, package verification, dictionary mounting, and one sample Esperanto pack exist. No third-party pack ships.
+- **Verified: the tree is unusually clean.** 18 TODO/FIXME/HACK/XXX markers across all of `app/src/main` and `lib/`. No file over 1,800 lines. Every long-lived `ime/` scope carries `SupervisorJob`; every `runBlocking` is covered by `scripts/runblocking-allowlist.txt`. Prior audit passes did their job, which is why this pass concentrates on behaviour rather than hygiene.
 
 ## Competitive Landscape
 
-- **FlorisBoard and HeliBoard:** Their trackers continue to surface editor-state failures, language-cycle control, and morphology gaps. SwiftFloris already owns editor invariant tests and has real-device editor work in `Roadmap_Blocked.md`, so another generic compatibility item would duplicate existing work. Configurable subtype cycling remains a valid active item. HeliBoard's Portuguese contraction report also supports the blocked compound-boundary work, not a new parallel engine.
-- **FUTO Keyboard:** FUTO publishes active releases, locale-hint work, explicit clean-link actions, and an MIT swipe-trace dataset. Its reported top-1 swipe result is useful as a vendor benchmark target, not an independent quality result. SwiftFloris can use the dataset for local regression measurement without redistributing FUTO's separately licensed model weights.
-- **AnySoftKeyboard and Keyman:** Both show the reach that data or language packages can create, and the compatibility burden that follows a long-lived plugin contract. SwiftFloris has the right small-base architecture. It should prove its current contract with the existing sample and blocked developer trust kit before widening the API.
-- **fcitx5-android and Trime:** These projects are stronger references for typed, cancellable addon UI and full CJK runtime integration. Their native engines, schemas, and data footprints argue for an external provider boundary, not inclusion in the base APK.
-- **Indic Keyboard, OpenBangla, Mozc, and Traditional T9:** Their specialization shows that script handling, transliteration, composition, and device form factors need language-specific engines and test vectors. SwiftFloris should continue to treat those as package or provider concerns and keep common editor transactions in the base app.
-- **Thumb-Key, Unexpected Keyboard, FlickBoard, 8VIM, and CleverKeys:** Alternative layouts require learning material, visible gesture feedback, and a non-gesture fallback. SwiftFloris already ships honeycomb, split, one-handed, terminal, and imported layouts. A private practice lab is plausible, but no local report or usability measure yet shows that it should precede safety and distribution work.
-- **Gboard:** Writing Tools, voice typing, spatial personalization, and federated language models show the quality ceiling. The Android editor opt-out and published spatial research transfer well. Server processing and uploaded learning do not fit SwiftFloris's base-app contract.
-- **Microsoft SwiftKey:** Multilingual prediction, Flow, themes, clipboard tools, and account-backed backup remain the closest feature reference. Microsoft ended standalone SwiftKey Accounts on 2026-05-31 and moved backup to OneDrive. Recent community reports describe migrations that appeared enabled but did not restore predictions. Those reports support stronger recovery receipts and rehearsal, not account sync.
-- **Samsung Keyboard:** Downloadable languages and writing assistance are presented in one discoverable settings path. SwiftFloris should match the clarity while keeping local processing and explicit providers.
-- **Grammarly, QuillBot, and LanguageTool:** These products confirm demand for proofreading and rewrite, but their Android paths rely on accounts, network services, Accessibility overlays, or floating assistants. SwiftFloris already has the safer IME-native route and should finish consent and provider contracts before expanding features.
-- **Bitwarden, Signal, and Firefox:** Bitwarden's portable encrypted export is a useful recovery pattern. Signal and Firefox produce support reports that separate environment metadata from sensitive content and explain exactly what is included. SwiftFloris already has environment reporting and crash formatting; raw logcat export still belongs behind the existing release-devtools item rather than a new diagnostics project.
-- **Typewise and other commercial alternative layouts:** The market confirms that users will try non-QWERTY geometry when learning cost is handled. It does not establish demand for a SwiftFloris training surface. A short usability study should come before roadmap work.
+Covering only what changed or what the prior pass under-read. The 2026-08-23 landscape section remains accurate for everything not listed here.
+
+- **HeliBoard** (now `HeliBorg/HeliBoard`, 6,034 stars) shipped **v4.1 on 2026-08-30**, on F-Droid 2026-08-31. v4.1-beta1 added a D-Pad cursor block, key-repeat as a long-press code, and a shift-state fix on arrow-key cursor moves. **Learn:** issue #2778, "No way to turn off annoying d-pad", collected 17 reactions in three days. Every new affordance ships with its off switch on day one. **Avoid:** the maintainer has now signed off two consecutive releases with "I'll still be barely active for a while" — do not take a dependency on that project's cadence.
+- **FlorisBoard** has had no release since v0.6.0-alpha02 (2026-01-23); stable is still v0.5.2. All current work is on `feat/k3lp/first-integration`, a ground-up touch-keyboard rewrite that landed `minDeviceWidthMm`, a touch-model cache, and per-key hitbox extension between 2026-08-26 and 2026-09-03. **Learn:** those three are the physical-accuracy primitives a fork normally has to invent. **Avoid:** PR #3330, a 151-file +32,649-line pure-Rust NLP engine, was closed unmerged in two days, with the only review comment asking whether AI wrote it. Large unlabelled drops get rejected regardless of merit.
+- **AnySoftKeyboard** merged five `[LLM]`-prefixed PRs in the window and is explicit about labelling AI-assisted work. **Learn:** PR #4871 fixed a Direct Boot failure where the IME starts before unlock, the preference store returns a no-op, history loads defaults, and the next write destroys the user's real data. SwiftFloris avoids the write half — `FlorisApplication.kt:141` returns before `initializePreferenceStoreForStartup` at `:174` when the user is locked — but `FlorisImeService` is `directBootAware="true"` (`AndroidManifest.xml:129`), so the keyboard does run pre-unlock on compiled-in defaults with nothing telling the user why.
+- **FUTO Keyboard** published a measured swipe benchmark in the v0.1.29 notes (2026-06-01): top-1 / top-4 error of **FUTO 7.38% / 4.19%, Gboard 11.05% / 5.66%, iOS 10.82% / 7.14%, HeliBoard with the Google library 13.12% / 7.63%**. **Learn:** that is a published yardstick and SwiftFloris has no equivalent number for its own glide engine. **Avoid:** the weights are under the FUTO Model Weights License, not an OSI licence, so they cannot ship in an F-Droid build; the 1M+ swipe dataset is MIT and can be used for evaluation freely.
+- **CleverKeys** (GPL-3.0, 435 stars) was the most active keyboard project in the window and replaced a neural swipe engine with a CTC/ONNX decoder plus a geometric fallback. **Learn:** their gating discipline is the pattern to copy — context rescoring shipped inert, default off, behind every privacy gate, with the geometric path taking over when the ONNX session dies rather than silently emptying the suggestion bar.
+- **Fossify Keyboard** (GPL-3.0, 664 stars, release 1.9.1) is fully offline with no INTERNET permission and a working F-Droid reproducible-build setup. **Learn:** its F-Droid metadata is the closest reference for getting SwiftFloris verified-reproducible.
+- **Urik** (GPL-3.0, 409 stars) is the closest existing analogue to SwiftFloris's whole thesis: swipe typing, custom layouts, password-manager support, an encrypted word-learning store, clipboard history, no network permission. **Avoid:** no push since 2026-06-24. Being first is not the same as being maintained.
+- **Microsoft SwiftKey** completed a **mandatory Microsoft-account migration on 2026-05-31**; legacy sign-ins were retired, learned dictionaries moved to OneDrive, and unmigrated data was permanently deleted. Copilot Tone and Chat are cloud round-trips. **Learn:** this is the sharpest available contrast for SwiftFloris's positioning — the price of SwiftKey is custody of the typing corpus. **Avoid:** nothing about account-backed backup is worth copying.
+- **Gboard** shipped AI Writing Tools in 2026, gated on Gemini Nano v2+ hardware rather than a subscription. **Learn:** ML Kit GenAI exposes proofreading and rewriting on top of Gemini Nano with input, inference, and output staying on-device inside AICore. A keyboard with no INTERNET permission can legitimately call it. That makes local rewrite a platform API rather than a moat, and a candidate for an optional addon rather than base-app work.
+- **Fleksy is dead** — ThingThing took the site down on 2026-06-08. **Chrooma** is abandoned since 2023. One competitor class has simply exited.
 
 ## Reported Issues
 
-- **Verified: no open issue or pull request exists in the SwiftFloris repository as of 2026-08-23.** Closed issue #1, the empty-emoji crash, and issue #9, the SymSpell memory and latency report, are fixed and documented. Neither should return to the active roadmap.
-- **Verified: discussion #21 remains the only concrete repository user request.** The user asks how to install Portuguese. Portuguese data is bundled, but the language-pack screen does not make the subtype-creation route clear. The active P1 language-setup item remains the direct answer.
-- **Verified: discussions #19 and #20 do not add demand.** One is an announcement and one asks for desired layouts or dictionaries. Neither has enough response evidence to justify a new item.
-- **Likely: editor compatibility remains the largest ecosystem reliability risk.** FlorisBoard, HeliBoard, FUTO, and AnySoftKeyboard have current reports involving duplicate commits, cursor state, Backspace, Enter, or physical Space handling. SwiftFloris already has replay and invariant tests plus blocked real-app smoke coverage. Monitor upstream issue #3310 and #3313, but do not create a duplicate roadmap entry without a local reproduction.
-- **Verified: migration failure is a repeated competitor complaint.** Two recent SwiftKey community reports describe backup or OneDrive migration that looked active before restore failed or predictions disappeared. They do not prove a SwiftFloris defect. They do show why a “write succeeded” toast is weaker than a verified, inspectable recovery artifact.
-- **Verified: Android 17 candidate accessibility support is already present.** The input connection batch layer implements the current candidate accessibility path and has focused tests. A new roadmap item would be stale on arrival (EditorInputConnectionBatch.kt:198-220 and related tests).
-- **Verified: morphology work already has an owner.** Portuguese contraction and compounding evidence strengthens the existing blocked compound-boundary item. It does not justify a second morphology or language-pack entry (Roadmap_Blocked.md).
+The tracker has 2 open issues, 2 closed, 0 open pull requests, and 3 discussions. Both open issues are new since the last research pass and both are actionable.
+
+- **#22 "Customisation resetting issue" (open, 2026-09-02, v1.9.66, S25 Ultra / Android 16).** Number row returns after being set to hint; symbol hints turn off; neither is restored from a backup. **Traced** to `AppPrefs.kt:297-354` as described in findings 1-3. The report is precise and complete, and it understates the defect — six further preferences are affected that the reporter did not name.
+- **#23 "UI And Resizing issues" (open, 2026-09-02, same build and device, screenshot attached).** Resize is janky and overshoots; autofill extends off screen. **Traced** to two independent causes: the self-referential drag deltas plus stale `pointerInput(Unit)` captures at `ImeWindowEditorHandles.kt:427-455`, and the display-width inline autofill sizing at `FlorisImeService.kt:900` and `NlpInlineAutofill.kt:76`. Two separate fixes; do not treat as one item.
+- **#9 "crash while typing" (closed).** SymSpell OOM on a 256 MB-heap TECNO device, fixed in v1.9.53 with budget scaling, word-length caps, periodic heap checks, in-place freeze, and an OOM catch. Do not re-open.
+- **#1 "Choosing an emoji crashes the board" (closed).** Fixed. Do not re-open.
+- **Discussion #21** (how to install Portuguese) remains answered by the active language-setup work. Discussions #19 and #20 carry no demand. Unchanged from the last pass.
+- **Not acted on:** upstream FlorisBoard's clipboard cluster (#3289 over-masking, #3323 reveal toggle) does not apply — `ClipboardInputLayout.kt:214-243` and `:786-826` already implement a time-limited per-item reveal through `ClipboardSensitiveRevealPolicy`. FlorisBoard #3222 and #3201 (settings lost after a bootloader change, imported settings reverting) describe symptoms close to #22 but in a different codebase; the local reproduction is stronger evidence and no separate item is needed.
 
 ## Security, Privacy, and Reliability
 
-- **Verified: the canonical trust registry blocks a clean release.** The checker directly compares registry values with Gradle catalogs, and both the checker and its self-test fail on the two stale values. Updating prose alone cannot repair this. The registry and regression fixture must move together.
-- **Verified: Android backup rules now have three independent modes.** SwiftFloris defines cloud backup and device transfer but no cross-platform transfer. Android states that a missing mode defaults to all eligible content. Because the app targets API 36 and compiles against 37, the 36.1 behavior is a current release concern, not a future platform note.
-- **Needs live validation: the exact API 36.1 export set.** Official behavior makes the configuration gap actionable now, but the final fix must be exercised with the Android 16 QPR2 transport. The project must not invent iOS bundle or team identifiers merely to satisfy XML syntax. If no valid counterpart exists, persisted data needs a demonstrated fail-closed placement or backup must be disabled for that mode.
-- **Verified: cloud backup lacks an encryption capability requirement.** The API 31+ `<cloud-backup>` element does not set `disableIfNoEncryptionCapabilities="true"`. The API 26-30 include rules do not use `requireFlags="clientSideEncryption"`. Android recommends conditional encryption for sensitive app data. Settings and layout state are less sensitive than learned text, but a privacy keyboard should make the choice explicit across every supported API.
-- **Verified: the versioned backup resource can hide drift.** `res/xml-v31/backup_rules.xml` uses a `data-extraction-rules` root even though the manifest's `dataExtractionRules` points to a different resource and `fullBackupContent` points to `backup_rules`. Current parity checks focus on the base rules. Every resource variant must be parsed or removed so device selection cannot change policy unnoticed.
-- **Verified: the no-network guarantee and Android cloud backup can both be true.** The app cannot transmit typing data itself, but Android can upload allowlisted app files. Public copy should say no app-owned network service, account, telemetry, or cloud learning. If Android-managed backup remains enabled, the UI should name it and show what is included.
-- **Verified: adaptive-touch collection now respects private sessions.** v1.9.63 applies the same privacy policy used by suggestions before recording offsets. Password, incognito, and `IME_FLAG_NO_PERSONALIZED_LEARNING` sessions do not update the model. Existing focused tests cover these paths.
-- **Verified: adaptive-touch persistence still escapes inventory and disclosure.** The shared preference file is neither named in `BackupDataInventory` nor accurately described in the privacy document. A future resource edit could expose it without a parity test noticing. The inventory should classify it as portable or sensitive-excluded and make the backup UI tell the same story.
-- **Verified: interactive backup publication has no readback proof.** `writeFromFile` returning successfully is treated as completion. Storage providers can truncate, delay, or mishandle a document. The scheduled path already contains digest, size, sync, temporary-name, rename, and encrypted-document checks that can seed one shared verifier.
-- **Likely: a recovery receipt will prevent false confidence.** Archive format version, selected sections, named omissions, encryption state, size, and SHA-256 are already available or cheap to derive. Showing and exporting that receipt makes backup support actionable without exposing content.
-- **Verified: release devtools can reveal typed and copied content.** Raw clipboard, surrounding text, selection, composition, and spelling overlays are reachable from release Settings. The existing P0 item remains necessary.
-- **Verified: Android 16 consent and protection hooks remain incomplete.** Rewrite routing does not observe `EditorInfo.isWritingToolsEnabled()`, and Advanced Protection is polled instead of subscribed. Existing P1 items have precise acceptance tests and should stay ahead of feature expansion.
-- **Verified: final-APK native compatibility is not proven.** SQLCipher 4.18.0 contributes native libraries. Addon verification checks alignment, while release evidence does not inspect ZIP and ELF alignment in the final app APK. The existing 16 KB item remains valid.
-- **Verified: current SQLCipher and Tink versions clear the reviewed advisories.** SQLCipher 4.18.0 includes SQLite 3.53.4 fixes. Tink 1.23.0 is beyond the affected ChunkedMac line, and no ChunkedMac call site exists in the app. No dependency change is justified from those advisories.
-- **Verified: Kotlin 2.4.10 remains in the advisory range for unsafe build-cache metadata.** The repository does not enable an untrusted remote cache, which limits exposure. The patched 2.4.20 line is still prerelease, so the existing blocker to wait for a stable release remains correct.
-- **Verified: Gradle 9.7.1 is on the patched line for the reviewed advisory.** Dependency verification remains useful defense in depth, but no evidence shows a current SwiftFloris regression that warrants another roadmap item.
+- **Verified: no key leak.** `keystore/swiftfloris-selfhost.jks` exists on disk but is untracked; `.gitignore:59` excludes `*.jks` and `git ls-files keystore/` returns nothing.
+- **Verified: the release key is now load-bearing and unpinned.** 94 people have installed an APK signed with certificate `dba1aa88…fdd8`. Android will refuse any future update signed by a different key, so this certificate is now permanent unless the maintainer accepts an uninstall-reinstall for every user. It should be pinned in the recipe and published on the fork-provenance page before another release goes out. The DN reads `SysAdminDoc Sideload`, which suggests the sideload key was used rather than a dedicated release key; that is a decision to record deliberately, not to discover later.
+- **Verified: the CLAUDE.md and vault claim "no release keystore on this host" is stale.** A signed release shipped on 2026-08-30. Three items in `Roadmap_Blocked.md` rest on that premise and need re-checking, not just the two named above.
+- **Verified: unescaped-delimiter corruption does not apply here.** `PersonalNgramPersistence.kt:24-33` rejects any token containing whitespace or a control character rather than escaping it, so the AnySoftKeyboard #4871 delimiter bug has no analogue in the n-gram stores.
+- **Verified: sensitive clipboard entries are handled.** `ClipDescription.EXTRA_IS_SENSITIVE` is read in `ClipboardManager.kt:289` and `ClipboardDatabase.kt`, and the reveal path is time-boxed.
+- **Verified: Android 17 native and reflection hardening do not apply.** The app uses `System.loadLibrary` only (`ClipboardHistoryEncryption.kt:47`, `FlorisUserDictionaryEncryption.kt:39`), never `System.load`, so "Safer Native DCL" is a non-issue. The single `isAccessible = true` (`FlorisEmojiCompat.kt:238`) is on a constructor, not a static final field. No `ContentCaptureManager.setContentCaptureEnabled` call exists. No manifest `screenOrientation`/`resizeableActivity`/`*AspectRatio` overrides exist, so the large-screen enforcement at targetSdk 37 is a no-op here.
+- **Verified: the API 37 IME accessibility requirement is already met.** `EditorInputConnectionBatch.kt:198-222` implements `TextAttribute.Builder.setTextSuggestionSelected()` on both `commitText` and `setComposingText` behind an API 37 guard. The reader half of that feature belongs to host apps, not the IME. No item needed.
+- **Verified: stylus handwriting is implemented.** `method.xml:8` declares `supportsStylusHandwriting`, and `FlorisImeService.kt:605-628` implements `onStartStylusHandwriting()` and `onStylusHandwritingMotionEvent()`. No item needed.
+- **Needs live validation: Android 17 password visibility on physical keyboards.** Android 17 splits password display into `show_passwords_physical` (defaulting to hidden) and `show_passwords_touch`. The app has a physical-keyboard path and a `SensitiveFieldGuard`, but nothing reads either setting. Whether the platform handles this entirely below the IME needs a device check before code moves.
+- **Likely: the keyboard runs on defaults before first unlock with no signal.** `FlorisImeService` is `directBootAware="true"` while the preference store is deliberately not initialized until after unlock. Nothing in the IME waits on `preferenceStoreLoaded`; only `FlorisAppActivity.kt:115` and `ScheduledBackupWorker.kt:98` do. The failure mode is a lock-screen keyboard that ignores every customization, which is confusing rather than dangerous, and it is one write away from the AnySoftKeyboard data-loss bug if a pre-unlock write is ever added.
 
 ## Architecture Assessment
 
-- **Verified: module ownership is sound.** The base app owns the IME and Settings, benchmark code is isolated, a sample dictionary pack exercises packaging, and shared libraries are separate. Large language, speech, handwriting, or model runtimes should keep using typed provider boundaries.
-- **Verified: `BackupDataInventory` is the right abstraction but not yet exhaustive.** It centralizes archive sections, Android domains, dispositions, and omission labels. Its own contract says a new persisted store cannot be silently forgotten. Adaptive touch proves that source discovery is not enforced. A fixture or static registry test must make the promise executable.
-- **Verified: backup policy is spread across resource overlays and code.** Pre-31 XML, API 31+ XML, a second v31 resource, manual archive selection, scheduled publication, and omission UI all express parts of the same contract. The inventory should generate or exhaustively verify each representation, including new platform modes.
-- **Verified: release truth has too many hand-copied pins.** Gradle catalogs, `trust-capabilities.json`, public docs, F-Droid metadata, and release scripts repeat versions and capabilities. The existing public-doc checker catches some drift. The failed trust gate and stale threat-model text show the remaining copies need one owner or complete derivation checks.
-- **Verified: backup construction and publication are already separated.** `BackupArchiveBuilder` creates an app-private archive and SAF publication happens later. That is a good boundary. A shared publication verifier can serve manual and scheduled paths without rewriting archive construction.
-- **Verified: coverage quantity is not yet a critical-path contract.** Kover is enabled without verification floors. Privacy, backup, migration, addon enrollment, editor transactions, and dictionary persistence need package or branch thresholds rather than a repository-wide percentage.
-- **Verified: repository hygiene still permits generated Python bytecode.** Two `.pyc` files are tracked and the hygiene gate does not reject them. The active P2 item remains precise.
-- **Verified: Room 3 research status changed, implementation risk did not.** Room 3.0.1 is stable, so `Roadmap_Blocked.md` is stale when it calls the line alpha. Migration still requires encrypted continuity, historical schema, DAO, performance, and rollback work. The existing blocked spike remains the right next step.
-- **Verified: addon contracts are ahead of addon supply.** The repository has signature enrollment, metadata, provenance, mounting, and a sample pack. The blocked developer trust kit and unavailable release signer must land before a new production pack can be distributed credibly.
-- **Likely: local quality remains the strongest differentiation.** Spatial personalization research, compounding research, and accessibility studies support lower touch-error rates through per-user geometry, language-specific test sets, visible errors, and reset controls. SwiftFloris already has most of that architecture. The immediate gap is trustworthy lifecycle management for the learned state.
+- **Verified: `migrate()` is being used as a defaults mechanism and needs a different one.** The correct place to change a shipped default for new installs is the `PreferenceData` default plus a one-shot, version-stamped migration keyed on `internal.versionOnInstall` / `versionLastUse`, which already exist in the model (`FlorisPreferenceModelImpl.kt:154-156`). The current approach cannot distinguish "user never chose" from "user chose this and I disagree". Fixing the eight entries without fixing the mechanism invites the same commit again.
+- **Verified: gesture code that mutates its own layout needs root-space coordinates.** `imeWindowEditorHandle` is the only place in the tree where a drag target repositions itself under the finger. The fix is the one its own TODO names: track `positionInRoot()` from `onGloballyPositioned` and compute `current - initial`, not accumulated node-local deltas.
+- **Verified: `pointerInput(Unit)` is a latent staleness trap.** `ImeWindowEditorHandles.kt:427` and `:432` both use it. Any state or callback read inside those blocks is frozen at first composition. Worth a targeted sweep rather than a one-line fix.
+- **Verified: IME window geometry has no single owner.** Inline autofill reads `resources.displayMetrics`, `FlorisImeSizing` derives its own heights (with a standing TODO at `FlorisImeSizing.kt:129-135` to fold that into `ImeWindow`), and `ImeWindowConstraints` owns the real window bounds. The autofill overflow is a symptom of three sources of truth for one number.
+- **Verified: release truth still has hand-copied pins, and now a hand-copied URL.** The F-Droid `binary:` URL is the newest instance of the class the existing toolchain-drift item already covers. It should be folded into that item's checker rather than given a parallel gate.
+- **Verified: coverage floors are still absent.** Kover is enabled without verification rules (`app/build.gradle.kts:331-333`). The preference-migration defect is precisely the kind a branch floor over `app/` migration code would have made visible.
+- **Verified: fork-added strings remain untranslated.** 44 `values-*` directories, 2,607 source strings, `FORK_ADDED_SOURCE_CEILING = 297` in `scripts/check-locale-coverage.py:222`, and the `--json` report shows 0 fork-added strings translated in every locale. The gate stops the debt widening but the Crowdin ownership decision in `Roadmap_Blocked.md` is a maintainer choice, not an engineering gap. No new i18n item is added for that reason.
+- **Verified: multi-user and work-profile handling has no found gap.** The only user-scoped code is `UserManagerCompat.isUserUnlocked` at `FlorisApplication.kt:141` and a `LauncherApps`/`UserHandle` reference in `FlorisAppActivity.kt:223`. An IME is installed and enabled per user by the platform, and the app keeps no cross-user state, so nothing here needs a roadmap item. Recorded so the next pass does not re-derive it.
+- **Verified: observability needs nothing new.** Crash staging (`CrashUtility`), a crash-report dialog that survives recreation, environment reporting in About, and the `flog*` topic logger are all present and were audited in the 2026-08-20 and 2026-08-25 passes. Raw-content diagnostics remain governed by the existing release-devtools boundary. No item added.
 
 ## Rejected Ideas
 
-- **Rejected now: cloud rewrite, translation, search, telemetry, account sync, or federated updates.** Each adds a network data path and weakens the product's clearest promise. Existing local providers and explicit exports cover the safer architecture.
-- **Rejected: fake cross-platform identity values.** Android requires a real iOS bundle ID, team ID, and content version for cross-platform transfer. Placeholder values would create a false policy and an untestable trust claim.
-- **Rejected now: a production addon pack.** The sample, verifier, and runtime contract exist, but the release signer and addon developer trust kit are blocked. Shipping a pack before its distribution and rollback path is verifiable would invert the dependency order.
-- **Rejected: vendoring FUTO model weights.** The trace dataset is MIT and suitable for evaluation. The model weights use a separate license and should not enter the Apache-2.0 base artifact.
-- **Rejected: embedding Rime, fcitx, Mozc, or another full input engine in `:app`.** These engines bring native code, large data, extra update cadence, and license obligations. The addon boundary exists for this reason.
-- **Deferred: an alternative-layout practice lab.** Competitors show a real learning cost, but SwiftFloris has no user report, funnel measurement, or study showing where people abandon honeycomb or imported layouts. Run a small private usability study before assigning implementation priority.
-- **Rejected: visually moving keys as personalization.** Spatial adaptation should remain in hit testing while labels and key geometry stay stable. Moving targets harm motor memory and accessibility.
-- **Rejected now: post-quantum APK signing v3.2.** Platform support is emerging, while F-Droid and multi-signer compatibility remain uncertain. Current signing, reproducibility, and release availability are higher-confidence work.
-- **Rejected: another generic editor-compatibility item.** Existing invariant tests and blocked foreground app testing already own the risk. Add a focused item only after a local reproduction identifies a missing contract.
-- **Rejected: another Android 17 candidate-accessibility item.** The compatibility layer and tests are already present.
-- **Rejected: a duplicate morphology roadmap item.** Current Portuguese and compounding evidence belongs in the existing blocked compound-boundary work.
-- **Rejected: a new diagnostics project.** Environment and crash reports already exist. Raw content handling is part of the current release-devtools P0 item, and support export can be reassessed after that boundary is fixed.
+- **Rejected: a second Android 17 candidate-accessibility item.** `EditorInputConnectionBatch.kt:198-222` already implements the IME half. (Source: Android 17 behaviour changes.)
+- **Rejected: a stylus handwriting item.** Implemented at `FlorisImeService.kt:605-628` and declared in `method.xml`. (Source: Android stylus input docs.)
+- **Rejected: an n-gram delimiter-escaping item.** `PersonalNgramPersistence.kt:24-33` sanitizes rather than escapes, which closes the same hole. (Source: AnySoftKeyboard PR #4871.)
+- **Rejected: a clipboard reveal-toggle item.** `ClipboardSensitiveRevealPolicy` already provides a time-limited per-item reveal. (Source: FlorisBoard issues #3289, #3323.)
+- **Rejected: `System.load` / static-final-reflection hardening for Android 17.** Neither pattern exists in the tree. (Source: Android 17 behaviour changes.)
+- **Rejected: large-screen resizability work for targetSdk 37.** The manifest sets no orientation, resizability, or aspect-ratio constraints, so the enforcement changes nothing. (Source: Android 17 behaviour changes.)
+- **Rejected: vendoring FUTO swipe model weights.** The FUTO Model Weights License is not an OSI licence and would break the F-Droid build. Unchanged from 2026-08-23. (Source: FUTO model card.)
+- **Rejected: training a swipe decoder in this repo.** arXiv:2606.25247 fully describes a 635K-parameter TCN at 2.5 MB and 1.54 ms, and the training data is MIT, but the work is a research project with its own hardware and evaluation needs, not a keyboard roadmap item. Measure first. (Source: arXiv:2606.25247, NLnet GestureTyping.)
+- **Rejected: an on-device LLM rewrite runtime in `:app`.** ML Kit GenAI and AICore are Google Play Services surfaces and NNAPI is deprecated in favour of them; both are unusable in an F-Droid-shippable no-network base APK. If local rewrite is ever wanted it belongs behind the existing addon boundary with a self-contained runtime. (Source: Android NNAPI migration guide, ML Kit GenAI docs.)
+- **Rejected: NPU/GPU acceleration for any future local model.** Published 2026 measurements show framework-induced NPU gaps up to 10×, NPU wake latency that alone exceeds a keystroke budget, and an OS-enforced GPU frequency floor that terminates inference on Galaxy S24. Short-prompt decode is memory-bound and belongs on a tuned CPU thread. (Source: arXiv:2607.05475, arXiv:2603.23640.)
+- **Rejected: a generic "improve glide accuracy" item.** No local measurement exists, so any such item would be unfalsifiable. The measurement harness below is the prerequisite.
+- **Rejected: an escape-hatch audit of existing features.** HeliBoard #2778 is a good warning for new work but there is no local report that any shipped SwiftFloris affordance lacks an off switch.
+- **Rejected: post-quantum APK signing.** Available in Android 17, but the release key was only just put into service and multi-signer compatibility with F-Droid is unresolved. Pinning the current certificate is the higher-confidence work.
+- **Deferred: an alternative-layout practice lab.** Unchanged from 2026-08-23 — still no local usability evidence.
 
 ## Sources
 
 Repository and tracker:
 
-- https://github.com/SysAdminDoc/SwiftFloris
-- https://github.com/SysAdminDoc/SwiftFloris/releases/tag/v1.9.59
-- https://github.com/SysAdminDoc/SwiftFloris/issues?q=is%3Aissue%20is%3Aopen
-- https://github.com/SysAdminDoc/SwiftFloris/pulls?q=is%3Apr%20is%3Aopen
+- https://github.com/SysAdminDoc/SwiftFloris/issues/22
+- https://github.com/SysAdminDoc/SwiftFloris/issues/23
+- https://github.com/SysAdminDoc/SwiftFloris/releases/tag/v1.9.66
 - https://github.com/SysAdminDoc/SwiftFloris/discussions/21
-- https://github.com/SysAdminDoc/SwiftFloris/discussions/19
-- https://github.com/SysAdminDoc/SwiftFloris/discussions/20
-- https://github.com/SysAdminDoc/SwiftFloris/issues/1
-- https://github.com/SysAdminDoc/SwiftFloris/issues/9
 
-Open-source keyboards and input engines:
+Open-source keyboards:
 
-- https://github.com/florisboard/florisboard/releases/tag/v0.5.2
-- https://github.com/florisboard/florisboard/issues/3310
-- https://github.com/florisboard/florisboard/issues/3313
-- https://github.com/florisboard/florisboard/issues/3328
-- https://github.com/HeliBorg/HeliBoard/releases/tag/v4.0
-- https://github.com/HeliBorg/HeliBoard/issues/1835
-- https://github.com/HeliBorg/HeliBoard/issues/2702
-- https://github.com/HeliBorg/HeliBoard/issues/2744
-- https://github.com/futo-org/android-keyboard/releases/tag/0.1.30
-- https://github.com/futo-org/android-keyboard/pull/1833
-- https://github.com/futo-org/android-keyboard/pull/1892
-- https://github.com/AnySoftKeyboard/AnySoftKeyboard
-- https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/4812
-- https://github.com/AnySoftKeyboard/LanguagePack
-- https://github.com/openboard-team/openboard
-- https://github.com/rkkr/simple-keyboard
-- https://github.com/FossifyOrg/Keyboard
-- https://github.com/Julow/Unexpected-Keyboard
-- https://github.com/dessalines/thumb-key
-- https://codeberg.org/natkr/flickboard
-- https://github.com/8VIM/8VIM
-- https://github.com/tribixbite/CleverKeys
-- https://github.com/smc/Indic-Keyboard
-- https://github.com/fcitx5-android/fcitx5-android
-- https://github.com/osfans/trime
-- https://github.com/sspanak/tt9
-- https://help.keyman.com/products/android/version-history/
-- https://github.com/ElishaAz/Sayboard
-- https://github.com/OpenBangla/OpenBangla-Keyboard
-- https://github.com/google/mozc
-
-Commercial products and adjacent recovery patterns:
-
-- https://support.google.com/gboard/answer/16515540
-- https://support.google.com/gboard/answer/11197787
-- https://support.google.com/gboard/answer/12373137
-- https://support.microsoft.com/en-us/swiftkey
-- https://support.microsoft.com/en-us/swiftkey-keyboard/microsoft-swiftkey-keyboard-privacy-questions-and-your-data
-- https://support.microsoft.com/en-us/swiftkey-keyboard/account
-- https://www.samsung.com/us/support/answer/ANS10001592/
-- https://www.samsung.com/us/support/answer/ANS10000943/
-- https://support.grammarly.com/hc/en-us/articles/15606282682637-Grammarly-for-Android-user-guide
-- https://help.quillbot.com/hc/en-us/articles/39335519701143-How-does-the-Quillbot-Keyboard-and-Writing-Assistant-work-on-Android
-- https://help.languagetool.org/hc/en-us/articles/39254499343383-Where-can-I-access-the-LanguageTool-Writing-Assistant
-- https://www.typewise.app/support
-- https://bitwarden.com/help/encrypted-export/
-- https://support.signal.org/hc/en-us/articles/360007318591-Debug-Logs-and-Crash-Reports
-- https://support.mozilla.org/en-US/kb/use-troubleshooting-information-page-fix-firefox
-- https://support.brave.com/hc/en-us/articles/9982188779405-What-does-Copy-clean-link-mean
-
-Android platform, standards, and distribution:
-
-- https://developer.android.com/identity/data/autobackup
-- https://developer.android.com/privacy-and-security/risks/backup-best-practices
-- https://developer.android.com/reference/android/view/inputmethod/EditorInfo
-- https://developer.android.com/reference/android/view/inputmethod/InputMethodInfo
-- https://developer.android.com/reference/android/app/LocaleManager
-- https://developer.android.com/reference/android/security/advancedprotection/AdvancedProtectionManager
-- https://developer.android.com/privacy-and-security/advanced-protection-mode
-- https://developer.android.com/guide/practices/page-sizes
-- https://developer.android.com/identity/autofill/ime-autofill
-- https://developer.android.com/identity/autofill/credential-manager-autofill
-- https://developer.android.com/guide/topics/resources/string-resource#Plurals
-- https://support.google.com/accessibility/android/answer/16800105
-- https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html
-- https://f-droid.org/en/docs/Reproducible_Builds/
-- https://f-droid.org/en/docs/Build_Metadata_Reference/
-
-Dependencies and security advisories:
-
-- https://developer.android.com/build/releases/agp-9-3-0-release-notes
-- https://docs.gradle.org/9.7.1/release-notes.html
-- https://docs.gradle.org/9.7.1/userguide/dependency_verification.html
-- https://github.com/gradle/gradle/security/advisories/GHSA-mqwm-5m85-gmcv
-- https://kotlinlang.org/docs/releases.html
-- https://github.com/advisories/GHSA-r937-wjx7-w2jp
-- https://developer.android.com/jetpack/androidx/releases/room3
-- https://developer.android.com/training/data-storage/room/migration-2-to-3
-- https://www.zetetic.net/blog/2026/08/18/sqlcipher-4.18.0-release/
-- https://central.sonatype.com/artifact/net.zetetic/sqlcipher-android
-- https://www2.sqlite.org/cves.html
-- https://github.com/tink-crypto/tink-java/releases/tag/v1.23.0
-- https://github.com/tink-crypto/tink-java/issues/75
-- https://github.com/advisories/GHSA-xxmf-j3rw-f8p2
-- https://kotlin.github.io/kotlinx-kover/gradle-plugin/
-
-Research and technical literature:
-
-- https://huggingface.co/datasets/futo-org/swipe.futo.org
+- https://github.com/HeliBorg/HeliBoard/releases/tag/v4.1
+- https://github.com/HeliBorg/HeliBoard/releases/tag/v4.1-beta1
+- https://github.com/HeliBorg/HeliBoard/issues/2778
+- https://github.com/HeliBorg/HeliBoard/issues/2226
+- https://github.com/florisboard/florisboard/commits/feat/k3lp/first-integration
+- https://github.com/florisboard/florisboard/pull/3330
+- https://raw.githubusercontent.com/florisboard/florisboard/main/ROADMAP.md
+- https://github.com/florisboard/florisboard/issues/3289
+- https://github.com/florisboard/florisboard/issues/3323
+- https://github.com/florisboard/florisboard/issues/3201
+- https://github.com/AnySoftKeyboard/AnySoftKeyboard/pull/4871
+- https://github.com/AnySoftKeyboard/AnySoftKeyboard/pull/4879
+- https://github.com/futo-org/android-keyboard/releases
+- https://swipe.futo.tech/
+- https://futo.tech/blog/swipe-keyboard
 - https://huggingface.co/futo-org/futo-swipe/blob/main/LICENSE.md
+- https://huggingface.co/datasets/futo-org/swipe.futo.org
+- https://github.com/FossifyOrg/Keyboard
+- https://f-droid.org/en/packages/org.fossify.keyboard/
+- https://github.com/urikdev/Urik
+- https://github.com/tribixbite/CleverKeys
+- https://github.com/divvun/giellakbd-android
+- https://github.com/onlyloveyd/LazyKeyboard
+
+Commercial products:
+
+- https://www.androidauthority.com/gboard-writing-tools-other-android-phones-3593589/
+- https://www.windowscentral.com/software-apps/swiftkey-will-soon-require-a-microsoft-account-data-to-be-moved-to-onedrive
+- https://www.heise.de/en/news/Microsoft-SwiftKey-Microsoft-account-mandatory-for-backups-from-end-of-May-11217783.html
+- https://support.microsoft.com/en-us/swiftkey-keyboard/how-to-use-tone-in-microsoft-swiftkey-keyboard
+- https://www.sammobile.com/news/you-can-still-resize-samsung-keyboard-one-ui-8-5-just-not-as-quickly/
+- https://keyboardkit.com/blog/2026/06/08/fleksy-shuts-down-their-website
+
+Android platform and distribution:
+
+- https://developer.android.com/about/versions/17/behavior-changes-17
+- https://developer.android.com/about/versions/17/behavior-changes-all
+- https://android-developers.googleblog.com/2026/06/Android-17.html
+- https://developer.android.com/reference/android/view/inputmethod/TextAttribute
+- https://developer.android.com/develop/ui/views/touch-and-input/stylus-input/stylus-input-in-text-fields
+- https://developer.android.com/ndk/guides/neuralnetworks/migration-guide
+- https://developers.google.com/ml-kit/genai
+- https://developer.android.com/ai/gemini-nano
+- https://android-developers.googleblog.com/2026/06/android-developer-verification.html
+- https://support.google.com/android-developer-console/answer/16561738
+- https://f-droid.org/2026/02/24/open-letter-opposing-developer-verification.html
+- https://f-droid.org/en/docs/Reproducible_Builds/
+
+Dependencies:
+
+- https://developer.android.com/build/releases/agp-9-4-0-release-notes
+- https://developer.android.com/build/releases/agp-9-3-0-release-notes
+- https://developer.android.com/jetpack/androidx/releases/navigation
+- https://developer.android.com/jetpack/androidx/releases/test-uiautomator
+- https://developer.android.com/jetpack/androidx/releases/room3
+- https://developer.android.com/jetpack/compose/bom/bom-mapping
+- https://services.gradle.org/versions/current
+
+Research:
+
 - https://arxiv.org/abs/2606.25247
-- https://research.google/pubs/spatial-model-personalization-in-gboard/
-- https://research.google/pubs/handling-compounding-in-mobile-keyboard-input/
-- https://research.google/pubs/federated-learning-of-gboard-language-models-with-differential-privacy/
-- https://research.google/pubs/synthesizing-and-adapting-error-correction-data-for-mobile-large-language-model-applications/
-- https://www.usenix.org/system/files/conference/usenixsecurity15/sec15-paper-chen-jin.pdf
-- https://citizenlab.ca/research/vulnerabilities-across-keyboard-apps-reveal-keystrokes-to-network-eavesdroppers/
-- https://pmc.ncbi.nlm.nih.gov/articles/PMC7881442/
-- https://pmc.ncbi.nlm.nih.gov/articles/PMC9589473/
-- https://github.com/hunspell/hunspell
-
-Community and curated lists:
-
-- https://github.com/ideas-no996/awesome-android-keyboards
-- https://github.com/pluja/awesome-privacy
-- https://discuss.privacyguides.net/t/what-keyboard-are-you-using-on-android/15973
-- https://discuss.privacyguides.net/t/heliboard-offline-keyboard-for-android/28093
-- https://news.ycombinator.com/item?id=40831489
-- https://forum.languagetool.org/t/languagetool-on-android/11647
-- https://www.reddit.com/r/Swiftkey/comments/1vp13la/restore_keyboard_layout_languages_settings_and/
-- https://www.reddit.com/r/Swiftkey/comments/1tylh00/migration_to_onedrive_failed_lost_predictions/
+- https://arxiv.org/abs/2602.12432
+- https://arxiv.org/abs/2602.06489
+- https://arxiv.org/abs/2607.05475
+- https://arxiv.org/abs/2603.23640
+- https://arxiv.org/abs/2605.08195
+- https://arxiv.org/abs/2604.19642
+- https://aclanthology.org/2026.acl-industry.51/
+- https://nlnet.nl/project/GestureTyping/
+- https://dl.acm.org/doi/10.1145/3447526.3472059
 
 ## Open Questions
 
-None block prioritization. API 36.1 cross-platform transport behavior and manual-backup readback across several SAF providers are explicit acceptance tests for the new roadmap items, not prerequisites for adding them.
+- **Does the platform already hide password characters from a physical keyboard below the IME on Android 17, or must the IME read `show_passwords_physical` itself?** This decides whether the physical-keyboard privacy item is code or documentation. It needs an Android 17 device or emulator, which this host does not have.
+- **Was the published v1.9.66 APK signed with `keystore/swiftfloris-selfhost.jks` or a separate release key?** The certificate DN says "SysAdminDoc Sideload". Only the maintainer can answer, and the answer determines whether the fork-provenance page describes one key or two.
+
+Neither blocks prioritization. Everything else in the roadmap additions has an acceptance test that is runnable on this host.

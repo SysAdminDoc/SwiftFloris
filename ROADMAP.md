@@ -142,3 +142,104 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Where: app/src/main/kotlin/dev/patrickgold/florisboard/ime/popup/PopupSet.kt:99.
   Acceptance: The branch is gone and adding a hint mode fails the build rather than silently taking a fallback path; popup priority tests still pass for every existing mode pair.
   Complexity: S
+
+## Research-Driven Additions (2026-09-04)
+
+### P0
+
+- [ ] P0: Stop the preference migration from overwriting settings the user chose
+  Why: `FlorisPreferenceModel.migrate()` permanently pins eight shipped preferences to fork-preferred values. jetpref calls `migrate()` from `DataStore.loadAndUpdate`, which runs for both `Event.Init` (every process start) and `Event.Import` (backup restore), with no version gate — verified by decompiling `jetpref-datastore-model` 0.3.0. Every value being forced away is still a selectable option, so a user cannot keep: number row off, hinted number row on, hinted symbols on, the dynamic language/emoji utility key, the current-language space bar, a scrollable candidate row, Follow-system theming, or the `floris_day`/`floris_night` themes. This is issue #22 exactly, including the reporter's observation that a backup restore does not bring the settings back.
+  Evidence: https://github.com/SysAdminDoc/SwiftFloris/issues/22; app/src/main/kotlin/dev/patrickgold/florisboard/app/AppPrefs.kt:297-354; commit 722fe491e "Match default keyboard to SwiftKey layout"; app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/RestoreRollbackSnapshot.kt:260; ime/theme/ThemeMode.kt:27; ime/keyboard/SpaceBarMode.kt:21; ime/smartbar/CandidatesDisplayMode.kt:25; ime/text/key/UtilityKeyAction.kt:26; app/src/main/assets/ime/theme/org.florisboard.themes/extension.json.
+  Touches: AppPrefs.kt, app/prefs/KeyboardPrefs.kt, app/prefs/ThemePrefs.kt, app/prefs/SuggestionPrefs.kt, FlorisPreferenceModelImpl.kt, app/src/test/kotlin/dev/patrickgold/florisboard/app/AppPrefsMigrationTest.kt.
+  Acceptance: The eight forced rewrites are gone from `migrate()`. Any default the fork wants for NEW installs is expressed as the `PreferenceData` default plus, where an existing install must be moved once, a version-stamped one-shot keyed on the existing `internal.versionOnInstall` / `internal.versionLastUse` entries — never an unconditional rule. `AppPrefsMigrationTest` asserts KEEP_AS_IS for every one of the eight keys at every currently-selectable value (its current cases at :137-151 assert the defect and must be inverted). A test drives a stored datastore through two consecutive `Event.Init` loads and one `Event.Import` and proves each of the eight values survives all three unchanged. Legitimate value renames (`clipboard__sync_to_*`, `theme__editor_display_colors_as`, the `keyboard__one_handed_mode` OFF reset) keep working.
+  Complexity: M
+
+### P1
+
+- [ ] P1: Fix the resize gesture so dragging a handle does not amplify itself
+  Why: `imeWindowEditorHandle` accumulates `dragAmount` from `detectDragGestures`, whose deltas are measured in the pointer-input node's own coordinate space. That node is the resize handle, which the resize moves. A stationary finger therefore still produces deltas in the direction of growth, which is issue #23's "quite janky and makes the keyboard bigger than intended". The file's own TODO at :433 already proposes the fix.
+  Evidence: https://github.com/SysAdminDoc/SwiftFloris/issues/23; app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowEditorHandles.kt:433 and :438-455.
+  Touches: ImeWindowEditorHandles.kt, ImeWindowController.kt, ImeWindowSpec.kt, a new window-resize test.
+  Acceptance: The gesture computes `current - initial` from `positionInRoot()` captured via `onGloballyPositioned`, not from accumulated node-local deltas. A test replays a synthetic drag of N dp against a controller that actually applies each intermediate spec, and asserts the final spec differs from the initial one by N dp within one dp — the current code fails that test. Every handle (all four edges and four corners, fixed and floating) is covered. Dragging to a constraint boundary and back returns the window to its starting size.
+  Complexity: M
+
+- [ ] P1: Stop the resize gesture reading layout state frozen at first composition
+  Why: Both gesture blocks are `pointerInput(Unit)`, so the lambda is remembered from the first composition and never restarts. `rowCount`, `smartbarRowCount`, and all four gesture callbacks are captured once, so a resize performed after the row count changes computes against a stale layout. This is the second, independent contributor to issue #23's overshoot.
+  Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowEditorHandles.kt:427 and :432-455; FlorisImeSizing.rowCountAsState()/smartbarRowCountAsState().
+  Touches: ImeWindowEditorHandles.kt.
+  Acceptance: The gesture reads the current row counts and current callbacks at gesture time, via `rememberUpdatedState` or by keying `pointerInput` on the values it depends on. A test composes the handle, changes the smartbar row count, then drags, and asserts the resulting spec uses the new count — reverting the fix makes it fail. A grep-based or lint-based check flags any other `pointerInput(Unit)` in `ime/` that closes over composition state.
+  Complexity: S
+
+- [ ] P1: Size inline autofill chips to the keyboard, not to the display
+  Why: The `InlinePresentationSpec` max width and the `InlineSuggestion.inflate()` size both come from `resources.displayMetrics.widthPixels`, which is the full display. Passing that as the inflate size makes every chip exactly display-width, so a keyboard narrower than the display — floating, one-handed, split, or resized — renders chips that run off its own edge. This is issue #23's autofill half, with a screenshot attached to the report.
+  Evidence: https://github.com/SysAdminDoc/SwiftFloris/issues/23; app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt:898-901; app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpInlineAutofill.kt:75-79 and :142-179; app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowConstraints.kt.
+  Touches: FlorisImeService.kt, NlpInlineAutofill.kt, InlineSuggestionsUi.kt, FlorisImeSizing.kt, InlineSuggestionSizePolicy tests.
+  Acceptance: Both the presentation spec and the inflate call derive their width from the current IME window width owned by `ImeWindowConstraints`/`FlorisImeSizing`, not from `displayMetrics`. The inflate width is a wrap-content or window-bounded value rather than the spec maximum, so a provider's chip cannot exceed the smartbar. `InlineSuggestionSizePolicy` tests cover a window narrower than the display, a window equal to it, and a zero/unmeasured window falling back safely. A Roborazzi capture of the smartbar with inline suggestions at a reduced window width shows no chip crossing the keyboard edge.
+  Complexity: M
+
+- [ ] P1: Pin the release signing certificate and repair the F-Droid binary URL
+  Why: The recipe's `binary:` URL returns HTTP 404 — it names `app-release.apk` while the published asset is `SwiftFloris-v1.9.66-release.apk` — so F-Droid's binary comparison has nothing to compare against, and `AllowedAPKSigningKeys` is still empty. Both blockers that parked this work have cleared: v1.9.66 shipped a signed APK on 2026-08-30, and its certificate SHA-256 is `dba1aa88e37b90155fca3135ca3b781de92c225107e47c9806e75bf88055fdd8` (`CN=SysAdminDoc Sideload`, RSA 4096, v2+v3 schemes), read from the published artifact with `apksigner verify --print-certs`. 94 people have already installed under that key, so it is permanent unless every user reinstalls.
+  Evidence: fdroid/io.github.sysadmindoc.swiftfloris.yml; https://github.com/SysAdminDoc/SwiftFloris/releases/tag/v1.9.66; `curl -I .../v1.9.66/app-release.apk` returns 404 while `.../SwiftFloris-v1.9.66-release.apk` returns 200; Roadmap_Blocked.md "Finish F-Droid reproducible-build verification (remainder)" and "Publish a fork-provenance proof"; https://f-droid.org/en/docs/Build_Metadata_Reference/.
+  Touches: fdroid/io.github.sysadmindoc.swiftfloris.yml, scripts/check-fdroid-recipe.py, scripts/check-release-front-door.sh, README fork-provenance section, docs/REPRODUCIBLE_BUILDS.md, Roadmap_Blocked.md.
+  Acceptance: `AllowedAPKSigningKeys` carries the verified certificate SHA-256; the `binary:` URL resolves to the actual published asset name for the declared version; the fork-provenance section publishes the same fingerprint with the command that reproduces it. `check-fdroid-recipe.py` gains a fourth invariant that resolves the `binary:` URL for the current version and fails on a non-200, with a self-test fixture carrying a wrong asset name. The two matching items move out of `Roadmap_Blocked.md`.
+  Complexity: S
+
+- [ ] P1: Move to AGP 9.3.2 or later so lint does not crash the F-Droid build
+  Why: AGP 9.3.2 (2026-08-24) fixes lint dying on JDK 17 with `NoSuchMethodError: java.util.List.removeLast()` in the bundled intellij-core. The F-Droid recipe installs `openjdk-17-jdk-headless`, so the build F-Droid runs is on the affected JDK even though the host build on JDK 21 is green. AGP 9.4.0 (2026-09-01) is also available and requires Gradle 9.6.0 or newer, which the pinned 9.7.1 already satisfies.
+  Evidence: https://developer.android.com/build/releases/agp-9-4-0-release-notes; fdroid/io.github.sysadmindoc.swiftfloris.yml sudo block; gradle/libs.versions.toml (AGP 9.3.1); gradle/tools.versions.toml (jdk = "17").
+  Touches: gradle/libs.versions.toml, app/src/main/config/trust-capabilities.json, docs/REPRODUCIBLE_BUILDS.md, scripts/check-public-doc-version-pins.py.
+  Acceptance: AGP is at 9.3.2 or 9.4.0; `:app:lintDebug` passes under JDK 17 as well as JDK 21; the trust registry and public doc pins carry the new version and their self-tests pass; the full local gate (unit, Roborazzi verify, lint, release assemble) is green.
+  Complexity: S
+
+### P2
+
+- [ ] P2: Make the keyboard resize handles usable without a drag gesture
+  Why: `ImeWindowEditorHandles.kt` contains no `contentDescription`, `semantics`, `stateDescription`, or `Role` anywhere. Eight drag-only controls are unannounced to TalkBack and unreachable by switch access, in a repo that already enforces a 48 dp touch-target floor and a theme-contrast gate. Issue #23 shows the resize surface is one people actually use.
+  Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowEditorHandles.kt:129-190 and :272-380; docs/ACCESSIBILITY.md; https://developer.android.com/guide/topics/ui/accessibility/principles.
+  Touches: ImeWindowEditorHandles.kt, strings.xml and locale resources, an accessibility test, Roborazzi resize-mode captures.
+  Acceptance: Every handle announces which edge or corner it adjusts and its current size, and exposes custom accessibility actions that step the dimension by a fixed increment so the window can be resized without a drag. A test asserts each of the eight handles carries a non-empty content description and at least one custom action, and that invoking an action changes the spec. Labels are localized, not literals.
+  Complexity: M
+
+- [ ] P2: Measure this keyboard's glide accuracy before changing the engine
+  Why: FUTO published a comparable top-1/top-4 swipe error table (FUTO 7.38%/4.19%, Gboard 11.05%/5.66%, HeliBoard with the Google library 13.12%/7.63%) and SwiftFloris has no equivalent number for its own decoder, so no glide change can be shown to help or hurt. The FUTO trace dataset is MIT and usable for evaluation; only the weights are encumbered, so a measurement harness carries no licensing risk. This is the prerequisite the rejected "improve glide accuracy" idea was missing.
+  Evidence: https://github.com/futo-org/android-keyboard/releases (0.1.29 notes, 2026-06-01); https://huggingface.co/datasets/futo-org/swipe.futo.org; https://arxiv.org/abs/2606.25247; https://dl.acm.org/doi/10.1145/3447526.3472059; app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/gestures/.
+  Touches: a JVM test-source or benchmark harness, ime/text/gestures/, ime/nlp/latin/, a checked-in trace fixture subset, docs.
+  Acceptance: A repeatable local harness replays a fixed, checked-in subset of MIT-licensed swipe traces through the production decoder and reports top-1 and top-4 word error against the published word list. The current number is recorded in the repo with the date and the exact fixture. The harness runs from Gradle without a device and without network access. No FUTO model weights enter the tree.
+  Complexity: M
+
+- [ ] P2: Say what the keyboard is doing before the device is first unlocked
+  Why: `FlorisImeService` is declared `directBootAware="true"`, but `FlorisApplication.onCreate` returns before initializing the preference store when the user is locked, so the lock-screen keyboard runs on compiled-in defaults and ignores every customization with no explanation. Nothing in the IME waits on `preferenceStoreLoaded`; only Settings and the backup worker do. AnySoftKeyboard shipped a fix in the same area where the equivalent no-op store went on to destroy the user's real data on the next write, so the boundary is worth making explicit before anything is written pre-unlock.
+  Evidence: app/src/main/AndroidManifest.xml:129; app/src/main/kotlin/dev/patrickgold/florisboard/FlorisApplication.kt:141-146 and :174-180; app/src/main/kotlin/dev/patrickgold/florisboard/app/FlorisAppActivity.kt:115; app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/ScheduledBackupWorker.kt:98; https://github.com/AnySoftKeyboard/AnySoftKeyboard/pull/4871.
+  Touches: FlorisImeService.kt, FlorisApplication.kt, a Robolectric direct-boot test, docs/PRIVACY_AND_AI.md or README.
+  Acceptance: While the user is locked, the IME reads a documented locked-mode configuration rather than silently falling back, and no code path writes to the preference store before `preferenceStoreLoaded` is true. A Robolectric test with the user locked proves that a preference write attempted pre-unlock is refused rather than staged, and that the same value read after unlock is the user's stored one. The behaviour is stated in public docs.
+  Complexity: M
+
+- [ ] P2: Bring the toolchain forward on navigation and uiautomator
+  Why: Three pinned artifacts are behind as of 2026-09-04 and the rest of the catalog is current. `androidx.navigation` 2.9.8 to 2.10.0 (2026-08-26) adds predictive-back transition overloads and `NavBackStackEntryInfo`; its minSdk moves to 24, which this app already exceeds, and `handleDeepLink` now ignores undeclared destinations. `androidx.test.uiautomator` 2.3.0 to 2.4.0 (2026-07-01) is a minor version hiding a full API rewrite (`onView()` renamed `onElement()`, default 10s find timeouts, blocking `startActivity`), so it needs real time rather than a routine bump.
+  Evidence: https://developer.android.com/jetpack/androidx/releases/navigation; https://developer.android.com/jetpack/androidx/releases/test-uiautomator; gradle/libs.versions.toml.
+  Touches: gradle/libs.versions.toml, app/src/main/kotlin/dev/patrickgold/florisboard/app/Routes.kt and navigation call sites, app/src/androidTest/, trust-capabilities.json.
+  Acceptance: Both artifacts are bumped, the instrumented sources compile against the 2.4.0 API, deep-link handling still resolves every declared Settings route, `:app:assembleDebugAndroidTest` succeeds, and the full local gate is green. If the uiautomator rewrite proves larger than the value it returns, the item records that finding and pins 2.3.0 deliberately with a written reason rather than leaving it as unexamined drift.
+  Complexity: M
+
+- [ ] P2: Decide and record whether SwiftFloris targets API 37
+  Why: Android 17 shipped stable on 2026-06-16 and the project already compiles against API 37 while targeting 36, so the target is a deliberate choice that is nowhere written down. This pass verified that the usual API 37 breakers do not apply here — no `System.load`, no static-final reflection, no manifest orientation or resizability constraints, no `setContentCaptureEnabled` — so the move is cheap, but it should be made and documented rather than drifting.
+  Evidence: https://android-developers.googleblog.com/2026/06/Android-17.html; https://developer.android.com/about/versions/17/behavior-changes-17; gradle.properties (projectTargetSdk=36, projectCompileSdk=37).
+  Touches: gradle.properties, docs/REPRODUCIBLE_BUILDS.md, README, scripts/check-public-doc-version-pins.py, trust-capabilities.json.
+  Acceptance: Either `projectTargetSdk` moves to 37 with the full local gate green and the pinned docs updated, or the repo records in one named place why it stays at 36 and what would change that. Whichever is chosen, the public doc pin checker asserts the target SDK claim matches `gradle.properties`.
+  Complexity: S
+
+### P3
+
+- [ ] P3: Find out whether Android 17 hides passwords from physical keyboards without IME help
+  Why: Android 17 splits password display into `show_passwords_physical`, which defaults to hiding all password characters, and `show_passwords_touch`. SwiftFloris has a physical-keyboard path and a `SensitiveFieldGuard`, and nothing reads either setting. Whether the platform handles this entirely below the IME decides whether this is code or a documentation line, and that cannot be settled by reading.
+  Evidence: https://developer.android.com/about/versions/17/behavior-changes-17; app/src/main/kotlin/dev/patrickgold/florisboard/app/prefs/PhysicalKeyboardPrefs.kt; app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt:711-740.
+  Touches: FlorisImeService.kt or PhysicalKeyboard policy, docs/THREAT_MODEL.md, README privacy posture.
+  Acceptance: The behaviour is checked on an Android 17 device or emulator with a physical keyboard attached and a password field focused, with both settings toggled. Either the IME is changed to honour the settings and a test covers it, or the threat model records that the platform owns this below the IME and names the check that established it.
+  Complexity: S
+
+- [ ] P3: Sweep for other gesture handlers frozen by `pointerInput(Unit)`
+  Why: The resize handle proved the pattern silently freezes composition state and callbacks at first composition. It is worth knowing whether any other gesture surface in `ime/` has the same shape before a user finds it.
+  Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowEditorHandles.kt:427 and :432; cross-reference the existing P2 item "Make the keyboard layout controller reachable from unit tests", which covers the glide pointer bookkeeping in TextKeyboardLayout separately.
+  Touches: ime/ gesture call sites, a lint rule or repository-hygiene check.
+  Acceptance: Every `pointerInput(Unit)` in `app/src/main` is either shown to close over nothing that changes, or re-keyed / wrapped in `rememberUpdatedState`. A check fails on a fixture that introduces a new `pointerInput(Unit)` closing over a `State` read.
+  Complexity: S
