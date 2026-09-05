@@ -137,12 +137,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: The rename is coordinated with Crowdin so translations follow the key; the locale-coverage gate stays green.
   Complexity: S
 
-- [ ] P3: Remove the dead `else` branch in the popup hint priority resolution
-  Why: The compiler reports the enclosing `when` as exhaustive, so the branch is unreachable. It reads as defensive but hides the compile error that would otherwise flag a new `KeyHintMode` value.
-  Where: app/src/main/kotlin/dev/patrickgold/florisboard/ime/popup/PopupSet.kt:99.
-  Acceptance: The branch is gone and adding a hint mode fails the build rather than silently taking a fallback path; popup priority tests still pass for every existing mode pair.
-  Complexity: S
-
 ## Research-Driven Additions (2026-09-04)
 
 ### P1

@@ -9,6 +9,7 @@
 - Commit the emoji you tapped after changing skin tone. An emoji key captured its emoji when it first appeared on screen, so if the preferred skin tone changed while the palette was open the key drew the new tone and inserted the old one.
 - Build with AGP 9.3.2. Lint crashes on JDK 17 under 9.3.1, and JDK 17 is what the F-Droid recipe installs, so the build F-Droid runs could fail where the local one passes.
 - Make Obtainium actually see new releases. The APK filter in both Obtainium manifests looked for `app-release.apk`, and no release this project has ever published was named that, so the update channel the README recommends matched nothing and silently offered no updates. It now matches the `SwiftFloris-v<version>-release.apk` assets that really ship, and the release gate resolves the newest release to confirm at least one asset matches.
+- Order long-press popups by the number hint mode again. When the symbol hint was set to hint priority, the code re-checked the symbol hint mode instead of the number hint mode, so one branch always won and the number hint setting was ignored: the main character and the number hint came out in the wrong order for every mode except hint priority.
 
 ## v1.9.66 (2026-08-29)
 

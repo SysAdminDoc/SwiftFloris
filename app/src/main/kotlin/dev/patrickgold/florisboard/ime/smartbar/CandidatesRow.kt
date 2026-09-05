@@ -115,6 +115,7 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
 
     val displayMode by prefs.suggestion.displayMode.collectAsState()
     val candidates by nlpManager.activeCandidatesFlow.collectAsState()
+    val longPressDelay by prefs.keyboard.longPressDelay.collectAsState()
 
     // ROADMAP §7 Next-3.4 — long-press a suggestion to surface an in-strip
     // "Remove '<word>' from predictions?" prompt (SwiftKey/Gboard parity, closes
@@ -133,7 +134,7 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
         CandidateStripContent(
             candidates = candidates,
             displayMode = displayMode,
-            longPressDelay = prefs.keyboard.longPressDelay.get().toLong(),
+            longPressDelay = longPressDelay.toLong(),
             onCandidateClick = { n ->
                 // Can't use candidate directly. The live list can also shrink
                 // between the rendered frame and the tap (suggestions reroll on
@@ -434,7 +435,10 @@ private fun CandidateItem(
                     )
                 }
             }
-            .pointerInput(Unit) {
+            // Keyed on the delay so a changed preference restarts the block.
+            // pointerInput keeps its lambda while the key is unchanged, and the
+            // timeout below is a plain Long captured when it first composed.
+            .pointerInput(longPressDelay) {
                 awaitEachGesture {
                     val down = awaitFirstDown()
                     isPressed = true

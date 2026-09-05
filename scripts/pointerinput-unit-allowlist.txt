@@ -1,0 +1,33 @@
+# Reviewed production pointerInput(Unit) sites.
+# Format: relative/path.kt | normalized source line | verdict=<verdict>; rationale=<why>
+#
+# Verdicts:
+#   no-capture     the block reads nothing from the enclosing composable
+#   stable-capture everything it reads is fixed for that composable's lifetime
+#   scoped-node    a capture does change, but the node is created and disposed
+#                  with the thing it captures, so it cannot be observed stale
+#
+# Audited 2026-09-05 against Compose BOM 2026.08.00 (compose-ui 1.12.0), where
+# SuspendingPointerInputModifierNodeImpl.update only resets the handler when a
+# key or the handler's class changes, so a recomposed capturing lambda keeps its
+# original captures. Two sites failed that audit and were keyed instead of
+# allowlisted: the emoji key now uses pointerInput(base) and the candidate chip
+# pointerInput(longPressDelay).
+
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt | .pointerInput(Unit) { | verdict=scoped-node; rationale=Popup item gesture; popupItem state is keyed on filteredHistory and a key change nulls it, disposing this node in the same frame
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt | .pointerInput(Unit) { | verdict=stable-capture; rationale=Clear-all-history dialog scrim writes through a keyless remembered MutableState whose object never changes
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt | .pointerInput(Unit) { | verdict=no-capture; rationale=Swallows taps so they cannot reach the surface behind the dialog; the gesture body is empty
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/MediaInputLayout.kt | .pointerInput(Unit) { | verdict=stable-capture; rationale=Tab button reads the input feedback CompositionLocal and an onClick that only assigns a constant MediaPanelMode through a keyless remembered state
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/MediaInputLayout.kt | .pointerInput(Unit) { | verdict=stable-capture; rationale=Backspace key reads a remembered InteractionSource, the KeyboardManager input event dispatcher and a constant TextKeyData
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/emoji/EmojiPaletteView.kt | .pointerInput(Unit) { | verdict=stable-capture; rationale=Search field clear button reads the input feedback CompositionLocal and a callback that assigns through a keyless remembered state
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/emoji/EmojiPaletteView.kt | .pointerInput(Unit) { | verdict=scoped-node; rationale=Emoji variant popup row; the node exists only while the popup is visible and is disposed when it closes
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/emoji/EmojiPaletteView.kt | .pointerInput(Unit) { | verdict=scoped-node; rationale=Emoji variant popup entry; the node exists only while the popup is visible and is disposed when it closes
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/emoji/EmojiPaletteView.kt | .pointerInput(Unit) { | verdict=scoped-node; rationale=Emoji history action row; the node exists only while the popup is visible and its actions close over values fixed for that popup
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/emoji/EmojiPaletteView.kt | .pointerInput(Unit) { detectTapGestures { onAddTag() } } | verdict=scoped-node; rationale=Add-tag chip inside the emoji popup; the node is created on popup open and disposed on close
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/sticker/StickerPaletteView.kt | .pointerInput(Unit) { | verdict=stable-capture; rationale=Search field clear button assigns through a keyless remembered state; node is scoped to a non-blank query
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/sheet/BottomSheetHostUi.kt | }.pointerInput(Unit) { | verdict=scoped-node; rationale=Scrim dismiss; onHide closes over a KeyboardState snapshot but the modifier is applied through conditional(isShowing), so the node is built in the same recomposition that opened the sheet
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/quickaction/QuickActionsEditorPanel.kt | .pointerInput(Unit) { | verdict=stable-capture; rationale=Drag-and-drop reorder; every handler reads through keyless remembered state objects and SnapshotStateLists, and the arrangement is deliberately fetched once and not observed
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindow.kt | .pointerInput(Unit) { | verdict=stable-capture; rationale=Floating-mode onboarding dismiss calls through the LocalWindowController, which is provided once per IME window
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowEditorHandles.kt | .pointerInput(Unit) { | verdict=no-capture; rationale=Consumes every pointer event so the editor overlay swallows input; reads nothing from the enclosing scope
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowEditorHandles.kt | .pointerInput(Unit) { | verdict=stable-capture; rationale=Editor handle tap; onTap closes over the window controller, which is stable for the window's lifetime
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowEditorHandles.kt | .pointerInput(Unit) { | verdict=stable-capture; rationale=Editor handle drag; the gesture callbacks close over the window controller and a constant handle enum, and rowCount/smartbarRowCount are by-delegates over State<Int> so their reads inside the block are live

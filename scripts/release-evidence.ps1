@@ -277,10 +277,14 @@ Invoke-EvidenceCommand "backup-privacy-copy" $bash @((Convert-ToGitBashPath "scr
 Invoke-EvidenceCommand "fork-identity" $bash @((Convert-ToGitBashPath "scripts\check-fork-identity.sh"))
 Invoke-EvidenceCommand "layout-json" $python @("scripts/check-layout-json.py")
 Invoke-EvidenceCommand "locale-coverage" $python @("scripts/check-locale-coverage.py", "--check")
-Invoke-EvidenceCommand "public-doc-version-pins" $python @("scripts/check-public-doc-version-pins.py")
+# --check-published also resolves the newest release and requires an asset to
+# match each Obtainium filter. A filter that matches nothing is silent in
+# Obtainium: users simply stop being offered updates.
+Invoke-EvidenceCommand "public-doc-version-pins" $python @("scripts/check-public-doc-version-pins.py", "--check-published")
 Invoke-EvidenceCommand "trust-capability-gate" $python @("scripts/check-trust-capabilities.py")
 Invoke-EvidenceCommand "security-dependency-freshness" $python @("scripts/check-security-dependency-freshness.py")
 Invoke-EvidenceCommand "runblocking-allowlist" $python @("scripts/check-runblocking-allowlist.py")
+Invoke-EvidenceCommand "pointerinput-unit-allowlist" $python @("scripts/check-pointerinput-unit-allowlist.py")
 Invoke-EvidenceCommand "live-doc-integrity" $python @("scripts/check-live-doc-integrity.py")
 # --check-published resolves the recipe binary URL against the real GitHub
 # release. Release time is exactly when that asset is supposed to exist, and

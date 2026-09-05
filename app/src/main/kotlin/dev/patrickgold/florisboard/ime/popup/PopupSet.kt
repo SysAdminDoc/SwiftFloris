@@ -92,7 +92,7 @@ class MutablePopupSet<T : AbstractKeyData>(
                         // due to smart priority of number hint, main wins if it exists, otherwise number hint overrules accent priority of symbol hint
                         else -> PopupKeys(localSymbolHint, listOfNotNull(localMain, localNumberHint, localSymbolHint), localRelevant + hintPopups)
                     }
-                    KeyHintMode.HINT_PRIORITY -> when (keyHintConfiguration.symbolHintMode) {
+                    KeyHintMode.HINT_PRIORITY -> when (keyHintConfiguration.numberHintMode) {
                         // when both hints are present in hint priority, symbol hint wins
                         KeyHintMode.HINT_PRIORITY -> PopupKeys(localSymbolHint, listOfNotNull(localSymbolHint, localNumberHint, localMain), localRelevant + hintPopups)
                         // hint priority of symbol hint wins, and overrules potential accent priority of number hint

@@ -726,7 +726,12 @@ private fun EmojiKey(
                     true
                 }
             }
-            .pointerInput(Unit) {
+            // Keyed on `base`, not Unit: pointerInput never restarts its block
+            // while the key is unchanged, and `base` is derived from the
+            // preferred skin tone. Frozen at Unit, the key would keep committing
+            // the skin tone that was current when it first composed while
+            // drawing the new one.
+            .pointerInput(base) {
                 detectTapGestures(
                     onPress = {
                         inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
