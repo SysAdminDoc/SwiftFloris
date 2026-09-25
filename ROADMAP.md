@@ -180,3 +180,29 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: The behaviour is checked on an Android 17 device or emulator with a physical keyboard attached and a password field focused, with both settings toggled. Either the IME is changed to honour the settings and a test covers it, or the threat model records that the platform owns this below the IME and names the check that established it.
   Complexity: S
 
+## Research-Driven Additions (2026-09-25)
+
+### P1
+
+- [ ] P1: Make blocked decisions expire instead of aging silently
+  Why: The local blocker list still says Kotlin 2.4.20, Room 3, Unicode 18, release signing, and pre-September developer verification are blocked, but those conditions have cleared or changed. The live-doc checker catches closed issue URLs and some release-tag movement, not review expiry or dependency and standards transitions.
+  Evidence: Roadmap_Blocked.md; scripts/check-live-doc-integrity.py; https://kotlinlang.org/docs/releases.html; https://developer.android.com/jetpack/androidx/releases/room3; https://blog.unicode.org/2026/09/announcing-unicode-standard-version-180.html; https://developer.android.com/developer-verification.
+  Touches: a tracked blocked-evidence manifest, Roadmap_Blocked.md, scripts/check-live-doc-integrity.py, checker self-tests, maintainer documentation.
+  Acceptance: Every blocked item has a stable ID, last-reviewed date, recheck date, and primary evidence in a tracked manifest. The gate fails for missing or expired review data and supports machine-readable probes for dependency releases, standards releases, tracker state, and release assets. Tests prove failure for an expired item and success after its blocking condition is reconciled. The currently stale entries are corrected in the same change.
+  Complexity: M
+
+- [ ] P1: Prove recovery under the Android 17 per-app memory limiter
+  Why: Android 17 applies memory limits to every app and reports limiter kills through `ApplicationExitInfo` with `MemoryLimiter:AnonSwap`. SwiftFloris keeps dictionaries, decoder state, emoji data, clipboard state, and image caches in a long-lived IME process, while `onTrimMemory()` currently evicts only the sticker bitmap cache at the background threshold.
+  Evidence: https://developer.android.com/about/versions/17/behavior-changes-all; app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt; app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/sticker/StickerPaletteView.kt.
+  Touches: FlorisImeService.kt, recoverable cache owners, benchmark memory scenarios, API 37 device tests, privacy-safe diagnostics, lifecycle documentation.
+  Acceptance: A repeatable baseline records memory for first render, large-dictionary load, glide decoding, emoji search, clipboard history, and sticker decoding. An API 37 test exercises `am memory-limiter manual`, verifies durable state survives process recreation, and confirms all ephemeral keyboard state rebuilds. Recoverable caches have documented trim behavior and bounds. Diagnostics distinguish a limiter kill from an app crash without recording typed text. A regression test or scripted device check fails when reconstruction or classification breaks.
+  Complexity: M
+
+### P2
+
+- [ ] P2: Maintain a compatibility ledger for the parent Keyboard3 rewrite
+  Why: FlorisBoard PR #3341 changes 147 files across keyboard storage, extension types, hints, input actions, function keys, and layout behavior. SwiftFloris carries fork-specific layout, privacy, addon, and test contracts, so waiting for a finished parent rewrite and then attempting a bulk merge would hide semantic regressions inside a large diff.
+  Evidence: https://github.com/florisboard/florisboard/pull/3341; app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard3; app/src/main/kotlin/dev/patrickgold/florisboard/lib/ext; app/src/test.
+  Touches: a tracked parent-compatibility ledger, extension and keyboard metadata fixtures, upstream review notes, maintainer documentation.
+  Acceptance: The ledger pins the reviewed parent commit or PR revision, maps each changed contract to adopt, reimplement, or reject, and records the local behavior and test that protect the decision. It covers storage, extension types, hints, input actions, function keys, and layout semantics. A fixture proves parent keyboard metadata cannot silently change meaning during import. The ledger is refreshed when the parent PR changes materially or lands.
+  Complexity: M
