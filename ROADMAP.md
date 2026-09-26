@@ -206,3 +206,15 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Touches: a tracked parent-compatibility ledger, extension and keyboard metadata fixtures, upstream review notes, maintainer documentation.
   Acceptance: The ledger pins the reviewed parent commit or PR revision, maps each changed contract to adopt, reimplement, or reject, and records the local behavior and test that protect the decision. It covers storage, extension types, hints, input actions, function keys, and layout semantics. A fixture proves parent keyboard metadata cannot silently change meaning during import. The ledger is refreshed when the parent PR changes materially or lands.
   Complexity: M
+
+## Issue Intake (2026-09-26)
+
+Open GitHub issues checked against this list on 2026-09-26. The only open issue is #23. Its resize-jank half is the P1 item above ("Fix the resize gesture so dragging a handle does not amplify itself"). Its second half was not on the list:
+
+- [ ] P2: Autofill suggestions extend past the screen edge (issue #23, second observation)
+  Reported: CalX24, 2026-09-02, SwiftFloris 1.9.66 from GitHub Releases on a Samsung S25 Ultra, Android 16, screenshot attached.
+  Why: the autofill strip runs off the right edge of the display in the screenshot, so the last suggestions cannot be reached. Likely the strip is laid out at the resized keyboard width (the same amplified width the P1 item fixes) or is not constrained to the window at all.
+  Next: reproduce after the resize fix; if it persists, constrain the autofill row to the IME window width with horizontal scrolling when the chips overflow.
+  Acceptance: with the keyboard resized to any width, every autofill chip is reachable and none is clipped, checked at 360 dp and on the S25.
+  Evidence: https://github.com/SysAdminDoc/SwiftFloris/issues/23
+  Complexity: S
