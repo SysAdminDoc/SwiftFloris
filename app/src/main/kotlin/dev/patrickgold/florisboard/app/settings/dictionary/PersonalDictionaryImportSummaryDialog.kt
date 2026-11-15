@@ -62,6 +62,9 @@ fun PersonalDictionaryImportSummaryDialog(
         } else {
             onKeep
         },
+        // Back and a tap outside default to onDismiss, which here is Undo. Closing the summary
+        // must keep the words; only the Undo button takes the import back.
+        onOutsideDismissal = onKeep,
     ) {
         Column(
             modifier = Modifier.padding(top = 4.dp),
