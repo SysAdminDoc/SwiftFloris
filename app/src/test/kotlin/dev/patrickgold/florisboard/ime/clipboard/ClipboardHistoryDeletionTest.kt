@@ -37,6 +37,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.io.File
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -64,8 +65,9 @@ class ClipboardHistoryDeletionTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         // The app's start-up reconciliation deletes media its own history doesn't hold. Let it
-        // finish first, or it can take the files planted below while a test runs.
-        runBlocking { context.clipboardManager().value.snapshotHistoryForRestore() }
+        // finish first, or it can take the files planted below while a test runs. Bounded, so a
+        // start-up that never gets there fails the test instead of hanging it.
+        runBlocking { withTimeout(10_000) { context.clipboardManager().value.snapshotHistoryForRestore() } }
         Robolectric.setupContentProvider(ClipboardMediaProvider::class.java, ClipboardMediaProvider.AUTHORITY)
         history = Room.inMemoryDatabaseBuilder(context, ClipboardHistoryDatabase::class.java)
             .allowMainThreadQueries()
