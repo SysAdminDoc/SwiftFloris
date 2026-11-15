@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.StateFlow
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-import kotlin.properties.Delegates
 
 /**
  * This class is a helper managing the state of the text input logic which
@@ -235,7 +234,17 @@ class ObservableKeyboardState private constructor(
         fun new(value: ULong = STATE_ALL_ZERO) = ObservableKeyboardState(value)
     }
 
-    override var rawValue by Delegates.observable(initValue) { _, old, new -> if (old != new) dispatchState() }
+    // Volatile like the base class's field, which this override replaces. Writes go through the
+    // synchronized setFlag and setRegion, so they publish under the same monitor as dispatchState.
+    @Volatile
+    private var observedValue: ULong = initValue
+    override var rawValue: ULong
+        get() = observedValue
+        set(value) {
+            val old = observedValue
+            observedValue = value
+            if (old != value) dispatchState()
+        }
     private val batchEditCount = AtomicInteger(BATCH_ZERO)
 
     init {
@@ -244,7 +253,10 @@ class ObservableKeyboardState private constructor(
 
     /**
      * Dispatches the new state to all observers if [batchEditCount] is [BATCH_ZERO] (= no active batch edits).
+     * Runs under the monitor setFlag and setRegion hold, so an [endBatchEdit] on another thread can't
+     * publish its snapshot after a newer one and leave observers on the stale state.
      */
+    @Synchronized
     private fun dispatchState() {
         if (batchEditCount.get() == BATCH_ZERO) {
             dispatchFlow.value = this.snapshot()

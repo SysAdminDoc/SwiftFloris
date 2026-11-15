@@ -56,3 +56,32 @@ class DpToleranceMatcher(expected: Dp, tolerance: Dp) : Matcher<Dp> {
         return matcher.test(value.value)
     }
 }
+
+/**
+ * Runs [call] on another thread while this one holds [monitor], and passes once that thread is
+ * blocked waiting for it. Fails when [call] finishes first, which means it never takes the lock.
+ * Any exception [call] throws once the lock is released is rethrown here.
+ */
+fun shouldWaitForMonitor(monitor: Any, call: () -> Unit) {
+    var failure: Throwable? = null
+    val thread = Thread {
+        try {
+            call()
+        } catch (error: Throwable) {
+            failure = error
+        }
+    }
+    thread.isDaemon = true
+    synchronized(monitor) {
+        thread.start()
+        val deadline = System.nanoTime() + 5_000_000_000L
+        while (thread.state != Thread.State.BLOCKED) {
+            check(thread.isAlive) { "The call finished without waiting for the lock." }
+            check(System.nanoTime() < deadline) { "The call never reached the lock." }
+            Thread.yield()
+        }
+    }
+    thread.join(5_000L)
+    check(!thread.isAlive) { "The call didn't finish once the lock was released." }
+    failure?.let { throw it }
+}

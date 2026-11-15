@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Keep shift and the keyboard mode from sticking on an old state. Two changes made at nearly the same moment on different threads could reach the keyboard out of order, and it then showed the older one until something else changed.
 - Keep settings light with the "System default (AMOLED)" theme while the phone is in light mode. It turned the settings backgrounds black even in light mode, while text, icons and the status bar stayed set up for a light screen. It now looks the same as "System default" until the phone switches to dark, and then uses pure black.
 - Make the settings home fit at 200% text size. On a narrow phone with large text, the status row, the section buttons and the quick actions kept their columns and cut labels like "Import data" short with "...". The grids now drop to fewer columns when they run out of room, and button labels can take two lines, so every label shows in full.
 - Remove a clip from history when you clear it right after copying. Its history entry was added a moment after the clip showed up, so a clear in between missed it and left the entry and its picture behind. Two copies made back to back also land in history in the order you made them, and copying the same text twice in a row keeps one entry
