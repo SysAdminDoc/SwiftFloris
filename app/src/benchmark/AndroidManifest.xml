@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Debug-key build: leave the signature permissions to the release so
+         both install side by side (see the debug overlay). -->
+    <permission
+        android:name="io.github.sysadmindoc.swiftfloris.permission.REGISTER_ADDON"
+        tools:node="remove"/>
+    <permission
+        android:name="io.github.sysadmindoc.swiftfloris.permission.BIND_MCP"
+        tools:node="remove"/>
 
     <application>
         <activity

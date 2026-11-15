@@ -7,7 +7,26 @@
     (heap dumps would expose freshly-typed text), and it is not required for
     normal end-user functionality.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        The main manifest declares the addon and MCP signature permissions
+        under the release package's names. A debug-key build declaring the
+        same names fails to install next to the release with
+        INSTALL_FAILED_DUPLICATE_PERMISSION, so the debug build leaves the
+        declarations to the release. Its uses-permission stays: with the
+        release installed the grant is refused (different signer), which is
+        what happened anyway, so signature-gated addon and MCP binding can
+        only be exercised from a release-signed build.
+    -->
+    <permission
+        android:name="io.github.sysadmindoc.swiftfloris.permission.REGISTER_ADDON"
+        tools:node="remove"/>
+    <permission
+        android:name="io.github.sysadmindoc.swiftfloris.permission.BIND_MCP"
+        tools:node="remove"/>
+
     <application>
         <profileable android:shell="true"/>
 

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Let the debug build install next to the release. Both declared the same two signature permissions, so Android refused whichever one went on second. The debug build now leaves those declarations to the release.
 - Stop the app behind the keyboard from redrawing its whole layout while you resize or move the keyboard. The keyboard reported its new top edge on every frame of the drag, so the app re-laid itself out under your finger. It now keeps its layout until you let go and adjusts once. Part of issue #23.
 - Stop restyling the whole keyboard when only the shift state or mode changes. Each change rebuilt the Material You color palettes from scratch, and because a rebuilt palette never compares equal to the old one, every key looked up its style again. The palettes are now built once per theme and accent color.
 - Resize the keyboard's labels when you let go of the resize handle, not on every frame of the drag. Text size follows the keyboard height, and following it live made every key look up its style again on each frame. Part of issue #23.
