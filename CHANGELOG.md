@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Have TalkBack say which option is picked in lists like the backup destination, the restore mode, the scheduled backup interval and the physical keyboard layout. Each row read as a radio button without saying whether it was checked.
 - Build with Kotlin 2.4.21. Kotlin 2.4.10 had a security bug (CVE-2026-53914) where a tampered build cache could run code during a build, and release builds now refuse a compiler that still has it.
 - Stop next-word learning from pairing words across text fields. Moving to another field resets what the keyboard remembers about the words you just typed, but that reset could land halfway through learning a word, so the first word in the new field was saved as following the last one in the old field, sometimes in another language.
 - Leave a cached file alone at startup when it can't be moved out of the way. The cleanup deleted it in place instead, which could take a file an import was still copying.

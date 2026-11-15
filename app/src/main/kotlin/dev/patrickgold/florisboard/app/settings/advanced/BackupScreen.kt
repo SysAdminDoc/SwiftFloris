@@ -42,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ShareCompat
@@ -890,7 +892,9 @@ internal fun RadioListItem(
     JetPrefListItem(
         modifier = Modifier
             .alpha(if (enabled) 1f else 0.56f)
-            .rippleClickable(enabled = enabled, role = Role.RadioButton, onClick = onClick),
+            .rippleClickable(enabled = enabled, role = Role.RadioButton, onClick = onClick)
+            // The radio button inside takes no clicks, so the row says which one is picked.
+            .semantics { this.selected = selected },
         icon = {
             RadioButton(
                 selected = selected,
