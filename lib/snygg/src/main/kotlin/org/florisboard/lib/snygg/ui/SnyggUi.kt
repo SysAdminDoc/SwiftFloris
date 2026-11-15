@@ -154,20 +154,27 @@ fun ProvideSnyggTheme(
     content: @Composable () -> Unit,
 ) {
     val (colorPalette, contrastLevel, specVersion) = materialYouFlags
-    val lightScheme = dynamicColorScheme(
-        primary = systemAccentOrDefault(dynamicAccentColor),
-        isDark = false,
-        style = colorPalette,
-        contrastLevel = contrastLevel.value,
-        specVersion = specVersion
-    )
-    val darkScheme = dynamicColorScheme(
-        primary = systemAccentOrDefault(dynamicAccentColor),
-        isDark = true,
-        style = colorPalette,
-        contrastLevel = contrastLevel.value,
-        specVersion = specVersion
-    )
+    val primary = systemAccentOrDefault(dynamicAccentColor)
+    // Building a scheme is a full HCT palette computation. This composable recomposes whenever the font size
+    // multiplier changes, which is every frame of a keyboard resize, so only rebuild when the inputs change.
+    val lightScheme = remember(primary, colorPalette, contrastLevel, specVersion) {
+        dynamicColorScheme(
+            primary = primary,
+            isDark = false,
+            style = colorPalette,
+            contrastLevel = contrastLevel.value,
+            specVersion = specVersion
+        )
+    }
+    val darkScheme = remember(primary, colorPalette, contrastLevel, specVersion) {
+        dynamicColorScheme(
+            primary = primary,
+            isDark = true,
+            style = colorPalette,
+            contrastLevel = contrastLevel.value,
+            specVersion = specVersion
+        )
+    }
 
     val resolver = LocalFontFamilyResolver.current
     val customFontFamilies = remember(snyggTheme) {
