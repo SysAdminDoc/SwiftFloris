@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Make the settings home fit at 200% text size. On a narrow phone with large text, the status row, the section buttons and the quick actions kept their columns and cut labels like "Import data" short with "...". The grids now drop to fewer columns when they run out of room, and button labels can take two lines, so every label shows in full.
 - Remove a clip from history when you clear it right after copying. Its history entry was added a moment after the clip showed up, so a clear in between missed it and left the entry and its picture behind. Two copies made back to back also land in history in the order you made them, and copying the same text twice in a row keeps one entry
 - Fix the Obtainium link in the README. It still looked for `app-release` APKs, which releases stopped shipping, so adding SwiftFloris from that link found no update even after the Obtainium files themselves were fixed.
 - Say a clipboard delete or clear is done only once it is. Deleting a clip or clearing history said so right away while the work ran in the background, so a picture whose file couldn't be deleted stayed on the phone behind a "deleted" message. The message now waits for the result. If anything stays behind, you get "Couldn't delete everything" with Retry, and what's left stays in clipboard history where you can see it. Closing the clipboard screen doesn't cut a delete short anymore, a clip you pin while a clear is running stays put, and the automatic cleanup of old clips keeps any clip whose file it couldn't delete and tries again next time.

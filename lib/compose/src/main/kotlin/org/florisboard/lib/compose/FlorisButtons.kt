@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -64,6 +65,7 @@ fun FlorisButton(
     shape: Shape = MaterialTheme.shapes.small,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     colors: ButtonColors = ButtonDefaults.buttonColors(),
+    maxLines: Int = 1,
 ) {
     Button(
         modifier = modifier.defaultMinSize(minHeight = FlorisTouchTarget.MinSize),
@@ -85,7 +87,8 @@ fun FlorisButton(
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            maxLines = 1,
+            textAlign = TextAlign.Center,
+            maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
         )
     }
@@ -101,6 +104,7 @@ fun FlorisOutlinedButton(
     shape: Shape = MaterialTheme.shapes.small,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     colors: ButtonColors = ButtonDefaults.outlinedButtonColors(),
+    maxLines: Int = 1,
 ) {
     OutlinedButton(
         modifier = modifier.defaultMinSize(minHeight = FlorisTouchTarget.MinSize),
@@ -122,7 +126,8 @@ fun FlorisOutlinedButton(
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            maxLines = 1,
+            textAlign = TextAlign.Center,
+            maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
         )
     }

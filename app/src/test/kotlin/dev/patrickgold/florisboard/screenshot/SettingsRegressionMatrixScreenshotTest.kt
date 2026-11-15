@@ -34,15 +34,24 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -58,6 +67,7 @@ import dev.patrickgold.florisboard.app.AppTheme
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.settings.HomeScreen
+import dev.patrickgold.florisboard.app.settings.SettingsHomeDashboardTag
 import dev.patrickgold.florisboard.app.settings.search.SettingsSearchScreen
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
 import org.florisboard.lib.compose.FlorisEmptyState
@@ -65,6 +75,8 @@ import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.compose.stringRes
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.jupiter.api.DisplayName
 import org.junit.Rule
@@ -250,6 +262,142 @@ class RoborazziWideLandscapeSettingsCaptureTest {
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage(
             filePath = "src/test/snapshots/settings_regression_matrix/home_wide_landscape.png",
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.01f),
+            ),
+        )
+    }
+}
+
+/**
+ * The settings home dashboard at 200 percent text on narrow phones. The window is tall so the
+ * whole dashboard is on screen for the capture.
+ */
+@RunWith(AndroidJUnit4::class)
+@Config(qualifiers = "w360dp-h2800dp-hdpi", sdk = [35])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@DisplayName("Roborazzi capture: settings home at 200 percent text")
+class RoborazziSettingsHomeLargeTextCaptureTest {
+    @get:Rule
+    val composeRule = createAndroidComposeRule<RoborazziHostActivity>()
+
+    @get:Rule
+    val roborazziRule = RoborazziRule(
+        options = RoborazziRule.Options(
+            outputDirectoryPath = "build/outputs/roborazzi",
+        ),
+    )
+
+    @Before
+    fun setUp() {
+        val app = composeRule.activity.application as FlorisApplication
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            app.preferenceStoreLoaded.value
+        }
+    }
+
+    @Test
+    fun width320LightLtr() = checkHome(320.dp, AppTheme.LIGHT, LayoutDirection.Ltr)
+
+    @Test
+    fun width320LightRtl() = checkHome(320.dp, AppTheme.LIGHT, LayoutDirection.Rtl)
+
+    @Test
+    fun width320DarkLtr() = checkHome(320.dp, AppTheme.DARK, LayoutDirection.Ltr)
+
+    @Test
+    fun width320DarkRtl() = checkHome(320.dp, AppTheme.DARK, LayoutDirection.Rtl)
+
+    @Test
+    fun width360LightLtr() = checkHome(360.dp, AppTheme.LIGHT, LayoutDirection.Ltr)
+
+    @Test
+    fun width360LightRtl() = checkHome(360.dp, AppTheme.LIGHT, LayoutDirection.Rtl)
+
+    @Test
+    fun width360DarkLtr() = checkHome(360.dp, AppTheme.DARK, LayoutDirection.Ltr)
+
+    @Test
+    fun width360DarkRtl() = checkHome(360.dp, AppTheme.DARK, LayoutDirection.Rtl)
+
+    private fun checkHome(width: Dp, theme: AppTheme, layoutDirection: LayoutDirection) {
+        composeRule.setContent {
+            SettingsRegressionFrame(
+                theme = theme,
+                width = width,
+                height = 2800.dp,
+                layoutDirection = layoutDirection,
+                fontScale = 2f,
+            ) {
+                HomeScreen()
+            }
+        }
+        composeRule.waitForIdle()
+
+        val dashboard = composeRule.onNodeWithTag(SettingsHomeDashboardTag).fetchSemanticsNode()
+        val window = composeRule.onRoot().fetchSemanticsNode()
+        assertTrue(
+            "the dashboard runs past the window, so the capture would cut it off",
+            dashboard.boundsInRoot.bottom <= window.boundsInRoot.bottom,
+        )
+
+        val texts = composeRule.onAllNodes(
+            hasAnyAncestor(hasTestTag(SettingsHomeDashboardTag)) and
+                SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult),
+            useUnmergedTree = true,
+        ).fetchSemanticsNodes()
+        assertTrue("no text found in the dashboard", texts.size > 10)
+        texts.forEach { node ->
+            val layouts = mutableListOf<TextLayoutResult>()
+            node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+            val layout = layouts.single()
+            val input = layout.layoutInput
+            val label = input.text.text
+            // Semantics lays a plain-string Text out again at the full width it was offered,
+            // so neither its overflow flag nor its line widths say what fit in the box the
+            // label got. Laying it out in that box, with its own line limit and overflow,
+            // does what the screen did.
+            val inBox = TextMeasurer(input.fontFamilyResolver, input.density, input.layoutDirection, cacheSize = 0)
+                .measure(
+                    text = input.text,
+                    style = input.style,
+                    overflow = input.overflow,
+                    softWrap = input.softWrap,
+                    maxLines = input.maxLines,
+                    constraints = Constraints(maxWidth = layout.size.width),
+                )
+            assertFalse(
+                "\"$label\" is cut off: box ${layout.size}, needs ${inBox.multiParagraph.width} x " +
+                    "${inBox.multiParagraph.height} in ${inBox.lineCount} lines",
+                inBox.hasVisualOverflow || inBox.size.height > layout.size.height,
+            )
+            assertFalse(
+                "\"$label\" ends in an ellipsis",
+                (0 until inBox.lineCount).any { inBox.isLineEllipsized(it) },
+            )
+        }
+
+        listOf(
+            R.string.settings__home__open_keyboard_settings,
+            R.string.settings__search__placeholder,
+            R.string.settings__home__section_typing,
+            R.string.settings__home__section_personalization,
+            R.string.settings__home__section_privacy_data,
+            R.string.settings__home__section_advanced,
+            R.string.settings__home__section_about,
+            R.string.settings__home__quick_action_import,
+            R.string.settings__home__quick_action_privacy,
+            R.string.settings__home__quick_action_about,
+        ).forEach { label ->
+            val text = composeRule.activity.getString(label)
+            composeRule.onAllNodes(
+                hasAnyAncestor(hasTestTag(SettingsHomeDashboardTag)) and hasText(text) and hasClickAction(),
+            ).onFirst().assertExists()
+        }
+
+        composeRule.onNodeWithTag(SettingsHomeDashboardTag).captureRoboImage(
+            filePath = "src/test/snapshots/settings_regression_matrix/" +
+                "home_font_scale_200_w${width.value.toInt()}_${theme.id}_${layoutDirection.name.lowercase()}.png",
             roborazziOptions = RoborazziOptions(
                 compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.01f),
             ),

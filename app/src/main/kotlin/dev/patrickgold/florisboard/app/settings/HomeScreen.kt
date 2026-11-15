@@ -22,11 +22,16 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -70,12 +75,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
@@ -150,7 +157,9 @@ fun HomeScreen() = FlorisScreen {
         }
 
         SettingsHomeDashboard(
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier
+                .padding(8.dp)
+                .testTag(SettingsHomeDashboardTag),
             statusTone = statusTone,
             statusIcon = statusIcon,
             statusTitle = statusTitle,
@@ -318,6 +327,8 @@ fun HomeScreen() = FlorisScreen {
     }
 }
 
+internal const val SettingsHomeDashboardTag = "settings_home_dashboard"
+
 private enum class SettingsHomeStatusTone {
     Success,
     Warning,
@@ -420,37 +431,88 @@ private fun SettingsHomeDashboardHeader() {
 
 @Composable
 private fun SettingsHomeTrustChips() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        SettingsHomeTrustChip(
-            modifier = Modifier.weight(1f),
-            icon = Icons.Default.CloudOff,
-            label = stringRes(R.string.settings__home__trust_chip_no_cloud),
-            tint = MaterialTheme.colorScheme.primary,
+    val noCloud = stringRes(R.string.settings__home__trust_chip_no_cloud)
+    val noTelemetry = stringRes(R.string.settings__home__trust_chip_no_telemetry)
+    val offline = stringRes(R.string.settings__home__trust_chip_offline)
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    val tertiary = MaterialTheme.colorScheme.tertiary
+    SettingsHomeAdaptiveGrid(
+        maxColumns = 3,
+        minCellWidth = 88.dp,
+        spacing = 6.dp,
+        singleRowWeights = listOf(1f, 1.28f, 0.92f),
+        cells = listOf(
+            { modifier -> SettingsHomeTrustChip(modifier, Icons.Default.CloudOff, noCloud, primary) },
+            { modifier -> SettingsHomeTrustChip(modifier, Icons.Default.Shield, noTelemetry, secondary) },
+            { modifier -> SettingsHomeTrustChip(modifier, Icons.Default.CheckCircle, offline, tertiary) },
+        ),
+    )
+}
+
+/**
+ * Lays [cells] out in rows of up to [maxColumns]. A column is dropped whenever a cell would be
+ * narrower than [minCellWidth] grown by the text size, so large text gets whole rows instead of
+ * cut-off labels. Cells in a row share its height.
+ */
+@Composable
+private fun SettingsHomeAdaptiveGrid(
+    maxColumns: Int,
+    minCellWidth: Dp,
+    cells: List<@Composable (Modifier) -> Unit>,
+    spacing: Dp = 8.dp,
+    singleRowWeights: List<Float>? = null,
+) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val columns = settingsHomeColumnCount(
+            availableWidth = maxWidth,
+            fontScale = LocalDensity.current.fontScale,
+            maxColumns = maxColumns,
+            minCellWidth = minCellWidth,
+            spacing = spacing,
         )
-        SettingsHomeTrustChip(
-            modifier = Modifier.weight(1.28f),
-            icon = Icons.Default.Shield,
-            label = stringRes(R.string.settings__home__trust_chip_no_telemetry),
-            tint = MaterialTheme.colorScheme.secondary,
-        )
-        SettingsHomeTrustChip(
-            modifier = Modifier.weight(0.92f),
-            icon = Icons.Default.CheckCircle,
-            label = stringRes(R.string.settings__home__trust_chip_offline),
-            tint = MaterialTheme.colorScheme.tertiary,
-        )
+        val weights = singleRowWeights?.takeIf { columns >= cells.size }
+        Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+            cells.chunked(columns).forEach { row ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.spacedBy(spacing),
+                ) {
+                    row.forEachIndexed { index, cell ->
+                        cell(Modifier.weight(weights?.get(index) ?: 1f).fillMaxHeight())
+                    }
+                    repeat(columns - row.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
     }
+}
+
+internal fun settingsHomeColumnCount(
+    availableWidth: Dp,
+    fontScale: Float,
+    maxColumns: Int,
+    minCellWidth: Dp,
+    spacing: Dp,
+): Int {
+    val neededWidth = minCellWidth * fontScale.coerceAtLeast(1f)
+    for (columns in maxColumns downTo 2) {
+        val cellWidth = (availableWidth - spacing * (columns - 1)) / columns
+        if (cellWidth >= neededWidth) return columns
+    }
+    return 1
 }
 
 @Composable
 private fun SettingsHomeTrustChip(
+    modifier: Modifier,
     icon: ImageVector,
     label: String,
     tint: Color,
-    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
@@ -478,8 +540,6 @@ private fun SettingsHomeTrustChip(
             text = label,
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -533,8 +593,6 @@ private fun SettingsHomeStatusRow(
                     text = summary,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -545,6 +603,7 @@ private fun SettingsHomeStatusRow(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
                 text = actionLabel,
                 onClick = onAction,
+                maxLines = 2,
             )
         }
     }
@@ -556,49 +615,26 @@ private fun SettingsHomeSignalGrid(
     statusValue: String,
     buildVersion: String,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SettingsHomeSignalTile(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.CloudOff,
-                title = stringRes(R.string.settings__home__signal_privacy_title),
-                value = stringRes(R.string.settings__home__signal_privacy_value),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            SettingsHomeSignalTile(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Outlined.Build,
-                title = stringRes(R.string.settings__home__signal_build_title),
-                value = stringRes(
-                    R.string.settings__home__signal_build_value,
-                    "version" to buildVersion,
-                ),
-                tint = MaterialTheme.colorScheme.tertiary,
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SettingsHomeSignalTile(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.VerifiedUser,
-                title = stringRes(R.string.settings__home__signal_status_title),
-                value = statusValue,
-                tint = toneColor,
-            )
-            SettingsHomeSignalTile(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.Sync,
-                title = stringRes(R.string.settings__home__signal_sync_title),
-                value = stringRes(R.string.settings__home__signal_sync_value),
-                tint = MaterialTheme.colorScheme.secondary,
-            )
-        }
-    }
+    val privacyTitle = stringRes(R.string.settings__home__signal_privacy_title)
+    val privacyValue = stringRes(R.string.settings__home__signal_privacy_value)
+    val buildTitle = stringRes(R.string.settings__home__signal_build_title)
+    val buildValue = stringRes(R.string.settings__home__signal_build_value, "version" to buildVersion)
+    val statusTitle = stringRes(R.string.settings__home__signal_status_title)
+    val syncTitle = stringRes(R.string.settings__home__signal_sync_title)
+    val syncValue = stringRes(R.string.settings__home__signal_sync_value)
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    val tertiary = MaterialTheme.colorScheme.tertiary
+    SettingsHomeAdaptiveGrid(
+        maxColumns = 2,
+        minCellWidth = 120.dp,
+        cells = listOf(
+            { modifier -> SettingsHomeSignalTile(modifier, Icons.Default.CloudOff, privacyTitle, privacyValue, primary) },
+            { modifier -> SettingsHomeSignalTile(modifier, Icons.Outlined.Build, buildTitle, buildValue, tertiary) },
+            { modifier -> SettingsHomeSignalTile(modifier, Icons.Default.VerifiedUser, statusTitle, statusValue, toneColor) },
+            { modifier -> SettingsHomeSignalTile(modifier, Icons.Default.Sync, syncTitle, syncValue, secondary) },
+        ),
+    )
 }
 
 @Composable
@@ -609,54 +645,50 @@ private fun SettingsHomeNavigationCards(
     onAdvanced: () -> Unit,
     onAbout: () -> Unit,
 ) {
+    val typingTitle = stringRes(R.string.settings__home__section_typing)
+    val typingSummary = stringRes(R.string.settings__home__nav_typing_summary)
+    val personalizationTitle = stringRes(R.string.settings__home__section_personalization)
+    val personalizationSummary = stringRes(R.string.settings__home__nav_personalization_summary)
+    val privacyTitle = stringRes(R.string.settings__home__section_privacy_data)
+    val privacySummary = stringRes(R.string.settings__home__nav_privacy_summary)
+    val advancedTitle = stringRes(R.string.settings__home__section_advanced)
+    val advancedSummary = stringRes(R.string.settings__home__nav_advanced_summary)
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    val tertiary = MaterialTheme.colorScheme.tertiary
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = stringRes(R.string.settings__home__navigation_title),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SettingsHomeNavigationCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Outlined.Keyboard,
-                title = stringRes(R.string.settings__home__section_typing),
-                summary = stringRes(R.string.settings__home__nav_typing_summary),
-                tint = MaterialTheme.colorScheme.primary,
-                onClick = onTyping,
-            )
-            SettingsHomeNavigationCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Outlined.Palette,
-                title = stringRes(R.string.settings__home__section_personalization),
-                summary = stringRes(R.string.settings__home__nav_personalization_summary),
-                tint = MaterialTheme.colorScheme.secondary,
-                onClick = onPersonalization,
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SettingsHomeNavigationCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.Shield,
-                title = stringRes(R.string.settings__home__section_privacy_data),
-                summary = stringRes(R.string.settings__home__nav_privacy_summary),
-                tint = MaterialTheme.colorScheme.tertiary,
-                onClick = onPrivacyData,
-            )
-            SettingsHomeNavigationCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.Extension,
-                title = stringRes(R.string.settings__home__section_advanced),
-                summary = stringRes(R.string.settings__home__nav_advanced_summary),
-                tint = MaterialTheme.colorScheme.primary,
-                onClick = onAdvanced,
-            )
-        }
+        SettingsHomeAdaptiveGrid(
+            maxColumns = 2,
+            minCellWidth = 120.dp,
+            cells = listOf(
+                { modifier ->
+                    SettingsHomeNavigationCard(
+                        modifier, Icons.Outlined.Keyboard, typingTitle, typingSummary, primary, onTyping,
+                    )
+                },
+                { modifier ->
+                    SettingsHomeNavigationCard(
+                        modifier, Icons.Outlined.Palette, personalizationTitle, personalizationSummary,
+                        secondary, onPersonalization,
+                    )
+                },
+                { modifier ->
+                    SettingsHomeNavigationCard(
+                        modifier, Icons.Default.Shield, privacyTitle, privacySummary, tertiary, onPrivacyData,
+                    )
+                },
+                { modifier ->
+                    SettingsHomeNavigationCard(
+                        modifier, Icons.Default.Extension, advancedTitle, advancedSummary, primary, onAdvanced,
+                    )
+                },
+            ),
+        )
         SettingsHomeNavigationCard(
             modifier = Modifier.fillMaxWidth(),
             icon = Icons.Outlined.Info,
@@ -670,12 +702,12 @@ private fun SettingsHomeNavigationCards(
 
 @Composable
 private fun SettingsHomeNavigationCard(
+    modifier: Modifier,
     icon: ImageVector,
     title: String,
     summary: String,
     tint: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
@@ -710,27 +742,23 @@ private fun SettingsHomeNavigationCard(
             text = title,
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = summary,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
 @Composable
 private fun SettingsHomeSignalTile(
+    modifier: Modifier,
     icon: ImageVector,
     title: String,
     value: String,
     tint: Color,
-    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
@@ -755,15 +783,11 @@ private fun SettingsHomeSignalTile(
             text = title,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -805,16 +829,12 @@ private fun SettingsHomeSearchRail(
                 text = stringRes(R.string.settings__search__placeholder),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 modifier = Modifier.fillMaxWidth(),
                 text = stringRes(R.string.settings__home__search_summary),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -826,41 +846,30 @@ private fun SettingsHomeQuickActions(
     onPrivacy: () -> Unit,
     onAbout: () -> Unit,
 ) {
+    val importLabel = stringRes(R.string.settings__home__quick_action_import)
+    val privacyLabel = stringRes(R.string.settings__home__quick_action_privacy)
+    val aboutLabel = stringRes(R.string.settings__home__quick_action_about)
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
             text = stringRes(R.string.settings__home__quick_actions_title),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SettingsHomeActionButton(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.FileOpen,
-                label = stringRes(R.string.settings__home__quick_action_import),
-                onClick = onImport,
-            )
-            SettingsHomeActionButton(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.Shield,
-                label = stringRes(R.string.settings__home__quick_action_privacy),
-                onClick = onPrivacy,
-            )
-            SettingsHomeActionButton(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Outlined.Info,
-                label = stringRes(R.string.settings__home__quick_action_about),
-                onClick = onAbout,
-            )
-        }
+        SettingsHomeAdaptiveGrid(
+            maxColumns = 3,
+            minCellWidth = 90.dp,
+            cells = listOf(
+                { modifier -> SettingsHomeActionButton(modifier, Icons.Default.FileOpen, importLabel, onImport) },
+                { modifier -> SettingsHomeActionButton(modifier, Icons.Default.Shield, privacyLabel, onPrivacy) },
+                { modifier -> SettingsHomeActionButton(modifier, Icons.Outlined.Info, aboutLabel, onAbout) },
+            ),
+        )
     }
 }
 
 @Composable
 private fun SettingsHomeActionButton(
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
@@ -871,6 +880,7 @@ private fun SettingsHomeActionButton(
         icon = icon,
         text = label,
         onClick = onClick,
+        maxLines = 2,
     )
 }
 
