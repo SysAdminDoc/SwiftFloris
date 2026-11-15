@@ -54,56 +54,50 @@ private const val AmoledContainerTint = 0.045f
 private const val AmoledContainerHighTint = 0.060f
 private const val AmoledOutlineTint = 0.100f
 
+/**
+ * How a settings theme looks under the current system setting. Colors, surfaces and the system
+ * bars all read this one value, so AUTO AMOLED can't end up black in light mode.
+ */
+internal data class AppThemePosture(val isDark: Boolean, val useAmoledSurfaces: Boolean) {
+    val lightSystemBars: Boolean get() = !isDark
+}
+
+internal fun AppTheme.posture(systemDark: Boolean): AppThemePosture = when (this) {
+    AppTheme.AUTO -> AppThemePosture(isDark = systemDark, useAmoledSurfaces = false)
+    AppTheme.AUTO_AMOLED -> AppThemePosture(isDark = systemDark, useAmoledSurfaces = systemDark)
+    AppTheme.LIGHT -> AppThemePosture(isDark = false, useAmoledSurfaces = false)
+    AppTheme.DARK -> AppThemePosture(isDark = true, useAmoledSurfaces = false)
+    AppTheme.AMOLED_DARK -> AppThemePosture(isDark = true, useAmoledSurfaces = true)
+}
+
+internal fun appColorScheme(posture: AppThemePosture, seedColor: Color): ColorScheme {
+    return neutralDynamicColorScheme(
+        primary = seedColor,
+        isDark = posture.isDark,
+        isAmoled = posture.useAmoledSurfaces,
+        contrastLevel = RefinedContrastLevel,
+        modifyColorScheme = {
+            it.refinedSurfaces(
+                tint = seedColor,
+                isDark = posture.isDark,
+                isAmoled = posture.useAmoledSurfaces,
+            )
+        },
+    )
+}
+
 @Composable
 fun getColorScheme(
     theme: AppTheme,
 ): ColorScheme {
+    return appColorScheme(theme.posture(isSystemInDarkTheme()), currentSeedColor())
+}
+
+@Composable
+private fun currentSeedColor(): Color {
     val prefs by FlorisPreferenceStore
     val accentColor by prefs.other.accentColor.collectAsState()
-
-    val seedColor = systemAccentOrDefault(accentColor)
-    val systemDark = isSystemInDarkTheme()
-
-    return when (theme) {
-        AppTheme.AUTO, AppTheme.AUTO_AMOLED -> {
-            neutralDynamicColorScheme(
-                primary = seedColor,
-                isDark = systemDark,
-                isAmoled = theme == AppTheme.AUTO_AMOLED,
-                contrastLevel = RefinedContrastLevel,
-                modifyColorScheme = {
-                    it.refinedSurfaces(
-                        tint = seedColor,
-                        isDark = systemDark,
-                        isAmoled = theme == AppTheme.AUTO_AMOLED,
-                    )
-                },
-            )
-        }
-
-        AppTheme.DARK, AppTheme.LIGHT -> {
-            neutralDynamicColorScheme(
-                primary = seedColor,
-                isDark = theme == AppTheme.DARK,
-                contrastLevel = RefinedContrastLevel,
-                modifyColorScheme = {
-                    it.refinedSurfaces(tint = seedColor, isDark = theme == AppTheme.DARK, isAmoled = false)
-                },
-            )
-        }
-
-        AppTheme.AMOLED_DARK -> {
-            neutralDynamicColorScheme(
-                primary = seedColor,
-                isDark = true,
-                isAmoled = true,
-                contrastLevel = RefinedContrastLevel,
-                modifyColorScheme = {
-                    it.refinedSurfaces(tint = seedColor, isDark = true, isAmoled = true)
-                },
-            )
-        }
-    }
+    return systemAccentOrDefault(accentColor)
 }
 
 fun ColorScheme.amoled(): ColorScheme {
@@ -160,21 +154,16 @@ fun FlorisAppTheme(
     theme: AppTheme,
     content: @Composable () -> Unit,
 ) {
-    val colors = getColorScheme(theme = theme)
-
-    val darkTheme =
-        theme == AppTheme.DARK
-            || theme == AppTheme.AMOLED_DARK
-            || (theme == AppTheme.AUTO && isSystemInDarkTheme())
-            || (theme == AppTheme.AUTO_AMOLED && isSystemInDarkTheme())
+    val posture = theme.posture(isSystemInDarkTheme())
+    val colors = appColorScheme(posture, currentSeedColor())
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             WindowCompat.getInsetsController(window, window.decorView).apply {
-                isAppearanceLightStatusBars = !darkTheme
-                isAppearanceLightNavigationBars = !darkTheme
+                isAppearanceLightStatusBars = posture.lightSystemBars
+                isAppearanceLightNavigationBars = posture.lightSystemBars
             }
         }
     }

@@ -131,6 +131,17 @@ class RoborazziSettingsRegressionMatrixCaptureTest {
     }
 
     @Test
+    fun homeScreenAutoAmoledUnderSystemLight() {
+        // Robolectric runs with the system in light mode, so this must look like home_compact_light.
+        capture(
+            fileName = "home_auto_amoled_system_light.png",
+            theme = AppTheme.AUTO_AMOLED,
+        ) {
+            HomeScreen()
+        }
+    }
+
+    @Test
     fun settingsSearchAtTwoHundredPercentFontScale() {
         capture(
             fileName = "settings_search_font_scale_200.png",
