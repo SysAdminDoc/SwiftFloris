@@ -814,6 +814,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         flogInfo { "finishing=$finishingInput" }
         super.onFinishInputView(finishingInput)
         flagSecureEditorInfo = null
+        keyboardManager.abandonTextEntry()
         editorInstance.handleFinishInputView()
     }
 
@@ -839,6 +840,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         if (windowController.onWindowHidden()) {
             flogInfo(LogTopic.IMS_EVENTS)
             activeState.batchEdit {
+                keyboardManager.abandonTextEntry()
                 keyboardManager.resetUiModeAndHistory()
                 activeState.isActionsOverflowVisible = false
                 activeState.isActionsEditorVisible = false

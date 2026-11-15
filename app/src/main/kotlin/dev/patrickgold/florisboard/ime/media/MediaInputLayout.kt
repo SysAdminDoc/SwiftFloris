@@ -58,6 +58,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
+import dev.patrickgold.florisboard.ime.keyboard.InKeyboardTextEntry
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiData
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiPaletteView
@@ -85,7 +86,16 @@ fun MediaInputLayout(
     val keyboardManager by context.keyboardManager()
 
     var emojiLayoutDataMap by remember { mutableStateOf(EmojiData.Fallback) }
-    var activeMode by remember { mutableStateOf(MediaPanelMode.EMOJI) }
+    // Coming back from typing a sticker search lands on the sticker tab.
+    var activeMode by remember {
+        mutableStateOf(
+            if (keyboardManager.textEntry.pendingOutcomeKey() == InKeyboardTextEntry.StickerSearch) {
+                MediaPanelMode.STICKERS
+            } else {
+                MediaPanelMode.EMOJI
+            },
+        )
+    }
     LaunchedEffect(Unit) {
         emojiLayoutDataMap = EmojiData.get(context, "ime/media/emoji/root.txt")
     }

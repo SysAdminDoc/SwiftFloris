@@ -20,7 +20,6 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.util.TypedValue
 import android.widget.TextView
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -81,7 +80,6 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
@@ -95,8 +93,11 @@ import androidx.emoji2.widget.EmojiTextView
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.editorInstance
+import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
+import dev.patrickgold.florisboard.ime.keyboard.InKeyboardTextEntry
+import dev.patrickgold.florisboard.ime.keyboard.InKeyboardTextField
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
@@ -240,7 +241,19 @@ fun EmojiPaletteView(
         }
     }
     var recentlyUsedVersion by remember { mutableIntStateOf(0) }
-    var searchQuery by remember { mutableStateOf("") }
+    // Typing into the search, tag or group name field happens on the letter
+    // keys, which replace this panel until the entry ends (#24). Coming back
+    // here picks up what was typed.
+    val returningEntry = remember {
+        keyboardManager.textEntry.consumeOutcome { key ->
+            key == InKeyboardTextEntry.EmojiSearch ||
+                InKeyboardTextEntry.emojiTagValue(key) != null ||
+                InKeyboardTextEntry.pinGroupValue(key) != null
+        }
+    }
+    var searchQuery by remember {
+        mutableStateOf(returningEntry?.takeIf { it.fieldKey == InKeyboardTextEntry.EmojiSearch }?.text.orEmpty())
+    }
     val searchResults = remember(searchMappings, searchQuery, customEmojiTagVersion) {
         EmojiSearch.results(
             mappingsByLocale = searchMappings,
@@ -274,6 +287,39 @@ fun EmojiPaletteView(
         emojiTagSheetState.open(emoji.value)
         customEmojiTagVersion++
     }
+
+    fun onGroupPinned(groupName: String) {
+        pinnedGroupsVersion++
+        pinSheetVersion++
+        scope.launch {
+            context.showShortToast(
+                R.string.emoji__pin_group__pinned_toast,
+                "group" to groupName,
+            )
+        }
+    }
+
+    LaunchedEffect(returningEntry) {
+        val entry = returningEntry ?: return@LaunchedEffect
+        InKeyboardTextEntry.emojiTagValue(entry.fieldKey)?.let { emojiValue ->
+            emojiTagSheetState.open(emojiValue)
+            emojiTagSheetState.updateTagInput(entry.text)
+            if (entry.submitted) emojiTagSheetState.addTag()
+            customEmojiTagVersion++
+        }
+        InKeyboardTextEntry.pinGroupValue(entry.fieldKey)?.let { emojiValue ->
+            pinToGroupSheetState.open(emojiValue)
+            pinToGroupSheetState.updateNewGroupName(entry.text)
+            if (entry.submitted && pinToGroupSheetState.createGroupAndPin()) {
+                pinToGroupSheetState.lastPinnedGroupName()?.let(::onGroupPinned)
+            }
+            pinSheetVersion++
+        }
+    }
+
+    val searchHint = stringRes(R.string.emoji__search__placeholder)
+    val tagHint = stringRes(R.string.emoji__custom_tag__field_placeholder)
+    val groupNameHint = stringRes(R.string.emoji__pin_group__new_group_placeholder)
 
     @Composable
     fun GridHeader(text: String) {
@@ -335,6 +381,7 @@ fun EmojiPaletteView(
     @Composable
     fun EmojiSearchRow(
         query: String,
+        onEditQuery: () -> Unit,
         onQueryChange: (String) -> Unit,
     ) {
         val inputFeedbackController = LocalInputFeedbackController.current
@@ -356,32 +403,14 @@ fun EmojiPaletteView(
                     .size(ButtonDefaults.IconSize),
                 imageVector = Icons.Outlined.Search,
             )
-            BasicTextField(
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics {
-                        contentDescription = searchContentDescription
-                    },
-                value = query,
-                onValueChange = { value -> onQueryChange(value.take(40)) },
-                singleLine = true,
-                textStyle = TextStyle(
-                    color = style.foreground(),
-                    fontSize = searchFontSize,
-                ),
-                decorationBox = { innerTextField ->
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        if (query.isBlank()) {
-                            SnyggText(
-                                elementName = FlorisImeUi.MediaEmojiTab.elementName,
-                                text = stringRes(R.string.emoji__search__placeholder),
-                                colorOverride = style.foreground().copy(alpha = 0.58f),
-                                fontSizeOverride = searchFontSize,
-                            )
-                        }
-                        innerTextField()
-                    }
-                },
+            InKeyboardTextField(
+                modifier = Modifier.weight(1f),
+                text = query,
+                placeholder = stringRes(R.string.emoji__search__placeholder),
+                contentDescription = searchContentDescription,
+                color = style.foreground(),
+                fontSize = searchFontSize,
+                onClick = onEditQuery,
             )
             if (query.isNotBlank()) {
                 SnyggBox(
@@ -471,6 +500,17 @@ fun EmojiPaletteView(
     ) {
         EmojiSearchRow(
             query = searchQuery,
+            onEditQuery = {
+                keyboardManager.beginTextEntry(
+                    InKeyboardTextEntry.Request(
+                        fieldKey = InKeyboardTextEntry.EmojiSearch,
+                        hint = searchHint,
+                        initialText = searchQuery,
+                        maxLength = 40,
+                        returnTo = ImeUiMode.MEDIA,
+                    ),
+                )
+            },
             onQueryChange = { query -> searchQuery = query },
         )
         if (searchQuery.isNotBlank()) {
@@ -658,22 +698,40 @@ fun EmojiPaletteView(
             onStateChanged = {
                 pinSheetVersion++
             },
-            onPinned = { groupName ->
-                pinnedGroupsVersion++
-                pinSheetVersion++
-                scope.launch {
-                    context.showShortToast(
-                        R.string.emoji__pin_group__pinned_toast,
-                        "group" to groupName,
-                    )
-                }
+            onPinned = ::onGroupPinned,
+            onEditGroupName = {
+                keyboardManager.beginTextEntry(
+                    InKeyboardTextEntry.Request(
+                        fieldKey = InKeyboardTextEntry.pinGroup(pinToGroupSheetState.emoji()),
+                        hint = groupNameHint,
+                        initialText = pinToGroupSheetState.newGroupNameInput(),
+                        maxLength = EmojiPinGroupStore.MaxGroupNameLength,
+                        returnTo = ImeUiMode.MEDIA,
+                    ),
+                )
             },
         )
+        val taggedEmoji = if (emojiTagSheetState.isVisible()) emojiTagSheetState.emoji() else ""
+        val builtInLabels = remember(loadedSearchMappings, taggedEmoji) {
+            EmojiSearch.builtInLabels(loadedSearchMappings, taggedEmoji)
+        }
         EmojiTagSheet(
             state = emojiTagSheetState,
             version = customEmojiTagVersion,
+            builtInLabels = builtInLabels,
             onStateChanged = { customEmojiTagVersion++ },
             onTagged = { customEmojiTagVersion++ },
+            onEditTag = {
+                keyboardManager.beginTextEntry(
+                    InKeyboardTextEntry.Request(
+                        fieldKey = InKeyboardTextEntry.emojiTag(emojiTagSheetState.emoji()),
+                        hint = tagHint,
+                        initialText = emojiTagSheetState.tagInput(),
+                        maxLength = CustomEmojiTagStore.MaxTagLength,
+                        returnTo = ImeUiMode.MEDIA,
+                    ),
+                )
+            },
         )
     }
 }

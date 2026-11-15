@@ -33,6 +33,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.calendarQuickInsertManager
 import dev.patrickgold.florisboard.ime.calendar.CalendarAgendaPickerPanel
 import dev.patrickgold.florisboard.ime.calendar.CalendarAgendaPickerState
+import dev.patrickgold.florisboard.ime.keyboard.InKeyboardTextEntryBar
 import dev.patrickgold.florisboard.ime.smartbar.IncognitoDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.InlineSuggestionsStyleCache
 import dev.patrickgold.florisboard.ime.smartbar.Smartbar
@@ -56,6 +57,7 @@ fun TextInputLayout(
     val state by keyboardManager.activeState.collectAsState()
     val calendarPickerState by calendarQuickInsertManager.pickerState.collectAsState()
     val evaluator by keyboardManager.activeEvaluator.collectAsState()
+    val textEntrySession by keyboardManager.textEntry.session.collectAsState()
 
     InlineSuggestionsStyleCache()
 
@@ -64,8 +66,20 @@ fun TextInputLayout(
             .fillMaxWidth()
             .wrapContentHeight(),
     ) {
-        Smartbar()
-        if (!state.isSmartbarOnlyMode) {
+        val entrySession = textEntrySession
+        if (entrySession != null) {
+            InKeyboardTextEntryBar(
+                session = entrySession,
+                onCancel = { keyboardManager.finishTextEntry(submitted = false) },
+                onClear = { keyboardManager.textEntry.clear() },
+                onDone = { keyboardManager.finishTextEntry(submitted = true) },
+            )
+        } else {
+            Smartbar()
+        }
+        if (entrySession != null) {
+            TextKeyboardLayout(evaluator = evaluator)
+        } else if (!state.isSmartbarOnlyMode) {
             if (calendarPickerState != CalendarAgendaPickerState.Hidden) {
                 CalendarAgendaPickerPanel(
                     state = calendarPickerState,

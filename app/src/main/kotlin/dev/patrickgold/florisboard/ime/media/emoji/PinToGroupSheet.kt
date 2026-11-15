@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,13 +46,13 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.ime.keyboard.InKeyboardTextField
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.ime.theme.snyggErrorForegroundFor
 import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
@@ -75,6 +74,7 @@ fun PinToGroupSheet(
     version: Int,
     onStateChanged: () -> Unit,
     onPinned: (groupName: String) -> Unit,
+    onEditGroupName: () -> Unit,
 ) {
     if (!state.isVisible()) return
 
@@ -155,37 +155,19 @@ fun PinToGroupSheet(
                     }
 
                     val fieldContentDescription = stringRes(R.string.emoji__pin_group__field_content_description)
-                    BasicTextField(
-                        value = state.newGroupNameInput(),
-                        onValueChange = { text ->
-                            state.updateNewGroupName(text)
-                            onStateChanged()
-                        },
+                    InKeyboardTextField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .semantics {
-                                contentDescription = fieldContentDescription
-                            }
                             .clip(RoundedCornerShape(8.dp))
                             .background(fieldBackground)
                             .padding(horizontal = 10.dp, vertical = 8.dp),
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            color = foreground,
-                            fontSize = 14.sp,
-                        ),
-                        decorationBox = { innerTextField ->
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                if (state.newGroupNameInput().isBlank()) {
-                                    Text(
-                                        text = stringRes(R.string.emoji__pin_group__new_group_placeholder),
-                                        color = foreground.copy(alpha = 0.56f),
-                                        fontSize = 14.sp,
-                                    )
-                                }
-                                innerTextField()
-                            }
-                        },
+                        text = state.newGroupNameInput(),
+                        placeholder = stringRes(R.string.emoji__pin_group__new_group_placeholder),
+                        contentDescription = fieldContentDescription,
+                        color = foreground,
+                        placeholderColor = foreground.copy(alpha = 0.56f),
+                        fontSize = 14.sp,
+                        onClick = onEditGroupName,
                     )
 
                     state.error()?.let { error ->

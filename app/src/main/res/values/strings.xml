@@ -71,6 +71,7 @@
     <string name="emoji__search__clear" comment="Accessibility label for clearing the emoji panel search field">Clear emoji search</string>
     <string name="emoji__search__empty" comment="Empty state shown when emoji search has no results">No emojis match this search.</string>
     <string name="emoji__custom_tag__title" comment="In-keyboard sheet title for adding a custom tag to an emoji. {emoji} is the selected emoji.">Tag {emoji}</string>
+    <string name="emoji__custom_tag__built_in" comment="Line in the custom emoji tag sheet listing the names the emoji already has. {labels} is a comma-separated list such as pensive face, dejected, pensive">Built-in names: {labels}</string>
     <string name="emoji__custom_tag__empty" comment="Empty state in the custom emoji tag sheet">No custom tags yet.</string>
     <string name="emoji__custom_tag__field_placeholder" comment="Text field placeholder for a custom emoji tag">Add a tag</string>
     <string name="emoji__custom_tag__field_a11y" comment="Accessibility label for the custom emoji tag field">Custom emoji tag</string>
@@ -111,6 +112,9 @@
     <string name="sticker__share_import__success" comment="Toast after an image shared from another app is copied into SwiftFloris' local sticker pack">Sticker saved to local stickers.</string>
     <string name="sticker__search__placeholder" comment="Placeholder in the sticker panel search field">Search stickers</string>
     <string name="sticker__search__field_content_description" comment="Accessibility label for the sticker panel search field">Search stickers</string>
+    <string name="text_entry__typing_into" comment="Accessibility label for the bar shown above the letter keys while typing into a search or name field inside the keyboard. {field} is that field's name, such as Search emoji">Typing into {field}</string>
+    <string name="text_entry__type_action" comment="Accessibility action for a search or name field inside the keyboard. Activating it shows the letter keys so the user can type into the field">Type</string>
+    <string name="text_entry__clear" comment="Accessibility label for the button that clears the text typed into a search or name field inside the keyboard">Clear text</string>
     <string name="sticker__search__clear" comment="Accessibility label for clearing the sticker panel search field">Clear sticker search</string>
     <string name="sticker__search__empty" comment="Empty state shown when sticker search has no results; filenames and folder names are the local source for imported sticker indexing">No stickers match this filename, folder, or keyword search.</string>
     <string name="sticker__tile_a11y" comment="Accessibility label for a sticker tile. {label} is the sticker label.">Insert sticker {label}</string>

@@ -128,6 +128,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     val resources = KeyboardManagerResources()
     val activeState = ObservableKeyboardState.new()
     private val modeTransitions = KeyboardModeTransitionController()
+
+    /** Typing into a field the keyboard draws itself (#24). */
+    val textEntry = InKeyboardTextEntry()
+    private var textEntryReturnKeyboardMode: KeyboardMode? = null
     var smartbarVisibleDynamicActionsCount by mutableIntStateOf(0)
     @Volatile
     private var incognitoModeChangedListener: ((Boolean) -> Unit)? = null
@@ -318,6 +322,88 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
 
     fun transitionToImeUiMode(mode: ImeUiMode) {
         applyModeTransition(modeTransitions.transitionToImeUiMode(mode))
+    }
+
+    /**
+     * Shows the letter keys with an entry bar for [request] and sends key
+     * presses to [textEntry] until the user presses Done, Enter or Back.
+     */
+    fun beginTextEntry(request: InKeyboardTextEntry.Request) {
+        FlorisImeService.inputFeedbackController()?.keyPress(TextKeyData.UNSPECIFIED)
+        activeState.batchEdit {
+            transitionToImeUiMode(ImeUiMode.TEXT)
+            textEntryReturnKeyboardMode = activeState.keyboardMode
+            textEntry.begin(request)
+            if (activeState.keyboardMode != KeyboardMode.CHARACTERS) {
+                transitionToKeyboardMode(KeyboardMode.CHARACTERS)
+            }
+            activeState.inputShiftState = InputShiftState.UNSHIFTED
+            activeState.isActionsOverflowVisible = false
+            activeState.isActionsEditorVisible = false
+        }
+    }
+
+    /** Ends the entry and goes back to the panel that started it, which picks up the outcome. */
+    fun finishTextEntry(submitted: Boolean) {
+        val returnTo = textEntry.finish(submitted) ?: return
+        activeState.batchEdit {
+            restoreKeyboardModeAfterTextEntry()
+            transitionToImeUiMode(returnTo)
+        }
+    }
+
+    /** Drops an open entry without an outcome and leaves the letter keys as the app had them. */
+    fun abandonTextEntry() {
+        if (!textEntry.isActive) return
+        textEntry.abandon()
+        activeState.batchEdit {
+            restoreKeyboardModeAfterTextEntry()
+        }
+    }
+
+    private fun restoreKeyboardModeAfterTextEntry() {
+        val mode = textEntryReturnKeyboardMode ?: return
+        textEntryReturnKeyboardMode = null
+        if (activeState.keyboardMode != mode) {
+            transitionToKeyboardMode(mode)
+        }
+    }
+
+    /** Returns true when the key was fully handled by the entry. */
+    private fun routeKeyToTextEntry(data: KeyData): Boolean {
+        return when (TextEntryKeyPolicy.routeFor(data.code, data.type)) {
+            TextEntryKeyRoute.Text -> {
+                textEntry.type(data.asString(isForDisplay = false))
+                if (activeState.inputShiftState != InputShiftState.CAPS_LOCK &&
+                    !inputEventDispatcher.isPressed(KeyCode.SHIFT)
+                ) {
+                    activeState.inputShiftState = InputShiftState.UNSHIFTED
+                }
+                true
+            }
+            TextEntryKeyRoute.Space -> textEntry.type(" ")
+            TextEntryKeyRoute.DeleteCharacter -> textEntry.deleteBackward()
+            TextEntryKeyRoute.DeleteWord -> textEntry.deleteBackward(wholeWord = true)
+            TextEntryKeyRoute.Submit -> {
+                finishTextEntry(submitted = true)
+                true
+            }
+            TextEntryKeyRoute.Cancel -> {
+                finishTextEntry(submitted = false)
+                true
+            }
+            TextEntryKeyRoute.CancelThenPassThrough -> {
+                finishTextEntry(submitted = false)
+                false
+            }
+            TextEntryKeyRoute.Ignore -> true
+            TextEntryKeyRoute.PassThrough -> false
+        }
+    }
+
+    private fun isIgnoredByTextEntry(data: KeyData): Boolean {
+        return textEntry.isActive &&
+            TextEntryKeyPolicy.routeFor(data.code, data.type) == TextEntryKeyRoute.Ignore
     }
 
     fun prepareForEditor(preserveClipboard: Boolean) {
@@ -1105,6 +1191,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     override fun onInputKeyDown(data: KeyData) {
+        if (isIgnoredByTextEntry(data)) return
         val windowController = FlorisImeService.windowControllerOrNull()
         windowController?.editor?.disableIfNoGestureInProgress()
         when (data.code) {
@@ -1125,6 +1212,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     override fun onInputKeyUp(data: KeyData) = activeState.batchEdit {
+        if (textEntry.isActive && routeKeyToTextEntry(data)) return@batchEdit
         val windowController = FlorisImeService.windowControllerOrNull() ?: return@batchEdit
         when (data.code) {
             KeyCode.ARROW_DOWN,
@@ -1332,6 +1420,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     override fun onInputKeyRepeat(data: KeyData) {
+        if (isIgnoredByTextEntry(data)) return
         FlorisImeService.inputFeedbackController()?.keyRepeatedAction(data)
         when (data.code) {
             KeyCode.ARROW_DOWN,
@@ -1364,23 +1453,45 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     fun onHardwareKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         hardwareKeyboardRuntimeMapper.pruneDetachedLayouts()
         val mappedKey = hardwareKeyboardRuntimeMapper.map(event)
+        if (textEntry.isActive) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_DEL -> return textEntry.deleteBackward()
+                // Back closes the entry, not the keyboard.
+                KeyEvent.KEYCODE_BACK,
+                KeyEvent.KEYCODE_ESCAPE -> {
+                    finishTextEntry(submitted = false)
+                    return true
+                }
+            }
+        }
         return when (val action = HardwareKeyboardInputPolicy.keyDownAction(
             keyCode = keyCode,
             mappedKey = mappedKey,
             isMappedKeyAlphabetic = mappedKey?.let { UCharacter.isUAlphabetic(it.codePoint) } ?: false,
         )) {
             is HardwareKeyboardKeyDownAction.CommitMappedText -> {
+                if (textEntry.isActive) {
+                    return textEntry.type(action.text)
+                }
                 if (action.shouldFlushAutoCommitCandidate) {
                     nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) }
                 }
                 editorInstance.commitChar(action.text)
             }
             HardwareKeyboardKeyDownAction.HandleSpace -> {
-                handleHardwareKeyboardSpace()
+                if (textEntry.isActive) {
+                    textEntry.type(" ")
+                } else {
+                    handleHardwareKeyboardSpace()
+                }
                 true
             }
             HardwareKeyboardKeyDownAction.HandleEnter -> {
-                handleEnter()
+                if (textEntry.isActive) {
+                    finishTextEntry(submitted = true)
+                } else {
+                    handleEnter()
+                }
                 true
             }
             HardwareKeyboardKeyDownAction.HandleShiftDown -> {

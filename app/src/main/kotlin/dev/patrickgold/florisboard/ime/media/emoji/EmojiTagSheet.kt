@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,13 +45,13 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.ime.keyboard.InKeyboardTextField
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.ime.theme.snyggErrorForegroundFor
 import org.florisboard.lib.compose.stringRes
@@ -64,8 +63,10 @@ import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 fun EmojiTagSheet(
     state: EmojiTagSheetState,
     version: Int,
+    builtInLabels: List<String>,
     onStateChanged: () -> Unit,
     onTagged: (String) -> Unit,
+    onEditTag: () -> Unit,
 ) {
     if (!state.isVisible()) return
 
@@ -115,6 +116,18 @@ fun EmojiTagSheet(
                         fontWeight = FontWeight.SemiBold,
                     )
 
+                    // Search and `:shortcodes` already find the emoji by these.
+                    if (builtInLabels.isNotEmpty()) {
+                        Text(
+                            text = stringRes(
+                                R.string.emoji__custom_tag__built_in,
+                                "labels" to builtInLabels.joinToString(", "),
+                            ),
+                            color = foreground.copy(alpha = 0.72f),
+                            fontSize = 12.sp,
+                        )
+                    }
+
                     val existingTags = state.existingTags()
                     if (existingTags.isEmpty()) {
                         Text(
@@ -141,35 +154,19 @@ fun EmojiTagSheet(
                     }
 
                     val fieldContentDescription = stringRes(R.string.emoji__custom_tag__field_a11y)
-                    BasicTextField(
-                        value = state.tagInput(),
-                        onValueChange = { text ->
-                            state.updateTagInput(text)
-                            onStateChanged()
-                        },
+                    InKeyboardTextField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .semantics { contentDescription = fieldContentDescription }
                             .clip(RoundedCornerShape(8.dp))
                             .background(fieldBackground)
                             .padding(horizontal = 10.dp, vertical = 8.dp),
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            color = foreground,
-                            fontSize = 14.sp,
-                        ),
-                        decorationBox = { innerTextField ->
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                if (state.tagInput().isBlank()) {
-                                    Text(
-                                        text = stringRes(R.string.emoji__custom_tag__field_placeholder),
-                                        color = foreground.copy(alpha = 0.56f),
-                                        fontSize = 14.sp,
-                                    )
-                                }
-                                innerTextField()
-                            }
-                        },
+                        text = state.tagInput(),
+                        placeholder = stringRes(R.string.emoji__custom_tag__field_placeholder),
+                        contentDescription = fieldContentDescription,
+                        color = foreground,
+                        placeholderColor = foreground.copy(alpha = 0.56f),
+                        fontSize = 14.sp,
+                        onClick = onEditTag,
                     )
 
                     state.error()?.let { error ->

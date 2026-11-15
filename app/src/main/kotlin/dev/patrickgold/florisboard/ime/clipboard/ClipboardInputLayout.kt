@@ -49,7 +49,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Backspace
@@ -101,7 +100,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.R
@@ -111,6 +109,8 @@ import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
+import dev.patrickgold.florisboard.ime.keyboard.InKeyboardTextEntry
+import dev.patrickgold.florisboard.ime.keyboard.InKeyboardTextField
 import dev.patrickgold.florisboard.ime.media.KeyboardLikeButton
 import dev.patrickgold.florisboard.ime.smartbar.AnimationDuration
 import dev.patrickgold.florisboard.ime.smartbar.VerticalEnterTransition
@@ -191,7 +191,15 @@ fun ClipboardInputLayout(
     var isFilterRowShown by remember { mutableStateOf(false) }
     val activeFilterTypes = remember { mutableStateSetOf<ItemType>() }
     val activeFilterTypeSnapshot = activeFilterTypes.toSet()
-    var searchQuery by remember { mutableStateOf("") }
+    // The letter keys type the query and replace this panel meanwhile (#24).
+    var searchQuery by remember {
+        mutableStateOf(
+            keyboardManager.textEntry
+                .consumeOutcome { it == InKeyboardTextEntry.ClipboardSearch }
+                ?.text.orEmpty(),
+        )
+    }
+    val searchHint = stringRes(R.string.clipboard__search__placeholder)
     val effectiveSearchQuery = if (historySearchEnabled) searchQuery else ""
     val hasActiveSearchQuery = effectiveSearchQuery.isNotBlank()
     val hasActiveFilters = activeFilterTypeSnapshot.isNotEmpty() || hasActiveSearchQuery
@@ -340,6 +348,7 @@ fun ClipboardInputLayout(
     @Composable
     fun ClipboardSearchRow(
         query: String,
+        onEditQuery: () -> Unit,
         onQueryChange: (String) -> Unit,
     ) {
         val style = rememberSnyggThemeQuery(FlorisImeUi.ClipboardSearchRow.elementName)
@@ -360,29 +369,14 @@ fun ClipboardInputLayout(
                 imageVector = Icons.Default.Search,
                 contentDescription = null,
             )
-            BasicTextField(
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { contentDescription = searchDescription },
-                value = query,
-                onValueChange = { value -> onQueryChange(value.take(80)) },
-                singleLine = true,
-                textStyle = TextStyle(
-                    color = style.foreground(),
-                    fontSize = searchFontSize,
-                ),
-                decorationBox = { innerTextField ->
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        if (query.isBlank()) {
-                            Text(
-                                text = stringRes(R.string.clipboard__search__placeholder),
-                                color = style.foreground().copy(alpha = 0.58f),
-                                fontSize = searchFontSize,
-                            )
-                        }
-                        innerTextField()
-                    }
-                },
+            InKeyboardTextField(
+                modifier = Modifier.weight(1f),
+                text = query,
+                placeholder = stringRes(R.string.clipboard__search__placeholder),
+                contentDescription = searchDescription,
+                color = style.foreground(),
+                fontSize = searchFontSize,
+                onClick = onEditQuery,
             )
             if (query.isNotBlank()) {
                 SnyggIconButton(
@@ -658,6 +652,17 @@ fun ClipboardInputLayout(
                 ) {
                     ClipboardSearchRow(
                         query = searchQuery,
+                        onEditQuery = {
+                            keyboardManager.beginTextEntry(
+                                InKeyboardTextEntry.Request(
+                                    fieldKey = InKeyboardTextEntry.ClipboardSearch,
+                                    hint = searchHint,
+                                    initialText = searchQuery,
+                                    maxLength = 80,
+                                    returnTo = ImeUiMode.CLIPBOARD,
+                                ),
+                            )
+                        },
                         onQueryChange = { query -> searchQuery = query },
                     )
                 }

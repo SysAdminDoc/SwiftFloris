@@ -786,7 +786,9 @@ private class TextKeyboardLayoutController(
     val isGlideEnabled: Boolean get() = prefs.glide.enabled.get() &&
         prefs.glide.isEnabledForSubtype(subtypeManager.activeSubtype) &&
         editorInstance.activeInfo.isRichInputEditor &&
-        keyboardManager.activeState.keyVariation != KeyVariation.PASSWORD
+        keyboardManager.activeState.keyVariation != KeyVariation.PASSWORD &&
+        // Glide commits words to the app, not to a search or tag field in the keyboard.
+        !keyboardManager.textEntry.isActive
 
     private fun swipeSensitivityFor(pointer: TouchPointer): Int {
         val initialCode = pointer.initialKey?.computedData?.code
@@ -1224,6 +1226,9 @@ private class TextKeyboardLayoutController(
     }
 
     override fun onSwipe(event: SwipeGesture.Event): Boolean {
+        // Key swipes move the app's cursor or select its text, so they stay
+        // off while typing into a field the keyboard draws itself.
+        if (keyboardManager.textEntry.isActive) return false
         val pointer = pointerMap.findById(event.pointerId) ?: return false
         val initialKey = pointer.initialKey ?: return false
         val activeKey = pointer.activeKey
