@@ -39,6 +39,22 @@ private fun rootInsets(widthDp: Int, heightDp: Int): ImeInsets.Root {
     )
 }
 
+/**
+ * [ImeWindowConstraints] compares by identity, so two specs built from the same inputs are never
+ * equal as a whole. Compare everything else, plus the sizes the inline autofill request reads.
+ */
+private infix fun ImeWindowSpec.shouldMatchSettled(settled: ImeWindowSpec) {
+    assertSoftly {
+        this::class shouldBe settled::class
+        props shouldBe settled.props
+        userPreferredOptions shouldBe settled.userPreferredOptions
+        constraints::class shouldBe settled.constraints::class
+        props.keyboardWidth(constraints) shouldBe settled.props.keyboardWidth(settled.constraints)
+        calcSmartbarRowHeight(props.keyboardHeight) shouldBe
+            settled.calcSmartbarRowHeight(settled.props.keyboardHeight)
+    }
+}
+
 class ImeWindowControllerTest : FunSpec({
     val tolerance = 1e-3f.dp
 
@@ -223,6 +239,46 @@ class ImeWindowControllerTest : FunSpec({
                     val spec = spec.shouldBeInstanceOf<ImeWindowSpec.Floating>()
                     spec.props.shouldBeConstrainedTo(constraints, tolerance)
                 }
+            }
+        }
+    }
+
+    context("estimate before the root window is laid out") {
+        // The inline autofill request runs before a cold keyboard composes; its chip width comes
+        // from this estimate and holds for the whole login form (#23).
+        test("matches the fixed spec the keyboard settles on, height slider off 100%") {
+            checkAll(
+                Arb.rootInsets(),
+                Arb.windowConfigFixed(),
+            ) { rootInsets, windowConfig ->
+                val prefs by jetprefDataStoreOf(FlorisPreferenceModel::class)
+                prefs.keyboard.windowConfig.set(mapOf(rootInsets.formFactor.typeGuess to windowConfig))
+                prefs.keyboard.keyboardHeightMultiplierPortrait.set(120)
+                prefs.keyboard.keyboardHeightMultiplierLandscape.set(80)
+                val windowController = ImeWindowController(prefs, backgroundScope)
+
+                val estimate = windowController.estimateWindowSpec(rootInsets)
+                windowController.updateRootInsets(rootInsets)
+                val spec = windowController.activeWindowSpec.first { it !== ImeWindowSpec.Fallback }
+
+                estimate shouldMatchSettled spec
+            }
+        }
+
+        test("matches the floating spec the keyboard settles on") {
+            checkAll(
+                Arb.rootInsets(),
+                Arb.windowConfigFloating(),
+            ) { rootInsets, windowConfig ->
+                val prefs by jetprefDataStoreOf(FlorisPreferenceModel::class)
+                prefs.keyboard.windowConfig.set(mapOf(rootInsets.formFactor.typeGuess to windowConfig))
+                val windowController = ImeWindowController(prefs, backgroundScope)
+
+                val estimate = windowController.estimateWindowSpec(rootInsets)
+                windowController.updateRootInsets(rootInsets)
+                val spec = windowController.activeWindowSpec.first { it !== ImeWindowSpec.Fallback }
+
+                estimate shouldMatchSettled spec
             }
         }
     }

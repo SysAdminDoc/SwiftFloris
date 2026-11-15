@@ -209,6 +209,23 @@ object InlineSuggestionSizePolicy {
     }
 
     /**
+     * Chip width for a keyboard that hasn't been laid out yet, taken from the window spec it will
+     * settle on. The Smartbar puts its actions toggle and the sticky action, each a square as tall
+     * as the Smartbar row, beside the chip slot, so the estimate leaves room for both whatever the
+     * layout. Before this a cold request fell back to 320 px, and the password manager kept that
+     * width for every field in the form, which cut "Bitwarden My vault" to "Bitwar…" (#23).
+     */
+    fun estimatedChipWidthPx(
+        keyboardWidthPx: Int,
+        smartbarRowHeightPx: Int,
+        stickyActionPaddingPx: Int,
+        chipMarginPx: Int,
+    ): Int {
+        val besideSlotPx = 2 * smartbarRowHeightPx.coerceAtLeast(0) + stickyActionPaddingPx.coerceAtLeast(0)
+        return (keyboardWidthPx - besideSlotPx - chipMarginPx.coerceAtLeast(0)).coerceAtLeast(0)
+    }
+
+    /**
      * Chips are inflated at their content width, bounded by the spec maximum.
      * A fixed width makes every chip as wide as the keyboard, so even a short
      * "Vault is locked" chip pushes its label past the screen edge (#23).

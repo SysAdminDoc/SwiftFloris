@@ -93,6 +93,9 @@ private val NoExitTransition = ExitTransition.horizontalTween(0)
 private val AnimationTween = tween<Float>(AnimationDuration)
 private val NoAnimationTween = tween<Float>(0)
 
+/** Space either side of the sticky action, which sits beside the suggestions slot. */
+val SmartbarStickyActionPaddingH = 4.dp
+
 @Composable
 fun Smartbar() {
     val prefs by FlorisPreferenceStore
@@ -314,7 +317,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
 
         if (action != null) {
             QuickActionButton(
-                modifier = Modifier.padding(horizontal = 4.dp),
+                modifier = Modifier.padding(horizontal = SmartbarStickyActionPaddingH),
                 action = action,
                 evaluator = evaluator,
             )

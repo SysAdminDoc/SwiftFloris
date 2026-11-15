@@ -45,6 +45,9 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.app.FlorisAppActivity
@@ -66,11 +69,14 @@ import dev.patrickgold.florisboard.ime.lifecycle.LifecycleInputMethodService
 import dev.patrickgold.florisboard.ime.nlp.InlineSuggestionSizePolicy
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.ime.security.FlagSecurePolicy
+import dev.patrickgold.florisboard.ime.smartbar.InlineSuggestionsChipMargin
+import dev.patrickgold.florisboard.ime.smartbar.SmartbarStickyActionPaddingH
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingCapability
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.theme.WallpaperChangeReceiver
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
 import dev.patrickgold.florisboard.ime.voice.VoiceInputSetupReason
+import dev.patrickgold.florisboard.ime.window.ImeInsets
 import dev.patrickgold.florisboard.ime.window.ImeRootView
 import dev.patrickgold.florisboard.ime.window.ImeVisibilityConfigurationPolicy
 import dev.patrickgold.florisboard.ime.window.ImeWindowController
@@ -902,8 +908,16 @@ class FlorisImeService : LifecycleInputMethodService() {
 
         flogInfo(LogTopic.IMS_EVENTS) { "Creating inline suggestions request" }
         val stylesBundle = themeManager.createInlineSuggestionUiStyleBundle(this)
+        val measuredWidthPx = NlpInlineAutofill.presentationMaxWidthPx()
+        val chipWidthPx = if (measuredWidthPx > 0) {
+            measuredWidthPx
+        } else {
+            estimateInlineChipWidthPx().also { estimatePx ->
+                flogInfo(LogTopic.IMS_EVENTS) { "Keyboard not laid out yet, estimated chip width $estimatePx px" }
+            }
+        }
         val maxSize = InlineSuggestionSizePolicy.presentationMaxSize(
-            keyboardWidthPx = NlpInlineAutofill.presentationMaxWidthPx(),
+            keyboardWidthPx = chipWidthPx,
             chipHeightPx = NlpInlineAutofill.suggestionsChipHeightPx,
         )
         val spec = InlinePresentationSpec.Builder(
@@ -917,6 +931,25 @@ class FlorisImeService : LifecycleInputMethodService() {
         return InlineSuggestionsRequest.Builder(listOf(spec)).run {
             setMaxSuggestionCount(InlineSuggestionsRequest.SUGGESTION_COUNT_UNLIMITED)
             build()
+        }
+    }
+
+    /**
+     * The chip width the Smartbar will have, for a request that arrives before the keyboard is
+     * laid out. The root window fills the IME window, which spans the display.
+     */
+    private fun estimateInlineChipWidthPx(): Int {
+        val displayMetrics = resources.displayMetrics
+        return with(Density(this)) {
+            val rootInsets = ImeInsets.Root.of(IntRect(0, 0, displayMetrics.widthPixels, displayMetrics.heightPixels))
+            val spec = windowController.estimateWindowSpec(rootInsets)
+            InlineSuggestionSizePolicy.estimatedChipWidthPx(
+                keyboardWidthPx = spec.props.keyboardWidth(spec.constraints).roundToPx(),
+                smartbarRowHeightPx = spec.calcSmartbarRowHeight(spec.props.keyboardHeight).roundToPx(),
+                stickyActionPaddingPx = (SmartbarStickyActionPaddingH * 2).roundToPx(),
+                chipMarginPx = (InlineSuggestionsChipMargin.calculateLeftPadding(LayoutDirection.Ltr) +
+                    InlineSuggestionsChipMargin.calculateRightPadding(LayoutDirection.Ltr)).roundToPx(),
+            )
         }
     }
 

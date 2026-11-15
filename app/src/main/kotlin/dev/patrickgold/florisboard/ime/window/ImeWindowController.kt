@@ -131,25 +131,14 @@ class ImeWindowController(
                 prefs.keyboard.keyboardHeightMultiplierLandscape.asFlow(),
             )
         ) { values ->
-            val rootInsets = values[0] as ImeInsets.Root
-            val keySpacingFactorH = values[1] as Int
-            val keySpacingFactorV = values[2] as Int
-            val multiplierP = values[3] as Int
-            val multiplierL = values[4] as Int
-            val heightP = values[5] as Int
-            val heightL = values[6] as Int
-
-            val rootBounds = rootInsets.boundsDp
-            val isPortrait = rootBounds.width <= rootBounds.height
-            // ROADMAP §6 N5.3 — Scalable keyboard height. Form-factor default ×
-            // user multiplier; ImeWindowController.doComputeWindowSpec re-constrains
-            // to [minKeyboardHeight, maxKeyboardHeight].
-            val heightScale = if (isPortrait) heightP / 100f else heightL / 100f
-            ImeWindowSpec.UserPreferredOptions(
-                keySpacingFactorH = keySpacingFactorH / 100f,
-                keySpacingFactorV = keySpacingFactorV / 100f,
-                fontScale = if (isPortrait) multiplierP / 100f else multiplierL / 100f,
-                keyboardHeightScale = heightScale.coerceIn(0.5f, 1.5f),
+            userPreferredOptionsOf(
+                rootInsets = values[0] as ImeInsets.Root,
+                keySpacingFactorH = values[1] as Int,
+                keySpacingFactorV = values[2] as Int,
+                multiplierP = values[3] as Int,
+                multiplierL = values[4] as Int,
+                heightP = values[5] as Int,
+                heightL = values[6] as Int,
             )
         }
 
@@ -163,6 +152,27 @@ class ImeWindowController(
         }.collectIn(scope) { windowSpec ->
             activeWindowSpec.value = windowSpec
         }
+    }
+
+    /**
+     * The window spec the keyboard settles on once its root window is laid out with [rootInsets],
+     * computed straight from the stored window config and preferences. Android asks for the inline
+     * autofill request before a freshly started keyboard has composed, while [activeWindowSpec] is
+     * still [ImeWindowSpec.Fallback], and the chip width in that request holds for the whole form.
+     */
+    fun estimateWindowSpec(rootInsets: ImeInsets.Root): ImeWindowSpec {
+        val windowConfig = prefs.keyboard.windowConfig.get()[rootInsets.formFactor.typeGuess]
+            ?: ImeWindowConfig.Default
+        val userPreferredOptions = userPreferredOptionsOf(
+            rootInsets = rootInsets,
+            keySpacingFactorH = prefs.keyboard.keySpacingHorizontal.get(),
+            keySpacingFactorV = prefs.keyboard.keySpacingVertical.get(),
+            multiplierP = prefs.keyboard.fontSizeMultiplierPortrait.get(),
+            multiplierL = prefs.keyboard.fontSizeMultiplierLandscape.get(),
+            heightP = prefs.keyboard.keyboardHeightMultiplierPortrait.get(),
+            heightL = prefs.keyboard.keyboardHeightMultiplierLandscape.get(),
+        )
+        return doComputeWindowSpec(rootInsets, windowConfig, userPreferredOptions)
     }
 
     /**
@@ -348,6 +358,29 @@ class ImeWindowController(
                 floatingOnboardingVisible.value = true
             }
         }
+    }
+
+    private fun userPreferredOptionsOf(
+        rootInsets: ImeInsets.Root,
+        keySpacingFactorH: Int,
+        keySpacingFactorV: Int,
+        multiplierP: Int,
+        multiplierL: Int,
+        heightP: Int,
+        heightL: Int,
+    ): ImeWindowSpec.UserPreferredOptions {
+        val rootBounds = rootInsets.boundsDp
+        val isPortrait = rootBounds.width <= rootBounds.height
+        // ROADMAP §6 N5.3 — Scalable keyboard height. Form-factor default ×
+        // user multiplier; ImeWindowController.doComputeWindowSpec re-constrains
+        // to [minKeyboardHeight, maxKeyboardHeight].
+        val heightScale = if (isPortrait) heightP / 100f else heightL / 100f
+        return ImeWindowSpec.UserPreferredOptions(
+            keySpacingFactorH = keySpacingFactorH / 100f,
+            keySpacingFactorV = keySpacingFactorV / 100f,
+            fontScale = if (isPortrait) multiplierP / 100f else multiplierL / 100f,
+            keyboardHeightScale = heightScale.coerceIn(0.5f, 1.5f),
+        )
     }
 
     private fun doComputeWindowSpec(

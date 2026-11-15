@@ -162,6 +162,30 @@ class NlpInlineAutofillTest : FunSpec({
             specMaxHeightPx = 100,
         ).heightPx shouldBe 107
     }
+
+    test("a cold request leaves the chip the slot beside the Smartbar toggle and sticky action") {
+        // S25 at density 2.625: full-width keyboard, 133 px Smartbar row (107 px chips plus
+        // 5 dp margins), 4 dp either side of the sticky action, 5 dp chip margins.
+        val widthPx = InlineSuggestionSizePolicy.estimatedChipWidthPx(
+            keyboardWidthPx = 1080,
+            smartbarRowHeightPx = 133,
+            stickyActionPaddingPx = 21,
+            chipMarginPx = 26,
+        )
+
+        widthPx shouldBe 1080 - 2 * 133 - 21 - 26
+        // A warm keyboard drew "Bitwarden My vault" 507 px wide; the old cold fallback was 320.
+        (widthPx >= 507) shouldBe true
+    }
+
+    test("a cold estimate for a keyboard narrower than its Smartbar furniture is zero, not negative") {
+        InlineSuggestionSizePolicy.estimatedChipWidthPx(
+            keyboardWidthPx = 200,
+            smartbarRowHeightPx = 133,
+            stickyActionPaddingPx = 21,
+            chipMarginPx = 26,
+        ) shouldBe 0
+    }
 })
 
 private const val WRAP_CONTENT = -2 // android.view.ViewGroup.LayoutParams.WRAP_CONTENT
