@@ -29,6 +29,9 @@ internal data class GlideAlternativeCommit(
 /**
  * Keeps a small, process-local history of glide classifications so alternatives can be restored when the user
  * moves the cursor back into an unchanged committed word.
+ *
+ * Every public call locks the session: candidate assembly reads and prunes it on a background
+ * dispatcher while input handling records and consumes commits on the input thread.
  */
 internal class GlideAlternativeSession(
     private val maxCommits: Int = MaxCommits,
@@ -38,6 +41,7 @@ internal class GlideAlternativeSession(
     private val commits = ArrayDeque<GlideAlternativeCommit>()
     private var activeCommit: GlideAlternativeCommit? = null
 
+    @Synchronized
     fun remember(
         committedText: String,
         alternatives: List<String>,
@@ -74,6 +78,7 @@ internal class GlideAlternativeSession(
         activeCommit = commit.takeIf { commits.contains(it) }
     }
 
+    @Synchronized
     fun onContentChanged(
         content: EditorContent,
         now: Long = System.currentTimeMillis(),
@@ -92,6 +97,7 @@ internal class GlideAlternativeSession(
         }
     }
 
+    @Synchronized
     fun activeCandidates(now: Long = System.currentTimeMillis()): List<SuggestionCandidate> {
         pruneExpired(now)
         val commit = activeCommit ?: return emptyList()
@@ -106,6 +112,7 @@ internal class GlideAlternativeSession(
         }
     }
 
+    @Synchronized
     fun consume(candidate: GlideAlternativeSuggestionCandidate): Boolean {
         val commit = commits.firstOrNull {
             it.committed == candidate.committed &&
@@ -119,6 +126,7 @@ internal class GlideAlternativeSession(
         return true
     }
 
+    @Synchronized
     fun clear() {
         commits.clear()
         activeCommit = null

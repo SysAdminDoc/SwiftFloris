@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.ime.nlp
 
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
+import dev.patrickgold.florisboard.shouldWaitForMonitor
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -91,6 +92,27 @@ class GlideAlternativeSessionTest : FunSpec({
         )
 
         session.activeCandidates(now = 101L).map { it.text.toString() } shouldBe listOf("tree", "three")
+    }
+
+    test("every call waits while another thread is using the session") {
+        // Candidate assembly prunes the session on a background dispatcher while the input
+        // thread records and consumes commits, so an unlocked call could corrupt the history.
+        val session = GlideAlternativeSession(timeoutMs = 1_000L)
+        val range = EditorRange(0, 3)
+        shouldWaitForMonitor(session) {
+            session.remember(committedText = "the", alternatives = listOf("tree"), range = range, now = 100L)
+        }
+        shouldWaitForMonitor(session) {
+            session.onContentChanged(content("the", cursor = 1), now = 101L)
+        }
+        var candidates = emptyList<SuggestionCandidate>()
+        shouldWaitForMonitor(session) { candidates = session.activeCandidates(now = 102L) }
+        val candidate = candidates.single() as GlideAlternativeSuggestionCandidate
+        var consumed = false
+        shouldWaitForMonitor(session) { consumed = session.consume(candidate) }
+        consumed shouldBe true
+        shouldWaitForMonitor(session) { session.clear() }
+        session.activeCandidates(now = 103L) shouldBe emptyList()
     }
 })
 
