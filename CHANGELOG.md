@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Build with Kotlin 2.4.21. Kotlin 2.4.10 had a security bug (CVE-2026-53914) where a tampered build cache could run code during a build, and release builds now refuse a compiler that still has it.
 - Stop next-word learning from pairing words across text fields. Moving to another field resets what the keyboard remembers about the words you just typed, but that reset could land halfway through learning a word, so the first word in the new field was saved as following the last one in the old field, sometimes in another language.
 - Leave a cached file alone at startup when it can't be moved out of the way. The cleanup deleted it in place instead, which could take a file an import was still copying.
 - Stop two voice model installs or deletes from running over each other. The lock only covered one part of the app at a time, so a delete could remove a model folder another install was still copying into.
