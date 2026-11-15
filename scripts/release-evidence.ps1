@@ -241,7 +241,7 @@ $gradleReleaseEvidenceArgs = @(
     "-Dkotlin.caching.enabled=false"
 )
 $gradleMitigation = $gradleReleaseEvidenceArgs -join " "
-Add-Summary "Kotlin build-cache mitigation: gradle-local-gates use $gradleMitigation; remove after final Kotlin 2.4.20+ and compatible KSP ship."
+Add-Summary "Gradle local gates build from scratch with no Gradle or Kotlin cache: $gradleMitigation"
 
 function Get-KotlinBuildCacheGuardArguments {
     param(
