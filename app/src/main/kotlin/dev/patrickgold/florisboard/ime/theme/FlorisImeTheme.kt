@@ -52,7 +52,8 @@ fun FlorisImeTheme(content: @Composable () -> Unit) {
     }
     val snyggTheme = rememberSnyggTheme(activeThemeInfo.stylesheet, assetResolver)
     val windowSpec by windowController.activeWindowSpec.collectAsState()
-    val fontScale by remember { derivedStateOf { windowSpec.fontScale } }
+    val editorState by windowController.editor.state.collectAsState()
+    val fontScale by remember { derivedStateOf { windowController.themeFontScale(windowSpec, editorState) } }
 
     val state by keyboardManager.activeState.collectAsState()
     val attributes = mapOf(

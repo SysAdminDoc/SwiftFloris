@@ -275,6 +275,20 @@ class ImeWindowController(
         }
     }
 
+    /**
+     * The font scale the keyboard theme sizes its text with, for [spec] while the editor is in [editorState].
+     *
+     * During a resize gesture this holds the scale from when the gesture began. Every style query in the
+     * keyboard depends on the font scale, so following the window would restyle every key on every frame of
+     * the drag (issue #23). The text catches up to the new size once the gesture ends or is cancelled.
+     */
+    internal fun themeFontScale(spec: ImeWindowSpec, editorState: EditorState): Float {
+        if (editorState.isResizeGesture) {
+            editor.gestureFontScale?.let { return it }
+        }
+        return spec.fontScale
+    }
+
     fun onConfigurationChanged(@Suppress("UNUSED_PARAMETER") newConfig: Configuration) {
         // As of writing newConfig is unused, but kept for forward-compatibility.
         editor.disable()
@@ -524,6 +538,12 @@ class ImeWindowController(
         internal var gestureInsetsTop: Int? = null
             private set
 
+        /**
+         * The [ImeWindowSpec.fontScale] from when the current resize gesture began, held until it ends.
+         */
+        internal var gestureFontScale: Float? = null
+            private set
+
         private fun syncFromPrefs() {
             version.update { it + 1 }
         }
@@ -589,6 +609,7 @@ class ImeWindowController(
 
         fun beginResizeGesture(): ImeWindowSpec {
             gestureInsetsTop = reportedInsetsTop()
+            gestureFontScale = activeWindowSpec.value.fontScale
             state.value = EditorState.ACTIVE_RESIZE_GESTURE
             return activeWindowSpec.value
         }
