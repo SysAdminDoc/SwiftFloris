@@ -42,13 +42,19 @@ import dev.patrickgold.florisboard.lib.io.ZipUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.query
 import org.florisboard.lib.android.readToFile
 import org.florisboard.lib.kotlin.io.FsDir
@@ -57,7 +63,9 @@ import org.florisboard.lib.kotlin.io.readJson
 import org.florisboard.lib.kotlin.io.subDir
 import org.florisboard.lib.kotlin.io.subFile
 import java.io.Closeable
+import java.io.InterruptedIOException
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 class CacheManager(context: Context) {
     companion object {
@@ -188,11 +196,53 @@ class CacheManager(context: Context) {
 
     fun readFromUriIntoCache(uri: Uri) = readFromUriIntoCache(listOf(uri))
 
-    fun readFromUriIntoCache(uriList: List<Uri>): ImporterWorkspace {
+    /**
+     * [readFromUriIntoCache] for a coroutine, on the IO dispatcher. Cancelling the caller
+     * interrupts the copy: a file being copied stops at its next buffer, and a step that can't be
+     * interrupted (a call to the other app, an unzip, a compile) runs to its end, after which no
+     * further step starts. What it made is deleted, so a screen that's recreated and copies again
+     * overlaps the old copy by one step at most. A copy that had just finished is closed here.
+     * Either way the caller gets the cancellation and nothing is left behind. An interrupt that
+     * stops the import while the caller is still active fails it with [InterruptedIOException],
+     * so the caller doesn't end as if it had been cancelled.
+     */
+    suspend fun importFromUris(uriList: List<Uri>): ImporterWorkspace {
+        val job = currentCoroutineContext()[Job]
+        var made: ImporterWorkspace? = null
+        try {
+            return runInterruptible(Dispatchers.IO) {
+                readFromUriIntoCache(uriList, isCancelled = { job?.isCancelled == true }).also { made = it }
+            }
+        } catch (error: Throwable) {
+            made?.let { workspace ->
+                withContext(NonCancellable + Dispatchers.IO) { workspace.close() }
+            }
+            currentCoroutineContext().ensureActive()
+            if (error is CancellationException) {
+                // runInterruptible reports an InterruptedException as a cancellation, but the
+                // caller is still active, so it's a failed import and the caller has to hear it
+                // as one.
+                throw InterruptedIOException("The import was interrupted").apply { initCause(error) }
+            }
+            throw error
+        }
+    }
+
+    /**
+     * Copies [uriList] into a new importer workspace. [isCancelled] is asked between steps,
+     * since an interrupt can be swallowed by a call to another app's provider or land in a
+     * step that never checks for one.
+     */
+    fun readFromUriIntoCache(uriList: List<Uri>, isCancelled: () -> Boolean = { false }): ImporterWorkspace {
+        fun stopIfCancelled() {
+            if (isCancelled()) throw InterruptedIOException("The import was cancelled")
+        }
+
         val importUris = uriList.distinct()
         requireImportUriCount(importUris.size)
         val contentResolver = appContext.contentResolver ?: error("Content resolver is null.")
         val workspace = ImporterWorkspace(uuid = UUID.randomUUID().toString()).also { it.mkdirs() }
+        workspace.sources = importUris
         try {
             val usedFileNames = mutableSetOf<String>()
             var totalImportBytes = 0L
@@ -206,6 +256,7 @@ class CacheManager(context: Context) {
                             null to null
                         }
                     } ?: (null to null)
+                    stopIfCancelled()
                     reportedSize?.takeIf { it >= 0L }?.let {
                         requireImportBatchCapacity(totalImportBytes, it)
                     }
@@ -217,6 +268,7 @@ class CacheManager(context: Context) {
                     usedFileNames += fileName
                     val file = workspace.inputDir.subFile(fileName)
                     contentResolver.readToFile(uri, file, MaxImportFileBytes)
+                    stopIfCancelled()
                     totalImportBytes = addImportBatchBytes(totalImportBytes, file.length())
                     val extWorkingDir = workspace.outputDir.subDir(file.nameWithoutExtension)
                     val ext = runCatching {
@@ -334,6 +386,8 @@ class CacheManager(context: Context) {
         val inputDir: FsDir = dir.subDir(InputDirName)
         val outputDir: FsDir = dir.subDir(OutputDirName)
 
+        /** The URIs the files were copied from. */
+        var sources = emptyList<Uri>()
         var inputFileInfos = emptyList<FileInfo>()
 
         override fun mkdirs() {

@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.app.ext
 
+import android.net.Uri
 import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +64,7 @@ import dev.patrickgold.florisboard.lib.NATIVE_NULLPTR
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.io.FileRegistry
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -160,15 +163,41 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
             ?.mapSkipReasons()
         mutableStateOf(workspace)
     }
+    // Where the files came from. It's saved with the screen, so a screen that comes back after
+    // Android ended the app, or while the copy was still running, copies them again.
+    var importSources by rememberSaveable(initUuid) {
+        mutableStateOf(importResult?.getOrNull()?.sources?.toSaveable())
+    }
 
     fun setImportResult(result: Result<CacheManager.ImporterWorkspace>?) {
         importResult = result
         importWorkspaceUuid = result?.getOrNull()?.uuid
+        importSources = result?.getOrNull()?.sources?.toSaveable()
     }
 
     fun closeImportResult() {
         importResult?.getOrNull()?.close()
         setImportResult(null)
+    }
+
+    suspend fun prepareFiles(uris: List<Uri>) {
+        isPreparingFiles = true
+        lastImportNotice = null
+        lastImportErrorMessage = null
+        closeImportResult()
+        importSources = uris.toSaveable()
+        val result = try {
+            Result.success(cacheManager.importFromUris(uris))
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Throwable) {
+            Result.failure(error)
+        }
+        setImportResult(result.mapSkipReasons().onFailure { error ->
+            lastImportNotice = ExtensionImportFlowNotice.Failure
+            lastImportErrorMessage = error.summarizeForUser(detailsUnavailable)
+        })
+        isPreparingFiles = false
     }
 
     val currentImportResult by rememberUpdatedState(importResult)
@@ -197,22 +226,16 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
             }
             scope.launch {
                 if (!ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)) return@launch
-                isPreparingFiles = true
-                lastImportNotice = null
-                lastImportErrorMessage = null
-                closeImportResult()
-                setImportResult(runCatching {
-                    withContext(Dispatchers.IO) {
-                        cacheManager.readFromUriIntoCache(uriList)
-                    }
-                }.mapSkipReasons().onFailure { error ->
-                    lastImportNotice = ExtensionImportFlowNotice.Failure
-                    lastImportErrorMessage = error.summarizeForUser(detailsUnavailable)
-                })
-                isPreparingFiles = false
+                prepareFiles(uriList)
             }
         },
     )
+    LaunchedEffect(Unit) {
+        val sources = importSources
+        if (importResult == null && !sources.isNullOrEmpty() && !isPreparingFiles) {
+            prepareFiles(sources.map(Uri::parse))
+        }
+    }
     val selectFiles = {
         if (ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)) {
             runCatching {
@@ -439,6 +462,8 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
         }
     }
 }
+
+private fun List<Uri>.toSaveable() = mapTo(ArrayList()) { it.toString() }
 
 @Composable
 private fun FileInfoView(

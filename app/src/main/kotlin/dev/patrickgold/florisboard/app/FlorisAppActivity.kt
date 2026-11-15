@@ -62,9 +62,8 @@ import dev.patrickgold.florisboard.lib.util.AppVersionUtils
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlinx.coroutines.Dispatchers
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.android.hideAppIcon
 import org.florisboard.lib.android.showAppIcon
@@ -99,6 +98,7 @@ class FlorisAppActivity : ComponentActivity() {
     private var showAppIcon = true
     private var resourcesContext by mutableStateOf(this as Context)
     private var intentToBeHandled by mutableStateOf<Intent?>(null)
+    private val externalIntents = ExternalIntentLedger()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // R2-1: application init can stage a recoverable startup exception
@@ -115,6 +115,10 @@ class FlorisAppActivity : ComponentActivity() {
             setKeepOnScreenCondition { !appContext.preferenceStoreLoaded.value }
         }
         super.onCreate(savedInstanceState)
+        // Offered now and handled once the content is set. A rotation or process recreation
+        // brings an intent back here, and the ledger knows whether it was handled.
+        externalIntents.restore(savedInstanceState)
+        offerExternalIntent(intent, isLaunch = true)
         // Matrix #12 — Android 16 edge-to-edge migration. `targetSdk 36` forces edge-to-edge by default; we opt
         // in explicitly via the modern `enableEdgeToEdge()` API so the activity carries the same behavior across
         // pre-API-36 builds too, and so the `SystemBarStyle` is set deliberately (transparent bars). This also
@@ -200,7 +204,6 @@ class FlorisAppActivity : ComponentActivity() {
                     }
                 }
             }
-            onNewIntent(intent)
         }
     }
 
@@ -214,6 +217,7 @@ class FlorisAppActivity : ComponentActivity() {
             ViewCompat.getRootWindowInsets(decor)?.isVisible(WindowInsetsCompat.Type.ime())
         } ?: false
         outState.putBoolean(SAVED_KEY_IME_VISIBLE, imeVisible)
+        externalIntents.save(outState)
     }
 
     override fun onPause() {
@@ -233,24 +237,20 @@ class FlorisAppActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        offerExternalIntent(intent, isLaunch = false)
+    }
 
-        if (intent.action == Intent.ACTION_VIEW && intent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true) {
-            intentToBeHandled = intent
-            return
-        }
-        if (intent.action == Intent.ACTION_VIEW && intent.data != null) {
-            intentToBeHandled = intent
-            return
-        }
-        if (intent.action == Intent.ACTION_SEND && intent.importUris().isNotEmpty()) {
-            intentToBeHandled = intent
-            return
-        }
-        if (intent.isLanguageSettingsEntryPoint()) {
-            intentToBeHandled = intent
-            return
-        }
-        intentToBeHandled = null
+    /** Hands the request waiting in [externalIntents], if any, to [AppContent]. */
+    private fun offerExternalIntent(intent: Intent, isLaunch: Boolean) {
+        externalIntents.offer(intent, isLaunch, isRequest = intent.isExternalRequest())
+        intentToBeHandled = externalIntents.pending
+    }
+
+    private fun Intent.isExternalRequest(): Boolean {
+        return (action == Intent.ACTION_VIEW && categories?.contains(Intent.CATEGORY_BROWSABLE) == true) ||
+            (action == Intent.ACTION_VIEW && data != null) ||
+            (action == Intent.ACTION_SEND && importUris().isNotEmpty()) ||
+            isLanguageSettingsEntryPoint()
     }
 
     @Composable
@@ -289,37 +289,37 @@ class FlorisAppActivity : ComponentActivity() {
         }
 
         LaunchedEffect(intentToBeHandled) {
-            val intent = intentToBeHandled
-            if (intent != null) {
-                if (intent.isLanguageSettingsEntryPoint()) {
-                    // Land on the subtype list rather than the home screen: the
-                    // system sent the user here to add a keyboard language, and
-                    // making them find it again is the confusion this answers.
-                    // Marked consumed so a rotation, which re-runs onCreate and
-                    // replays the launch intent, does not push a second copy
-                    // onto the restored back stack.
-                    setIntent(intent.also { it.putExtra(EXTRA_LANGUAGE_SETTINGS_CONSUMED, true) })
-                    navController.navigate(Routes.Settings.Localization)
-                } else if (
-                    intent.action == Intent.ACTION_VIEW &&
-                    intent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true
-                ) {
-                    navController.handleDeepLink(intent)
-                } else {
-                    val uris = intent.importUris()
-                    val workspace = if (uris.isNotEmpty()) {
-                        runCatching {
-                            withContext(Dispatchers.IO) {
-                                cacheManager.readFromUriIntoCache(uris)
-                            }
-                        }.getOrNull()
-                    } else {
+            val intent = intentToBeHandled ?: return@LaunchedEffect
+            if (intent.isLanguageSettingsEntryPoint()) {
+                // Land on the subtype list rather than the home screen: the
+                // system sent the user here to add a keyboard language, and
+                // making them find it again is the confusion this answers.
+                navController.navigate(Routes.Settings.Localization)
+            } else if (
+                intent.action == Intent.ACTION_VIEW &&
+                intent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true
+            ) {
+                navController.handleDeepLink(intent)
+            } else {
+                val uris = intent.importUris()
+                // A newer request or the activity going away cancels this, and the copy then
+                // deletes what it made. The request is still waiting, so the recreated
+                // activity copies it again.
+                val workspace = if (uris.isNotEmpty()) {
+                    try {
+                        cacheManager.importFromUris(uris)
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (error: Exception) {
                         null
                     }
-                    navController.navigate(Routes.Ext.Import(ExtensionImportScreenType.EXT_ANY, workspace?.uuid))
+                } else {
+                    null
                 }
+                navController.navigate(Routes.Ext.Import(ExtensionImportScreenType.EXT_ANY, workspace?.uuid))
             }
-            intentToBeHandled = null
+            externalIntents.markHandled(intent)
+            intentToBeHandled = externalIntents.pending
         }
     }
 
@@ -328,12 +328,9 @@ class FlorisAppActivity : ComponentActivity() {
      *
      * The platform starts the alias named in `method.xml`'s
      * `android:languageSettingsActivity` by explicit component, so the component
-     * name is the only signal; there is no action to match on. The consumed flag
-     * keeps a configuration change from replaying the launch intent and pushing
-     * the destination a second time.
+     * name is the only signal; there is no action to match on.
      */
     private fun Intent.isLanguageSettingsEntryPoint(): Boolean {
-        if (getBooleanExtra(EXTRA_LANGUAGE_SETTINGS_CONSUMED, false)) return false
         return component?.className == ImeLanguageSettingsAliasName
     }
 
@@ -345,9 +342,6 @@ class FlorisAppActivity : ComponentActivity() {
          */
         internal const val ImeLanguageSettingsAliasName =
             "dev.patrickgold.florisboard.ImeLanguageSettingsAlias"
-
-        private const val EXTRA_LANGUAGE_SETTINGS_CONSUMED =
-            "swiftfloris.app.language_settings_consumed"
     }
 
     private fun Intent.importUris(): List<Uri> {

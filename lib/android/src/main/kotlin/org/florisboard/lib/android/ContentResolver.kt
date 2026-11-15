@@ -25,6 +25,7 @@ import org.florisboard.lib.kotlin.io.FsFile
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStream
+import java.io.InterruptedIOException
 import java.io.OutputStream
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -120,6 +121,10 @@ inline fun ContentResolver.writeAllText(uri: Uri, text: String) {
     }
 }
 
+/**
+ * Copies this stream to [out], failing once more than [maxBytes] have been read. An interrupt of
+ * the copying thread (as from `runInterruptible` on cancellation) stops it at the next buffer.
+ */
 fun InputStream.copyToLimited(out: OutputStream, maxBytes: Long): Long {
     require(maxBytes > 0) { "Argument `maxBytes` must be greater than 0" }
     if (maxBytes == Long.MAX_VALUE) {
@@ -128,6 +133,9 @@ fun InputStream.copyToLimited(out: OutputStream, maxBytes: Long): Long {
     var copied = 0L
     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
     while (true) {
+        if (Thread.interrupted()) {
+            throw InterruptedIOException("Copy was interrupted after $copied bytes")
+        }
         val read = read(buffer)
         if (read < 0) {
             return copied
