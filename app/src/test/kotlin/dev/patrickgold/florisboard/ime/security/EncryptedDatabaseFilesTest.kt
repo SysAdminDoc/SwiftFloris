@@ -16,12 +16,18 @@
 
 package dev.patrickgold.florisboard.ime.security
 
+import android.database.sqlite.SQLiteDatabaseCorruptException
+import android.database.sqlite.SQLiteDatabaseLockedException
+import android.database.sqlite.SQLiteDiskIOException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
+import net.zetetic.database.sqlcipher.SQLiteNotADatabaseException
 import java.io.File
+import java.io.IOException
 import java.nio.file.Files
+import java.security.KeyStoreException
 
 /**
  * Encrypting an existing plaintext database is a move-aside / rebuild / verify sequence over the
@@ -120,6 +126,21 @@ class EncryptedDatabaseFilesTest : FunSpec({
         File(dir, "history-wal.unreadable-4000").exists() shouldBe true
     }
 
+    test("a quarantine that can't move every file puts the store back and reports it kept") {
+        val dir = tempDir()
+        val database = File(dir, "history").apply { writeText("ciphertext") }
+        val wal = File(dir, "history-wal").apply { writeText("wal") }
+        // A directory at the destination name makes only the -wal rename fail.
+        File(dir, "history-wal.unreadable-6000").mkdirs()
+        File(dir, "history-wal.unreadable-6000/occupied").writeText("x")
+
+        EncryptedDatabaseFiles.quarantine(database, "unreadable", 6_000L) shouldBe false
+
+        database.readText() shouldBe "ciphertext"
+        wal.readText() shouldBe "wal"
+        File(dir, "history.unreadable-6000").exists() shouldBe false
+    }
+
     test("a partial staging failure restores what it already moved") {
         val dir = tempDir()
         val database = plaintextDatabase(dir)
@@ -134,5 +155,40 @@ class EncryptedDatabaseFilesTest : FunSpec({
 
         database.exists() shouldBe true
         wal.readText() shouldBe "wal"
+    }
+
+    test("only proven corruption authorizes quarantine") {
+        EncryptedDatabaseFiles.isDefinitiveCorruption(
+            SQLiteDatabaseCorruptException("malformed database"),
+        ) shouldBe true
+        // SQLCipher raises this for SQLITE_NOTADB: a damaged header or a key that no longer exists.
+        EncryptedDatabaseFiles.isDefinitiveCorruption(
+            SQLiteNotADatabaseException("file is not a database"),
+        ) shouldBe true
+        EncryptedDatabaseFiles.isDefinitiveCorruption(
+            IllegalStateException("query failed", SQLiteDatabaseCorruptException("malformed database")),
+        ) shouldBe true
+        EncryptedDatabaseFiles.isDefinitiveCorruption(
+            IOException("temporary read failure"),
+        ) shouldBe false
+        EncryptedDatabaseFiles.isDefinitiveCorruption(
+            IllegalStateException("database read failed", IOException("disk unavailable")),
+        ) shouldBe false
+        EncryptedDatabaseFiles.isDefinitiveCorruption(
+            SQLiteDatabaseLockedException("database is locked (code 5 SQLITE_BUSY)"),
+        ) shouldBe false
+        EncryptedDatabaseFiles.isDefinitiveCorruption(
+            SQLiteDiskIOException("disk I/O error (code 10)"),
+        ) shouldBe false
+        EncryptedDatabaseFiles.isDefinitiveCorruption(
+            KeyStoreException("Keystore operation failed"),
+        ) shouldBe false
+    }
+
+    test("a cause chain that loops back on itself ends without corruption evidence") {
+        val outer = IllegalStateException("outer")
+        val inner = IllegalStateException("inner", outer)
+        outer.initCause(inner)
+        EncryptedDatabaseFiles.isDefinitiveCorruption(outer) shouldBe false
     }
 })

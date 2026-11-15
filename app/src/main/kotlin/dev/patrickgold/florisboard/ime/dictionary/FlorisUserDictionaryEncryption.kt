@@ -49,7 +49,7 @@ internal object FlorisUserDictionaryEncryption {
     internal fun looksLikePlaintextSqliteHeader(header: ByteArray): Boolean =
         EncryptedDatabaseFiles.looksLikePlaintextSqliteHeader(header)
 
-    private fun getOrCreatePassphrase(context: Context): ByteArray {
+    internal fun getOrCreatePassphrase(context: Context): ByteArray {
         val appContext = context.applicationContext ?: context
         val prefs = TinkStringPreferenceCrypto.sharedPreferences(appContext, KEY_PREFS_FILE)
 
@@ -80,20 +80,23 @@ internal object FlorisUserDictionaryEncryption {
             // but `readLegacyEncryptedString` returned null, which means
             // either the legacy value pref is missing OR the legacy
             // decrypt failed (Android Keystore master key rotated, restored
-            // from a different device, keyset corrupt). Previous behaviour:
-            // `error(...)` — hard crash, IME unusable.
+            // from a different device, keyset corrupt, or a Keystore call
+            // that failed this once).
             //
-            // Recovery path: log, clear the legacy keyset entries, and
-            // fall through to generate a fresh passphrase. We lose any
-            // existing personal-dictionary words encrypted under the now-
-            // unreadable key, but the IME continues to function with a
-            // fresh empty dictionary. Users who relied on the old dictionary
-            // can re-import their backup if they have one.
+            // While an encrypted store is on disk, a new passphrase would
+            // make SQLCipher call that store "not a database", and it would
+            // be quarantined under a key we had just thrown away. So keep
+            // the keysets and the store, and fail this open as retryable.
+            check(mayReplaceUnreadableLegacyKey(appContext.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME))) {
+                "Legacy user dictionary key couldn't be read; keeping it and the encrypted store for a retry"
+            }
+            // Nothing encrypted depends on the old key: clear the legacy
+            // keyset entries and fall through to a fresh passphrase.
             Log.w(
                 TAG,
                 "Legacy encrypted-prefs keyset exists but cannot be decrypted; " +
-                    "clearing and regenerating user dictionary passphrase. " +
-                    "Any existing encrypted dictionary will be inaccessible.",
+                    "no encrypted dictionary needs it, so clearing it and " +
+                    "generating a new user dictionary passphrase.",
             )
             prefs.edit()
                 .remove("__androidx_security_crypto_encrypted_prefs_key_keyset__")
@@ -105,6 +108,17 @@ internal object FlorisUserDictionaryEncryption {
         SecureRandom().nextBytes(passphrase)
         persistWrappedPassphrase(prefs, passphrase)
         return passphrase
+    }
+
+    /**
+     * True when no encrypted store could still need an unreadable legacy key: neither the store
+     * nor its WAL holds any bytes (a new WAL-mode store keeps its first pages in the WAL until a
+     * checkpoint), or it is a plaintext database that the encryption migration will copy across.
+     */
+    internal fun mayReplaceUnreadableLegacyKey(databaseFile: File): Boolean {
+        // File.length() is 0 for a file that doesn't exist.
+        val holdsNoData = databaseFile.length() == 0L && File("${databaseFile.path}-wal").length() == 0L
+        return holdsNoData || isPlaintextSqliteDatabase(databaseFile)
     }
 
     private fun persistWrappedPassphrase(

@@ -19,16 +19,22 @@ package dev.patrickgold.florisboard.ime.dictionary
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import dev.patrickgold.florisboard.ime.security.EncryptedDatabaseFiles
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import org.junit.After
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
+import java.io.RandomAccessFile
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 class PersonalDictionaryRoomSqlCipherRuntimeTest {
@@ -39,6 +45,10 @@ class PersonalDictionaryRoomSqlCipherRuntimeTest {
     fun cleanupDatabases() {
         databaseNames.forEach { databaseName ->
             context.deleteDatabase(databaseName)
+            // deleteDatabase only knows SQLite's own names, not the kept-aside copies.
+            context.getDatabasePath(databaseName).parentFile
+                ?.listFiles { file -> file.name.startsWith(databaseName) }
+                ?.forEach { it.delete() }
         }
         databaseNames.clear()
     }
@@ -101,6 +111,112 @@ class PersonalDictionaryRoomSqlCipherRuntimeTest {
         )
     }
 
+    @Test
+    fun storeWithADamagedHeaderIsKeptAsideAndAnEmptyOneOpens() {
+        // SQLCipher keeps the key salt in the first 16 bytes, so the key no longer derives.
+        assertDamagedStoreIsKeptAsideAndReplaced("header") { file ->
+            file.seek(0)
+            file.write(ByteArray(64) { DAMAGE_BYTE })
+        }
+    }
+
+    @Test
+    fun storeWithDamagedPagesIsKeptAsideAndAnEmptyOneOpens() {
+        // Page 1 still decrypts, so the open itself works; the tables behind it don't.
+        assertDamagedStoreIsKeptAsideAndReplaced("pages") { file ->
+            val pages = file.length() / SQLCIPHER_PAGE_BYTES
+            assertTrue("Expected a store of several pages, got ${file.length()} bytes.", pages > 1)
+            for (page in 1 until pages) {
+                file.seek(page * SQLCIPHER_PAGE_BYTES + 512)
+                file.write(ByteArray(256) { DAMAGE_BYTE })
+            }
+        }
+    }
+
+    /**
+     * Runs the keyboard's real open path ([UserDictionaryStoreRecovery.open] over SQLCipher) on a
+     * store damaged on disk. The damaged bytes must still be there when the quarantine runs:
+     * SQLCipher's own corruption handler deletes database files when it isn't handling a codec.
+     */
+    private fun assertDamagedStoreIsKeptAsideAndReplaced(label: String, damage: (RandomAccessFile) -> Unit) {
+        val databaseName = "floris_user_dictionary_sqlcipher_damaged_${label}_${UUID.randomUUID()}"
+        databaseNames += databaseName
+        val databaseFile = context.getDatabasePath(databaseName)
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            val seeded = buildStore(databaseName)
+            executor.submit {
+                seeded.userDictionaryDao().insert(
+                    UserDictionaryEntry(id = 0, word = "swiftfloris", freq = 214, locale = "en", shortcut = null),
+                )
+            }.get(30, TimeUnit.SECONDS)
+            seeded.close()
+            assertFalse(
+                "The write-ahead log outlived the close, so damaging the main file proves nothing.",
+                File(databaseFile.path + "-wal").let { it.isFile && it.length() > 0 },
+            )
+            RandomAccessFile(databaseFile, "rw").use(damage)
+            val damagedBytes = databaseFile.readBytes()
+
+            val readFailure = executor.submit<Throwable?> {
+                val database = buildStore(databaseName)
+                try {
+                    runCatching { database.userDictionaryDao().queryLanguageList() }.exceptionOrNull()
+                } finally {
+                    database.close()
+                }
+            }.get(30, TimeUnit.SECONDS)
+            assertNotNull("The damaged store ($label) read without an error.", readFailure)
+            assertTrue(
+                "Expected corruption evidence from the damaged store ($label), got $readFailure",
+                EncryptedDatabaseFiles.isDefinitiveCorruption(readFailure!!),
+            )
+            assertArrayEquals(
+                "SQLCipher changed or deleted the damaged store ($label) before the app could keep it.",
+                damagedBytes,
+                databaseFile.readBytes(),
+            )
+
+            val resets = AtomicInteger()
+            val outcome = UserDictionaryStoreRecovery.runToCompletion(executor) {
+                UserDictionaryStoreRecovery.open(
+                    build = { buildStore(databaseName) },
+                    verify = { database -> database.userDictionaryDao().queryLanguageList() },
+                    close = { database -> database.close() },
+                    quarantine = { EncryptedDatabaseFiles.quarantine(databaseFile, "unreadable", 1L) },
+                    recordReset = { resets.incrementAndGet() },
+                )
+            }
+            val opened = outcome as? UserDictionaryOpenOutcome.Opened
+                ?: throw AssertionError("The damaged store ($label) was not replaced: $outcome")
+            try {
+                assertTrue(opened.replacedUnreadableStore)
+                assertEquals(1, resets.get())
+                assertArrayEquals(
+                    "The kept copy of the damaged store ($label) isn't the damaged file.",
+                    damagedBytes,
+                    File(databaseFile.parentFile, "${databaseFile.name}.unreadable-1").readBytes(),
+                )
+                val words = executor.submit<List<UserDictionaryEntry>> {
+                    opened.database.userDictionaryDao().queryAll()
+                }.get(30, TimeUnit.SECONDS)
+                assertEquals(emptyList<UserDictionaryEntry>(), words)
+            } finally {
+                opened.database.close()
+            }
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    private fun buildStore(databaseName: String): FlorisUserDictionaryDatabase {
+        val factory = FlorisUserDictionaryEncryption.openHelperFactory(context)
+            ?: error("SQLCipher open-helper factory could not be created.")
+        return Room.databaseBuilder(context, FlorisUserDictionaryDatabase::class.java, databaseName)
+            .openHelperFactory(factory)
+            .build()
+    }
+
     private fun readDatabaseHeader(databaseName: String): ByteArray {
         val databaseFile = context.getDatabasePath(databaseName)
         assertTrue(
@@ -127,5 +243,7 @@ class PersonalDictionaryRoomSqlCipherRuntimeTest {
 
     private companion object {
         private const val SQLITE_HEADER_BYTES = 16
+        private const val SQLCIPHER_PAGE_BYTES = 4096L
+        private const val DAMAGE_BYTE: Byte = 0x5A
     }
 }

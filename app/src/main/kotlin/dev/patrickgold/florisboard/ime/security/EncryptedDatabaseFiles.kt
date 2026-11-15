@@ -16,6 +16,8 @@
 
 package dev.patrickgold.florisboard.ime.security
 
+import android.database.sqlite.SQLiteDatabaseCorruptException
+import net.zetetic.database.sqlcipher.SQLiteNotADatabaseException
 import java.io.File
 
 /**
@@ -108,18 +110,45 @@ internal object EncryptedDatabaseFiles {
 
     /**
      * Preserves an unusable database under a `.<reason>-<timestamp>` name instead of deleting it.
-     * Returns false when anything could not be preserved, which callers must treat as "do not
-     * replace" — deleting data the user might still recover is worse than staying broken.
+     * Moves every sibling or none: returns false when anything could not be preserved and the store
+     * was put back in place, which callers must treat as "do not replace" — deleting data the user
+     * might still recover is worse than staying broken.
      */
     fun quarantine(databaseFile: File, reason: String, timestampMs: Long): Boolean {
-        var quarantined = true
+        val moved = mutableListOf<Backup>()
         for (file in siblingsOf(databaseFile)) {
             if (!file.exists()) continue
             val target = File(file.parentFile, "${file.name}.$reason-$timestampMs")
-            if (!file.renameTo(target)) {
-                quarantined = false
+            if (file.renameTo(target)) {
+                moved += Backup(file, target)
+                continue
             }
+            // Put back what already moved so a failure leaves the store whole where it was. Only
+            // if the main file can't be put back is it reported as moved: its words are no longer
+            // at the live path either way, and the caller has to say so.
+            for ((original, backup) in moved.asReversed()) {
+                backup.renameTo(original)
+            }
+            return !databaseFile.exists()
         }
-        return quarantined
+        return true
+    }
+
+    /**
+     * True only for evidence that the file itself can never be read with the key this app holds:
+     * SQLite's corruption error, or SQLCipher's "file is not a database" (a damaged header or a
+     * database encrypted under a key that no longer exists). Busy, locked, I/O and Keystore
+     * failures can clear on their own, so they never authorize [quarantine].
+     */
+    fun isDefinitiveCorruption(error: Throwable): Boolean {
+        val seen = HashSet<Throwable>()
+        var current: Throwable? = error
+        while (current != null && seen.add(current)) {
+            if (current is SQLiteDatabaseCorruptException || current is SQLiteNotADatabaseException) {
+                return true
+            }
+            current = current.cause
+        }
+        return false
     }
 }

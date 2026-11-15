@@ -19,7 +19,9 @@ package dev.patrickgold.florisboard.ime.dictionary
 import dev.patrickgold.florisboard.ime.security.TinkStringPreferenceCrypto
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.io.File
 import java.nio.ByteBuffer
+import java.nio.file.Files
 
 /**
  * JVM-safe regression checks for the value parsers used by the encrypted dictionary.
@@ -36,6 +38,32 @@ class PersonalDictionaryEncryptionTest : FunSpec({
         FlorisUserDictionaryEncryption.looksLikePlaintextSqliteHeader(sqliteHeader) shouldBe true
         FlorisUserDictionaryEncryption.looksLikePlaintextSqliteHeader(encryptedLikeHeader) shouldBe false
         FlorisUserDictionaryEncryption.looksLikePlaintextSqliteHeader(byteArrayOf(1, 2, 3)) shouldBe false
+    }
+
+    test("an unreadable legacy key is only replaced when no encrypted store could need it") {
+        val dir = Files.createTempDirectory("legacy-key").toFile()
+        try {
+            val database = File(dir, "floris_user_dictionary")
+            val wal = File(dir, "floris_user_dictionary-wal")
+
+            FlorisUserDictionaryEncryption.mayReplaceUnreadableLegacyKey(database) shouldBe true
+
+            database.writeBytes(ByteArray(0))
+            FlorisUserDictionaryEncryption.mayReplaceUnreadableLegacyKey(database) shouldBe true
+
+            // A new WAL-mode store can hold every word in its WAL before the first checkpoint.
+            wal.writeBytes(ByteArray(4096) { 0x42 })
+            FlorisUserDictionaryEncryption.mayReplaceUnreadableLegacyKey(database) shouldBe false
+            wal.delete()
+
+            database.writeBytes(ByteArray(4096) { 0x42 })
+            FlorisUserDictionaryEncryption.mayReplaceUnreadableLegacyKey(database) shouldBe false
+
+            database.writeBytes("SQLite format 3\u0000".toByteArray(Charsets.US_ASCII) + ByteArray(4080))
+            FlorisUserDictionaryEncryption.mayReplaceUnreadableLegacyKey(database) shouldBe true
+        } finally {
+            dir.deleteRecursively()
+        }
     }
 
     test("legacy encrypted preference string payload parser rejects wrong types and malformed lengths") {

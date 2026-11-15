@@ -46,6 +46,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -80,6 +81,7 @@ import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryDatabase
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryDao
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryReadDao
+import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryStorageState
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryValidation
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -826,6 +828,37 @@ fun UserDictionaryScreen(
                 text = stringRes(R.string.settings__udm__system_read_only_title),
                 secondaryText = stringRes(R.string.settings__udm__system_read_only_summary),
             )
+        }
+
+        // Only proven corruption resets the encrypted dictionary, after the old store is preserved;
+        // any other failed open keeps the files and retries, and both are shown instead of hidden.
+        val storageState by dictionaryManager.florisUserDictionaryStorageState.collectAsState()
+        if (type == UserDictionaryType.FLORIS) {
+            when (storageState) {
+                UserDictionaryStorageState.Available -> Unit
+                UserDictionaryStorageState.ResetAfterUnreadableStore -> FlorisErrorCard(
+                    modifier = Modifier.padding(8.dp),
+                    text = stringRes(R.string.settings__udm__storage_reset_title),
+                    secondaryText = stringRes(R.string.settings__udm__storage_reset_summary),
+                    actionLabel = stringRes(R.string.action__ok),
+                    onClick = {
+                        // Clearing the notice deletes its marker file, so it stays off the main thread.
+                        scope.launch(Dispatchers.IO) { dictionaryManager.acknowledgeFlorisUserDictionaryReset() }
+                    },
+                )
+                UserDictionaryStorageState.RetryableReadFailure -> FlorisErrorCard(
+                    modifier = Modifier.padding(8.dp),
+                    text = stringRes(R.string.settings__udm__storage_retry_title),
+                    secondaryText = stringRes(R.string.settings__udm__storage_retry_summary),
+                    actionLabel = stringRes(R.string.action__retry),
+                    onClick = {
+                        scope.launch {
+                            withContext(Dispatchers.IO) { dictionaryManager.retryFlorisUserDictionaryNow() }
+                            buildUi()
+                        }
+                    },
+                )
+            }
         }
 
         when (UserDictionaryEntryPolicy.resolveNotice(activeEntryOperation, lastEntryNotice)) {

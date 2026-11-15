@@ -17,7 +17,6 @@
 package dev.patrickgold.florisboard.ime.clipboard.provider
 
 import android.content.Context
-import android.database.sqlite.SQLiteDatabaseCorruptException
 import dev.patrickgold.florisboard.ime.security.EncryptedDatabaseFiles
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
@@ -118,7 +117,7 @@ object ClipboardHistoryStore {
             return OpenResult(database, wasReset = false)
         }
         database.close()
-        if (!isDefinitiveCorruption(readFailure)) {
+        if (!EncryptedDatabaseFiles.isDefinitiveCorruption(readFailure)) {
             _state.value = ClipboardHistoryStorageState.RetryableReadFailure
             flogWarning {
                 "Encrypted clipboard history read failed without corruption evidence; preserving the store"
@@ -149,17 +148,6 @@ object ClipboardHistoryStore {
             _state.value = ClipboardHistoryStorageState.RetryableReadFailure
             throw ClipboardHistoryRetryableReadException(error)
         }
-    }
-
-    /** Only this concrete platform exception is evidence strong enough to quarantine data. */
-    internal fun isDefinitiveCorruption(error: Throwable): Boolean {
-        val seen = HashSet<Throwable>()
-        var current: Throwable? = error
-        while (current != null && seen.add(current)) {
-            if (current is SQLiteDatabaseCorruptException) return true
-            current = current.cause
-        }
-        return false
     }
 
     /**

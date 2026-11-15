@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.dictionary
 
 import android.content.Context
+import android.os.SystemClock
 import androidx.room.Room
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
@@ -31,8 +32,9 @@ import dev.patrickgold.florisboard.lib.util.debugSummarizeTextForLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
@@ -153,6 +155,24 @@ class DictionaryManager private constructor(context: Context) {
 
     private var florisUserDictionaryDatabase: FlorisUserDictionaryDatabase? = null
     private var systemUserDictionaryDatabase: SystemUserDictionaryDatabase? = null
+    private val florisUserDictionaryOpenExecutor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "SwiftFloris-UserDictionaryOpen").apply { isDaemon = true }
+    }
+    private val florisUserDictionaryLoader = UserDictionaryStoreLoader<FlorisUserDictionaryDatabase>(
+        now = SystemClock::elapsedRealtime,
+        resetNotice = FileResetNotice(
+            lazy { applicationContext.getDatabasePath("${FlorisUserDictionaryDatabase.DB_FILE_NAME}.reset-notice") },
+        ),
+        onUnavailable = { failures, retryInMs, error ->
+            flogWarning(LogTopic.DICTIONARY) {
+                "Encrypted user dictionary unavailable, files kept; attempt $failures, next in $retryInMs ms: " +
+                    (error?.let { "${it::class.java.simpleName}: ${it.message}" } ?: "no store")
+            }
+        },
+    )
+
+    /** Whether the personal dictionary opened, is waiting to retry, or was reset; shown on its screen. */
+    val florisUserDictionaryStorageState: StateFlow<UserDictionaryStorageState> = florisUserDictionaryLoader.state
 
     companion object {
         private var defaultInstance: DictionaryManager? = null
@@ -467,16 +487,32 @@ class DictionaryManager private constructor(context: Context) {
         closeSystemUserDictionary()
     }
 
+    /**
+     * Skips the backoff wait after a failed open, for an explicit "Try again". Returns true when the
+     * store is open afterwards.
+     */
+    @Synchronized
+    fun retryFlorisUserDictionaryNow(): Boolean {
+        florisUserDictionaryLoader.skipBackoff()
+        loadFlorisUserDictionaryIfNecessary()
+        return florisUserDictionaryDatabase != null
+    }
+
+    /** Clears the reset notice once the user has seen it. */
+    fun acknowledgeFlorisUserDictionaryReset() {
+        florisUserDictionaryLoader.acknowledgeReset()
+    }
+
     private fun loadFlorisUserDictionaryIfNecessary() {
         val context = applicationContext
-        if (florisUserDictionaryDatabase == null && prefs.dictionary.enableFlorisUserDictionary.get()) {
-            florisUserDictionaryDatabase = runRoomBlocking {
-                openEncryptedFlorisUserDictionary(context)
-            }
-            if (florisUserDictionaryDatabase != null) {
-                repairLegacyLearnedLocaleRowsAsync()
-            }
+        if (florisUserDictionaryDatabase != null || !prefs.dictionary.enableFlorisUserDictionary.get()) {
+            return
         }
+        val database = florisUserDictionaryLoader.load {
+            runOpenToCompletion { openEncryptedFlorisUserDictionary(context) }
+        } ?: return
+        florisUserDictionaryDatabase = database
+        repairLegacyLearnedLocaleRowsAsync()
     }
 
     /**
@@ -508,35 +544,26 @@ class DictionaryManager private constructor(context: Context) {
         }
     }
 
-    private fun openEncryptedFlorisUserDictionary(context: Context): FlorisUserDictionaryDatabase? {
+    private fun openEncryptedFlorisUserDictionary(
+        context: Context,
+    ): UserDictionaryOpenOutcome<FlorisUserDictionaryDatabase> {
         if (!migratePlaintextFlorisUserDictionaryIfNecessary(context)) {
-            return null
+            return UserDictionaryOpenOutcome.Unavailable(null)
         }
-        return openVerifiedEncryptedFlorisUserDictionary(context)
-    }
-
-    private fun openVerifiedEncryptedFlorisUserDictionary(context: Context): FlorisUserDictionaryDatabase? {
-        val database = buildEncryptedFlorisUserDictionary(context) ?: return null
-        return runCatching {
-            database.userDictionaryDao().queryLanguageList()
-            database
-        }.getOrElse { error ->
-            flogWarning(LogTopic.DICTIONARY) { "Encrypted user dictionary could not be opened; preserving unreadable store before creating a replacement: ${error.message}" }
-            database.close()
-            if (!quarantineFlorisUserDictionaryDatabaseFiles(context, "unreadable")) {
-                flogError(LogTopic.DICTIONARY) { "Encrypted user dictionary replacement aborted because the unreadable store could not be preserved" }
-                return null
-            }
-            val replacement = buildEncryptedFlorisUserDictionary(context) ?: return null
-            runCatching {
-                replacement.userDictionaryDao().queryLanguageList()
-                replacement
-            }.getOrElse { replacementError ->
-                flogError(LogTopic.DICTIONARY) { "Encrypted user dictionary unavailable after recreation: ${replacementError.message}" }
-                replacement.close()
-                null
-            }
-        }
+        return UserDictionaryStoreRecovery.open(
+            build = { buildEncryptedFlorisUserDictionary(context) },
+            verify = { database -> database.userDictionaryDao().queryLanguageList() },
+            close = { database -> database.close() },
+            quarantine = {
+                flogWarning(LogTopic.DICTIONARY) { "Encrypted user dictionary is corrupt; preserving it before starting an empty one" }
+                quarantineFlorisUserDictionaryDatabaseFiles(context, "unreadable").also { preserved ->
+                    if (!preserved) {
+                        flogError(LogTopic.DICTIONARY) { "Could not preserve the corrupt user dictionary; leaving it in place" }
+                    }
+                }
+            },
+            recordReset = florisUserDictionaryLoader::markReset,
+        )
     }
 
     private fun buildEncryptedFlorisUserDictionary(context: Context): FlorisUserDictionaryDatabase? {
@@ -615,6 +642,7 @@ class DictionaryManager private constructor(context: Context) {
             florisUserDictionaryDatabase?.close()
             florisUserDictionaryDatabase = null
         }
+        florisUserDictionaryLoader.closed()
     }
 
     private fun closeSystemUserDictionary() {
@@ -654,9 +682,29 @@ class DictionaryManager private constructor(context: Context) {
         timestampMs = System.currentTimeMillis(),
     )
 
-    private fun <T> runRoomBlocking(block: () -> T): T {
-        return runBlocking(Dispatchers.IO) {
-            block()
+    /** Room refuses the verify query on the main thread, so the open runs on a thread of its own. */
+    private fun <T> runOpenToCompletion(block: () -> T): T =
+        UserDictionaryStoreRecovery.runToCompletion(florisUserDictionaryOpenExecutor, block)
+
+    /** The reset notice as a marker file beside the database, so erasing the store clears it too. */
+    private class FileResetNotice(markerFile: Lazy<File>) : UserDictionaryResetNotice {
+        private val marker by markerFile
+
+        override fun isPending(): Boolean = marker.exists()
+
+        override fun record() {
+            val written = runCatching { marker.parentFile?.mkdirs(); marker.exists() || marker.createNewFile() }
+            if (!written.getOrDefault(false)) {
+                flogError(LogTopic.DICTIONARY) {
+                    "Could not save the user dictionary reset notice; it shows until the keyboard restarts"
+                }
+            }
+        }
+
+        override fun clear() {
+            if (marker.exists() && !marker.delete()) {
+                flogWarning(LogTopic.DICTIONARY) { "Could not clear the user dictionary reset notice" }
+            }
         }
     }
 
