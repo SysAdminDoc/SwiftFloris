@@ -102,6 +102,13 @@ object LocalStickerPackRepository {
     private val SafeIdRegex = Regex("[A-Za-z0-9._-]{1,96}")
     private val _storageState = MutableStateFlow(LocalStickerPackStorageState.UNKNOWN)
 
+    /**
+     * Held for every write to the pack: an import committing its stickers, Clear, and a restore or
+     * rollback replacing the folder. They run on different threads, and each would otherwise write
+     * back a manifest that's missing the others' changes.
+     */
+    private val ManifestLock = Any()
+
     /** Observable load outcome so an unreadable manifest is not rendered as an empty pack. */
     val storageState: StateFlow<LocalStickerPackStorageState> = _storageState.asStateFlow()
 
@@ -294,15 +301,7 @@ object LocalStickerPackRepository {
                             },
                         )
                     }
-                    commitImportedFiles(storageDir, tempDir, imported)
-                    writeManifest(
-                        storageDir,
-                        currentManifest.copy(
-                            name = currentManifest.name.ifBlank { PackName },
-                            stickers = currentManifest.stickers + imported,
-                        ),
-                    )
-                    _storageState.value = LocalStickerPackStorageState.READY
+                    appendToManifest(storageDir, tempDir, imported)
                     LocalStickerPackResult.Success(imported.size)
                 } finally {
                     tempDir.deleteRecursively()
@@ -355,10 +354,38 @@ object LocalStickerPackRepository {
     }
 
     fun clear(context: Context) {
-        storageDir(context).deleteRecursively()
+        synchronized(ManifestLock) {
+            storageDir(context).deleteRecursively()
+        }
     }
 
-    private fun importStickerStream(
+    /** Runs [replace], which rewrites the whole pack folder (restore, rollback), while no import commits. */
+    fun <T> replacingPack(replace: () -> T): T = synchronized(ManifestLock) { replace() }
+
+    /**
+     * Copies the pack folder [from] into [to], leaving out the folder imports stage files in. Those
+     * aren't part of the pack yet, nothing would clean up a copy of them, and an import deletes them
+     * whenever it finishes, so copying them can fail halfway.
+     */
+    fun copyPack(from: File, to: File) {
+        val entries = checkNotNull(from.listFiles()) { "Could not list the sticker pack folder" }
+        to.mkdirs()
+        for (entry in entries) {
+            if (entry.name == TempDirName) continue
+            entry.copyRecursively(File(to, entry.name), overwrite = true)
+        }
+    }
+
+    /**
+     * Deletes the pack in [dir] but not the folder imports stage files in: an import may be writing
+     * there right now, and it deletes its own files when it ends. Returns whether the rest is gone.
+     */
+    fun clearPack(dir: File): Boolean {
+        val entries = dir.listFiles() ?: return !dir.exists()
+        return entries.filter { it.name != TempDirName }.map { it.deleteRecursively() }.all { it }
+    }
+
+    internal fun importStickerStream(
         storageDir: File,
         displayName: String,
         declaredMimeType: String?,
@@ -405,15 +432,7 @@ object LocalStickerPackRepository {
                     label = label,
                     keywords = UserStickerRepository.keywordsFor(label, displayName),
                 )
-                commitImportedFiles(storageDir, tempDir, listOf(entry))
-                writeManifest(
-                    storageDir,
-                    currentManifest.copy(
-                        name = currentManifest.name.ifBlank { PackName },
-                        stickers = currentManifest.stickers + entry,
-                    ),
-                )
-                _storageState.value = LocalStickerPackStorageState.READY
+                appendToManifest(storageDir, tempDir, listOf(entry))
                 LocalStickerPackResult.Success(1)
             } finally {
                 tempDir.deleteRecursively()
@@ -515,6 +534,30 @@ object LocalStickerPackRepository {
         return zip.getInputStream(entry).use { input ->
             val bytes = input.readBytesLimited(MaxManifestBytes)
             JsonCodec.decodeFromString(bytes.toString(Charsets.UTF_8))
+        }
+    }
+
+    /**
+     * Moves [imported] into the pack and adds them to the manifest as it is now, not as it was
+     * when the import started. Imports copy and check their files outside the lock, so two of
+     * them running together would otherwise each write back a manifest missing the other's
+     * stickers.
+     */
+    private fun appendToManifest(storageDir: File, tempDir: File, imported: List<LocalStickerPackEntry>) {
+        synchronized(ManifestLock) {
+            val latest = readExistingManifest(storageDir)
+            if (latest.stickers.size + imported.size > UserStickerRepository.MaxStickers) {
+                throw LocalStickerPackException(LocalStickerPackFailure.TOO_MANY_STICKERS)
+            }
+            commitImportedFiles(storageDir, tempDir, imported)
+            writeManifest(
+                storageDir,
+                latest.copy(
+                    name = latest.name.ifBlank { PackName },
+                    stickers = latest.stickers + imported,
+                ),
+            )
+            _storageState.value = LocalStickerPackStorageState.READY
         }
     }
 

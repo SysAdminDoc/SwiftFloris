@@ -117,11 +117,14 @@ internal class RestoreRollbackSnapshot private constructor(
                         source = context.filesDir.subDir(ExtensionManager.IME_THEME_PATH),
                         target = snapshotRoot.subDir(ThemeDirName),
                     )
-                    val stickerExisted = captureDirectory(
-                        selected = selection.localStickerPacks,
-                        source = LocalStickerPackRepository.storageDir(context),
-                        target = snapshotRoot.subDir(StickerDirName),
-                    )
+                    // Under the pack's lock, so an import committing now can't leave the copy
+                    // with its stickers but not its manifest, or the other way around.
+                    val stickerExisted = LocalStickerPackRepository.replacingPack {
+                        val source = LocalStickerPackRepository.storageDir(context)
+                        if (!selection.localStickerPacks || !source.exists()) return@replacingPack false
+                        LocalStickerPackRepository.copyPack(source, snapshotRoot.subDir(StickerDirName))
+                        true
+                    }
                     val snippetsExisted = captureDirectory(
                         selected = selection.snippets,
                         source = context.filesDir.subDir(BackupArchiveStores.SnippetsDirName),
@@ -292,11 +295,17 @@ internal class RestoreRollbackSnapshot private constructor(
         }
         if (selection.localStickerPacks) {
             restoreStep {
-                restoreDirectory(
-                    snapshot = snapshotRoot.subDir(StickerDirName),
-                    target = LocalStickerPackRepository.storageDir(context),
-                    existed = stickerDirExisted,
-                )
+                LocalStickerPackRepository.replacingPack {
+                    // An import staging files meanwhile keeps its folder, so clearing the pack
+                    // can't fail on files the import is still creating.
+                    val target = LocalStickerPackRepository.storageDir(context)
+                    check(LocalStickerPackRepository.clearPack(target)) {
+                        "Could not clear restore target before rollback."
+                    }
+                    if (stickerDirExisted) {
+                        LocalStickerPackRepository.copyPack(snapshotRoot.subDir(StickerDirName), target)
+                    }
+                }
                 evictStickerBitmapCache()
             }
         }

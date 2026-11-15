@@ -90,6 +90,7 @@ fun MediaScreen() = FlorisScreen {
     var showCustomEmojiTags by remember { mutableStateOf(false) }
     var customEmojiTagsRevision by remember { mutableIntStateOf(0) }
     var localStickerPackRevision by remember { mutableIntStateOf(0) }
+    var clearingLocalStickerPack by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val hasLocalStickerPack = remember(localStickerPackRevision) {
         LocalStickerPackRepository.hasLocalPack(context)
@@ -319,16 +320,25 @@ fun MediaScreen() = FlorisScreen {
                 icon = Icons.Outlined.Delete,
                 title = stringRes(R.string.prefs__media__stickers_pack_clear),
                 summary = stringRes(R.string.prefs__media__stickers_pack_clear__summary),
-                enabledIf = { hasLocalStickerPack },
+                enabledIf = { hasLocalStickerPack && !clearingLocalStickerPack },
                 onClick = {
-                    LocalStickerPackRepository.clear(context)
-                    evictStickerBitmapCache()
-                    localStickerPackRevision++
-                    Toast.makeText(
-                        context,
-                        localPackClearedText,
-                        Toast.LENGTH_SHORT,
-                    ).show()
+                    clearingLocalStickerPack = true
+                    scope.launch {
+                        // Clear waits for an import that's saving its stickers, so it runs off the
+                        // main thread. An import still copying files fails and says so. Evicting
+                        // inside the block means leaving the screen can't skip it.
+                        withContext(Dispatchers.IO) {
+                            LocalStickerPackRepository.clear(context)
+                            evictStickerBitmapCache()
+                        }
+                        clearingLocalStickerPack = false
+                        localStickerPackRevision++
+                        Toast.makeText(
+                            context,
+                            localPackClearedText,
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
                 },
             )
             // Recompute on every recomposition so a system-level grant

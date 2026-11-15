@@ -551,10 +551,12 @@ fun RestoreScreen() = FlorisScreen {
             val srcDir = workspaceFilesDir.subDir(LocalStickerPackRepository.StorageDirName)
             val dstDir = LocalStickerPackRepository.storageDir(context)
             restoreSelectedSection(sourceExists = srcDir.exists()) {
-                if (shouldReset) {
-                    dstDir.deleteRecursively()
+                LocalStickerPackRepository.replacingPack {
+                    if (shouldReset) {
+                        LocalStickerPackRepository.clearPack(dstDir)
+                    }
+                    LocalStickerPackRepository.copyPack(srcDir, dstDir)
                 }
-                srcDir.copyRecursively(dstDir, overwrite = true)
                 evictStickerBitmapCache()
             }
         }

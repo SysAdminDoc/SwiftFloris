@@ -103,11 +103,15 @@ internal object BackupArchiveBuilder {
         }
         if (selection.localStickerPacks) {
             val stickerDir = LocalStickerPackRepository.storageDir(appContext)
-            if (stickerDir.exists()) {
-                stickerDir.copyRecursively(
-                    workspaceFilesDir.subDir(LocalStickerPackRepository.StorageDirName),
-                    overwrite = true,
-                )
+            // Under the pack's lock, so an import committing now can't leave the archive with its
+            // stickers but not its manifest, and a Clear can't remove the folder once it's found.
+            LocalStickerPackRepository.replacingPack {
+                if (stickerDir.exists()) {
+                    LocalStickerPackRepository.copyPack(
+                        stickerDir,
+                        workspaceFilesDir.subDir(LocalStickerPackRepository.StorageDirName),
+                    )
+                }
             }
         }
         if (selection.snippets) {

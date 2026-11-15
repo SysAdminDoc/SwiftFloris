@@ -20,9 +20,12 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.file.Files
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -205,6 +208,115 @@ class LocalStickerPackRepositoryTest : FunSpec({
 
         val result = LocalStickerPackRepository.importArchive(tempDir(), archive) as LocalStickerPackResult.Failure
         result.reason shouldBe LocalStickerPackFailure.INVALID_ARCHIVE
+    }
+
+    test("two imports running at once keep each other's stickers") {
+        // A share import still copying its image must not write back the manifest it read
+        // before another import finished, or that import's sticker disappears from the pack.
+        val dir = tempDir()
+        val copyStarted = CountDownLatch(1)
+        val finishCopy = CountDownLatch(1)
+        val slowImage = object : ByteArrayInputStream(samplePngBytes()) {
+            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                copyStarted.countDown()
+                check(finishCopy.await(5, TimeUnit.SECONDS)) { "The test never released the copy." }
+                return super.read(b, off, len)
+            }
+
+            override fun read(b: ByteArray): Int = read(b, 0, b.size)
+        }
+        var slowResult: LocalStickerPackResult? = null
+        val slowImport = Thread {
+            slowResult = LocalStickerPackRepository.importStickerStream(
+                storageDir = dir,
+                displayName = "slow.png",
+                declaredMimeType = "image/png",
+                declaredSizeBytes = null,
+                streamProvider = { slowImage },
+            )
+        }
+        slowImport.start()
+        copyStarted.await(5, TimeUnit.SECONDS) shouldBe true
+
+        val quickImage = dir.resolve("quick.png").apply { writeBytes(samplePngBytes()) }
+        LocalStickerPackRepository.importStickerFile(dir, quickImage) shouldBe LocalStickerPackResult.Success(1)
+        finishCopy.countDown()
+        slowImport.join(5_000L)
+
+        slowResult shouldBe LocalStickerPackResult.Success(1)
+        val pack = LocalStickerPackRepository.loadPack(dir) { id -> "content://local/$id" }.shouldNotBeNull()
+        pack.stickers.map { it.label }.sorted() shouldBe listOf("quick", "slow")
+    }
+
+    test("an import that finishes during a restore keeps its sticker in the restored pack") {
+        // A restore copies the backed-up pack over the folder. If an import saved its manifest
+        // in the middle of that copy, the restored manifest would overwrite it and lose the sticker.
+        val backup = tempDir()
+        val backupImage = tempDir().resolve("restored.png").apply { writeBytes(samplePngBytes()) }
+        LocalStickerPackRepository.importStickerFile(backup, backupImage) shouldBe LocalStickerPackResult.Success(1)
+        val dir = tempDir()
+        val restoreStarted = CountDownLatch(1)
+        val finishRestore = CountDownLatch(1)
+        val restore = Thread {
+            LocalStickerPackRepository.replacingPack {
+                restoreStarted.countDown()
+                check(finishRestore.await(5, TimeUnit.SECONDS)) { "The test never released the restore." }
+                backup.copyRecursively(dir, overwrite = true)
+            }
+        }.apply { isDaemon = true }
+        restore.start()
+        restoreStarted.await(5, TimeUnit.SECONDS) shouldBe true
+
+        val quickImage = tempDir().resolve("quick.png").apply { writeBytes(samplePngBytes()) }
+        var importResult: LocalStickerPackResult? = null
+        val importer = Thread { importResult = LocalStickerPackRepository.importStickerFile(dir, quickImage) }
+            .apply { isDaemon = true }
+        importer.start()
+        val deadline = System.nanoTime() + 5_000_000_000L
+        while (importer.state != Thread.State.BLOCKED) {
+            check(importer.isAlive) { "The import saved its sticker without waiting for the restore." }
+            check(System.nanoTime() < deadline) { "The import never reached the lock." }
+            Thread.yield()
+        }
+        finishRestore.countDown()
+        restore.join(5_000L)
+        importer.join(5_000L)
+
+        importResult shouldBe LocalStickerPackResult.Success(1)
+        val pack = LocalStickerPackRepository.loadPack(dir) { id -> "content://local/$id" }.shouldNotBeNull()
+        pack.stickers.map { it.label }.sorted() shouldBe listOf("quick", "restored")
+    }
+
+    test("copying the pack for a backup or rollback leaves out an import's staged files") {
+        val dir = tempDir()
+        val image = tempDir().resolve("saved.png").apply { writeBytes(samplePngBytes()) }
+        LocalStickerPackRepository.importStickerFile(dir, image) shouldBe LocalStickerPackResult.Success(1)
+        // An import still running has its files staged here, outside the pack.
+        val staged = dir.resolve("tmp").resolve("in-flight").apply { mkdirs() }.resolve("sticker.png")
+        staged.writeBytes(samplePngBytes())
+        val copy = tempDir().resolve("copy")
+
+        LocalStickerPackRepository.copyPack(dir, copy)
+
+        copy.resolve("tmp").exists() shouldBe false
+        val pack = LocalStickerPackRepository.loadPack(copy) { id -> "content://local/$id" }.shouldNotBeNull()
+        pack.stickers.map { it.label } shouldBe listOf("saved")
+        // The staging folder in the pack itself stays for the import that owns it.
+        staged.exists() shouldBe true
+    }
+
+    test("clearing the pack for a restore or rollback keeps an import's staged files") {
+        val dir = tempDir()
+        val image = tempDir().resolve("saved.png").apply { writeBytes(samplePngBytes()) }
+        LocalStickerPackRepository.importStickerFile(dir, image) shouldBe LocalStickerPackResult.Success(1)
+        val staged = dir.resolve("tmp").resolve("in-flight").apply { mkdirs() }.resolve("sticker.png")
+        staged.writeBytes(samplePngBytes())
+
+        LocalStickerPackRepository.clearPack(dir) shouldBe true
+
+        dir.list()!!.toList() shouldBe listOf("tmp")
+        staged.exists() shouldBe true
+        LocalStickerPackRepository.clearPack(tempDir().resolve("missing")) shouldBe true
     }
 })
 
