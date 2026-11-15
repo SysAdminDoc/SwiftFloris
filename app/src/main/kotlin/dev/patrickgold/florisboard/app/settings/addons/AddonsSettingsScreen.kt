@@ -60,7 +60,10 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.FlorisEmptyState
@@ -119,24 +122,37 @@ fun AddonsSettingsScreen() = FlorisScreen {
     }
     val pinnedCount = pinnedPackageNames.size
 
-    fun publishReconcileResult(result: AddonRegistryStartup.Result) {
-        AddonRegistryStore.setActive(result.registry, result.snapshot)
+    suspend fun publishReconcileResult(result: AddonRegistryStartup.Result) {
+        AddonRegistryStore.setActive(result.registry, result.snapshot) {
+            if (result.signingPinsChanged) {
+                prefs.addon.signingCertPins.set(result.encodedSigningPins)
+            }
+        }
         snapshot = result.snapshot
         activePinnedPackageNames = result.registry.pinnedSigningCertificates().keys
         registryGeneration = AddonRegistryStore.generation()
     }
 
-    fun rescanInstalledAddons(persistedPinsOverride: String? = null) {
+    /** [updatePins] turns the stored pins into the ones the user just confirmed. */
+    fun rescanInstalledAddons(updatePins: ((String) -> String)? = null) {
         if (scanInProgress) return
         scanInProgress = true
         dictionaryCatalogLoaded = false
         scanError = null
-        scope.launch {
+        // Atomic, so a confirmed trust is saved even if the user leaves before this starts.
+        scope.launch(start = CoroutineStart.ATOMIC) {
             try {
-                val persistedPins = persistedPinsOverride ?: prefs.addon.signingCertPins.get()
-                if (persistedPinsOverride != null) {
-                    prefs.addon.signingCertPins.set(persistedPinsOverride)
+                if (updatePins != null) {
+                    // The user confirmed it, so it's saved before the scan and even if they leave
+                    // now. Read and saved in one step through the store, so pins a startup scan
+                    // saves meanwhile aren't lost, and it can't save older ones back over these.
+                    withContext(NonCancellable) {
+                        AddonRegistryStore.savePins {
+                            prefs.addon.signingCertPins.set(updatePins(prefs.addon.signingCertPins.get()))
+                        }
+                    }
                 }
+                val persistedPins = prefs.addon.signingCertPins.get()
                 val result = withContext(Dispatchers.Default) {
                     val enumeration = AddonEnumerator(context.applicationContext).scan()
                     AddonRegistryStartup.reconcile(
@@ -147,9 +163,8 @@ fun AddonsSettingsScreen() = FlorisScreen {
                     )
                 }
                 publishReconcileResult(result)
-                if (result.signingPinsChanged) {
-                    prefs.addon.signingCertPins.set(result.encodedSigningPins)
-                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 scanError = e.summarizeForUser(detailsUnavailable)
                 dictionaryCatalogLoaded = true
@@ -164,13 +179,18 @@ fun AddonsSettingsScreen() = FlorisScreen {
         scanInProgress = true
         dictionaryCatalogLoaded = false
         scanError = null
-        scope.launch {
+        scope.launch(start = CoroutineStart.ATOMIC) {
             try {
-                prefs.addon.signingCertPins.set("")
-                AddonRegistryStore.reset()
+                // One step with the reset, so a startup scan publishing now can't save its pins
+                // back after they're cleared. Finished even if the user leaves right away.
+                withContext(NonCancellable) {
+                    AddonRegistryStore.reset { prefs.addon.signingCertPins.set("") }
+                }
                 snapshot = AddonRegistryStore.snapshot()
                 activePinnedPackageNames = emptySet()
                 registryGeneration = AddonRegistryStore.generation()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 scanError = e.summarizeForUser(detailsUnavailable)
                 dictionaryCatalogLoaded = true
@@ -353,17 +373,15 @@ fun AddonsSettingsScreen() = FlorisScreen {
                     pendingPinAction = null
                     when (action) {
                         SigningPinAction.ResetAll -> resetTrustDecisions()
-                        is SigningPinAction.TrustNewCertificate -> {
-                            val nextPins = AddonSigningPinSet.parse(prefs.addon.signingCertPins.get())
+                        is SigningPinAction.TrustNewCertificate -> rescanInstalledAddons { storedPins ->
+                            AddonSigningPinSet.parse(storedPins)
                                 .withPinnedCertificate(action.packageName, action.signingCertSha256)
                                 .encode()
-                            rescanInstalledAddons(persistedPinsOverride = nextPins)
                         }
-                        is SigningPinAction.TrustChangedCertificate -> {
-                            val nextPins = AddonSigningPinSet.parse(prefs.addon.signingCertPins.get())
+                        is SigningPinAction.TrustChangedCertificate -> rescanInstalledAddons { storedPins ->
+                            AddonSigningPinSet.parse(storedPins)
                                 .withPinnedCertificate(action.packageName, action.signingCertSha256)
                                 .encode()
-                            rescanInstalledAddons(persistedPinsOverride = nextPins)
                         }
                     }
                 },

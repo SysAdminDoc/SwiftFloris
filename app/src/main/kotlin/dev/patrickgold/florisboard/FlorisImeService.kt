@@ -57,7 +57,6 @@ import dev.patrickgold.florisboard.app.settings.advanced.HardwareKeyboardDeviceO
 import dev.patrickgold.florisboard.app.settings.advanced.PhysicalKeyboardPolicy
 import dev.patrickgold.florisboard.ime.addon.AddonEnumerator
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
-import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
 import dev.patrickgold.florisboard.ime.editor.InputAttributes
@@ -88,6 +87,7 @@ import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.florisboard.lib.util.debugSummarize
 import dev.patrickgold.florisboard.lib.util.debugSummarizeTextForLog
 import dev.patrickgold.florisboard.lib.util.launchActivity
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -457,23 +457,34 @@ class FlorisImeService : LifecycleInputMethodService() {
     private fun startAddonRegistry() {
         lifecycleScope.launch(Dispatchers.Default) {
             try {
-                val enumeration = AddonEnumerator(applicationContext).scan()
-                val result = AddonRegistryStartup.reconcile(
-                    discovered = enumeration.accepted,
-                    persistedSigningPinsRaw = prefs.addon.signingCertPins.get(),
-                    trustedRootSigningCertSha256 = SigningFingerprint.sha256(applicationContext),
-                    packageRejections = enumeration.rejected,
+                // If Settings resets trust or rescans while this runs, its result wins and these
+                // pins aren't published or saved.
+                val result = AddonRegistryStartup.publishAtStartup(
+                    readPins = { prefs.addon.signingCertPins.get() },
+                    scan = { persistedPins ->
+                        val enumeration = AddonEnumerator(applicationContext).scan()
+                        AddonRegistryStartup.reconcile(
+                            discovered = enumeration.accepted,
+                            persistedSigningPinsRaw = persistedPins,
+                            trustedRootSigningCertSha256 = SigningFingerprint.sha256(applicationContext),
+                            packageRejections = enumeration.rejected,
+                        )
+                    },
+                    savePins = { prefs.addon.signingCertPins.set(it) },
                 )
-                AddonRegistryStore.setActive(result.registry, result.snapshot)
-                if (result.signingPinsChanged) {
-                    prefs.addon.signingCertPins.set(result.encodedSigningPins)
+                if (result == null) {
+                    flogInfo(LogTopic.IMS_EVENTS) { "Addon registry startup result dropped: Settings changed it first" }
+                    return@launch
                 }
                 flogInfo(LogTopic.IMS_EVENTS) {
                     "Addon registry startup: accepted=${result.snapshot.accepted.size}, " +
                         "rejected=${result.snapshot.rejected.size}, pinsChanged=${result.signingPinsChanged}"
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                AddonRegistryStore.reset()
+                // A registry Settings published meanwhile stays, and the stored pins are left
+                // alone either way.
                 flogWarning(LogTopic.IMS_EVENTS) { "Addon registry startup failed: $e" }
             }
         }

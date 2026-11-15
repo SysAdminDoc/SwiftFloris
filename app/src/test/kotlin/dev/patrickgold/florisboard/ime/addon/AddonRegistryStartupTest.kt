@@ -19,6 +19,11 @@ package dev.patrickgold.florisboard.ime.addon
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 private const val STARTUP_SHA_A =
     "01:01:01:01:01:01:01:01:01:01:01:01:01:01:01:01:" +
@@ -165,5 +170,144 @@ class AddonRegistryStartupTest : FunSpec({
 
         (afterSet > before) shouldBe true
         (afterReset > afterSet) shouldBe true
+    }
+
+    test("a startup scan that started before a trust reset isn't published") {
+        // The scan read the stored pins before the reset, so publishing it would bring back
+        // the trust the reset removed.
+        val scanStarted = AddonRegistryStore.generation()
+        AddonRegistryStore.reset()
+        val staleRegistry = AddonRegistryStartup.reconcile(
+            discovered = listOf(startupManifest("org.swiftfloris.dict.pl")),
+            persistedSigningPinsRaw = "",
+            trustedRootSigningCertSha256 = STARTUP_SHA_A,
+        ).registry
+
+        AddonRegistryStore.setActiveIfGeneration(scanStarted, staleRegistry) shouldBe false
+        AddonRegistryStore.active().snapshot() shouldBe emptyList()
+
+        AddonRegistryStore.setActiveIfGeneration(AddonRegistryStore.generation(), staleRegistry) shouldBe true
+        AddonRegistryStore.active().dictionaryPacks().map { it.packageName } shouldContainExactly listOf(
+            "org.swiftfloris.dict.pl",
+        )
+        AddonRegistryStore.reset()
+    }
+
+    test("a trust reset waits for a startup publish to save its pins, then clears them") {
+        // If the reset could land between startup publishing and saving its pins, the pins
+        // would be written back after the clear and the trust would return on the next start.
+        var storedPins = "pins-before-reset"
+        val saving = CompletableDeferred<Unit>()
+        val finishSave = CompletableDeferred<Unit>()
+        val registry = AddonRegistryStartup.reconcile(
+            discovered = listOf(startupManifest("org.swiftfloris.dict.pl")),
+            persistedSigningPinsRaw = "",
+            trustedRootSigningCertSha256 = STARTUP_SHA_A,
+        ).registry
+        withTimeout(5_000L) {
+            coroutineScope {
+                val startup = launch {
+                    AddonRegistryStore.setActiveIfGeneration(AddonRegistryStore.generation(), registry) {
+                        saving.complete(Unit)
+                        finishSave.await()
+                        storedPins = "startup-pins"
+                    }
+                }
+                saving.await()
+
+                // Undispatched, so the reset runs here until it has to wait: without the lock it
+                // would clear the pins and finish before launch returns.
+                val reset = launch(start = CoroutineStart.UNDISPATCHED) {
+                    AddonRegistryStore.reset { storedPins = "" }
+                }
+                reset.isCompleted shouldBe false
+                storedPins shouldBe "pins-before-reset"
+
+                finishSave.complete(Unit)
+                startup.join()
+                reset.join()
+            }
+        }
+
+        storedPins shouldBe ""
+        AddonRegistryStore.active().snapshot() shouldBe emptyList()
+    }
+
+    test("a confirmed trust override is saved at once and a startup scan from before can't undo it") {
+        // Saved before Settings rescans, so leaving mid-scan or a scan that fails keeps it.
+        val registry = AddonRegistryStartup.reconcile(
+            discovered = listOf(startupManifest("org.swiftfloris.dict.pl")),
+            persistedSigningPinsRaw = "",
+            trustedRootSigningCertSha256 = STARTUP_SHA_A,
+        ).registry
+        AddonRegistryStore.setActive(registry)
+        var storedPins = "older-pins"
+        val scanStarted = AddonRegistryStore.generation()
+
+        AddonRegistryStore.savePins { storedPins = "override-pins" }
+
+        storedPins shouldBe "override-pins"
+        // The registry on screen stays until the rescan publishes.
+        AddonRegistryStore.active().dictionaryPacks().map { it.packageName } shouldContainExactly listOf(
+            "org.swiftfloris.dict.pl",
+        )
+        val stalePublished = AddonRegistryStore.setActiveIfGeneration(scanStarted, AddonRegistry()) {
+            storedPins = "older-pins"
+        }
+        stalePublished shouldBe false
+        storedPins shouldBe "override-pins"
+        AddonRegistryStore.reset()
+    }
+
+    test("a startup scan overtaken by a confirmed trust scans again with it and publishes") {
+        // Settings' own rescan may fail or be left, so startup is what publishes the override.
+        var storedPins = "older-pins"
+        val scannedWith = mutableListOf<String>()
+        val pl = startupManifest("org.swiftfloris.dict.pl")
+
+        val result = AddonRegistryStartup.publishAtStartup(
+            readPins = { storedPins },
+            scan = { pins ->
+                scannedWith += pins
+                if (scannedWith.size == 1) AddonRegistryStore.savePins { storedPins = "override-pins" }
+                val reconciled = AddonRegistryStartup.reconcile(
+                    discovered = listOf(pl),
+                    persistedSigningPinsRaw = "",
+                    trustedRootSigningCertSha256 = STARTUP_SHA_A,
+                )
+                reconciled.copy(encodedSigningPins = "saved-from-$pins", signingPinsChanged = true)
+            },
+            savePins = { storedPins = it },
+        )
+
+        scannedWith shouldContainExactly listOf("older-pins", "override-pins")
+        result?.encodedSigningPins shouldBe "saved-from-override-pins"
+        storedPins shouldBe "saved-from-override-pins"
+        AddonRegistryStore.active().dictionaryPacks().map { it.packageName } shouldContainExactly listOf(
+            "org.swiftfloris.dict.pl",
+        )
+        AddonRegistryStore.reset()
+    }
+
+    test("a startup scan overtaken by a registry Settings published is dropped, not run again") {
+        var storedPins = "older-pins"
+        var scans = 0
+
+        val result = AddonRegistryStartup.publishAtStartup(
+            readPins = { storedPins },
+            scan = { pins ->
+                scans++
+                // Only the first scan is overtaken, so one run again would publish over Settings.
+                if (scans == 1) AddonRegistryStore.setActive(AddonRegistry()) { storedPins = "settings-pins" }
+                AddonRegistryStartup.reconcile(discovered = emptyList(), persistedSigningPinsRaw = pins)
+                    .copy(encodedSigningPins = "startup-pins", signingPinsChanged = true)
+            },
+            savePins = { storedPins = it },
+        )
+
+        result shouldBe null
+        scans shouldBe 1
+        storedPins shouldBe "settings-pins"
+        AddonRegistryStore.reset()
     }
 })

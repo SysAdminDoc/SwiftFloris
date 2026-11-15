@@ -114,7 +114,7 @@ class RoborazziThemeAndAddonsCaptureTest {
 
     @After
     fun tearDown() {
-        AddonRegistryStore.reset()
+        runBlocking { AddonRegistryStore.reset() }
         resetSmartbarOnlyState()
     }
 
@@ -294,7 +294,7 @@ class RoborazziThemeAndAddonsCaptureTest {
                 ),
             ),
         )
-        AddonRegistryStore.setActive(registry)
+        runBlocking { AddonRegistryStore.setActive(registry) }
     }
 
     private fun seedSmartbarOnlyState() {
