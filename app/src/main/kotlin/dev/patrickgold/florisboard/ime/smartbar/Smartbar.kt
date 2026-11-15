@@ -221,10 +221,10 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
 
     @Composable
     fun SuggestionsContent(modifier: Modifier = Modifier) {
-        when {
-            shouldShowPerAppAccentHint -> PerAppAccentDiscoveryHint(modifier)
-            shouldShowInlineSuggestionsUi -> InlineSuggestionsUi(inlineSuggestions, modifier)
-            else -> CandidatesRow(modifier)
+        when (SmartbarSuggestionsSlot.pick(shouldShowInlineSuggestionsUi, shouldShowPerAppAccentHint)) {
+            SmartbarSuggestionsSlot.INLINE_AUTOFILL -> InlineSuggestionsUi(inlineSuggestions, modifier)
+            SmartbarSuggestionsSlot.PER_APP_ACCENT_HINT -> PerAppAccentDiscoveryHint(modifier)
+            SmartbarSuggestionsSlot.CANDIDATES -> CandidatesRow(modifier)
         }
     }
 
@@ -410,5 +410,25 @@ private fun SmartbarSecondaryRow(modifier: Modifier = Modifier) {
                 .height(FlorisImeSizing.smartbarHeight)
                 .background(background),
         )
+    }
+}
+
+/**
+ * What the Smartbar's suggestions slot shows. Inline autofill comes first: it belongs to the field
+ * the user is filling right now, while the one-time per-app accent hint can wait for another field.
+ */
+internal enum class SmartbarSuggestionsSlot {
+    INLINE_AUTOFILL,
+    PER_APP_ACCENT_HINT,
+    CANDIDATES;
+
+    companion object {
+        fun pick(hasInlineSuggestions: Boolean, perAppAccentHintReady: Boolean): SmartbarSuggestionsSlot {
+            return when {
+                hasInlineSuggestions -> INLINE_AUTOFILL
+                perAppAccentHintReady -> PER_APP_ACCENT_HINT
+                else -> CANDIDATES
+            }
+        }
     }
 }
