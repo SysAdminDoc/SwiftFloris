@@ -22,6 +22,7 @@ import android.database.sqlite.SQLiteException
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileInfo
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFilesDatabase
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDao
@@ -35,6 +36,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.io.File
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -61,6 +63,9 @@ class ClipboardHistoryDeletionTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        // The app's start-up reconciliation deletes media its own history doesn't hold. Let it
+        // finish first, or it can take the files planted below while a test runs.
+        runBlocking { context.clipboardManager().value.snapshotHistoryForRestore() }
         Robolectric.setupContentProvider(ClipboardMediaProvider::class.java, ClipboardMediaProvider.AUTHORITY)
         history = Room.inMemoryDatabaseBuilder(context, ClipboardHistoryDatabase::class.java)
             .allowMainThreadQueries()
