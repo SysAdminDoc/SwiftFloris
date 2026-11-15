@@ -59,13 +59,14 @@ object StartupCachePurge {
      * for [purge]. A stale entry's name can be used again right away: a cold start from a share
      * creates its import inside `importer` moments after the snapshot, and deleting `importer`
      * by its name would delete that import with it. One rename per entry, so it's cheap enough
-     * for the calling thread. An entry that can't be renamed is returned as it is.
+     * for the calling thread. An entry that can't be renamed is left out and stays for a later
+     * start, since deleting it by its old name is exactly what the rename is there to avoid.
      */
     fun moveAside(staleEntries: List<File>): List<File> {
-        return staleEntries.map { entry ->
-            if (entry.name.startsWith(ASIDE_PREFIX)) return@map entry
+        return staleEntries.mapNotNull { entry ->
+            if (entry.name.startsWith(ASIDE_PREFIX)) return@mapNotNull entry
             val aside = File(entry.parentFile, ASIDE_PREFIX + UUID.randomUUID())
-            if (entry.renameTo(aside)) aside else entry
+            aside.takeIf { entry.renameTo(it) }
         }
     }
 

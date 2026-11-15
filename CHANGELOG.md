@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Leave a cached file alone at startup when it can't be moved out of the way. The cleanup deleted it in place instead, which could take a file an import was still copying.
 - Stop two voice model installs or deletes from running over each other. The lock only covered one part of the app at a time, so a delete could remove a model folder another install was still copying into.
 - Guard glide typing's list of alternative words. The suggestion row reads and trims it in the background while typing adds to it, and nothing kept the two from running at the same time.
 - Keep shift and the keyboard mode from sticking on an old state. Two changes made at nearly the same moment on different threads could reach the keyboard out of order, and it then showed the older one until something else changed.

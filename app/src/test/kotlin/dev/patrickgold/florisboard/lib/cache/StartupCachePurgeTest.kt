@@ -90,6 +90,18 @@ class StartupCachePurgeTest : FunSpec({
         cacheDir.list()!!.toList() shouldBe emptyList()
     }
 
+    test("leaves an entry it can't move aside for a later start") {
+        // Purging it by its old name could delete an import made there after the snapshot.
+        val cacheDir = tempCacheDir()
+        File(cacheDir, "importer/old-workspace").apply { mkdirs() }
+        val stuck = object : File(cacheDir, "importer") {
+            override fun renameTo(dest: File): Boolean = false
+        }
+
+        StartupCachePurge.moveAside(listOf(stuck)) shouldBe emptyList()
+        File(cacheDir, "importer/old-workspace").exists() shouldBe true
+    }
+
     test("treats a missing cache directory as nothing to do") {
         StartupCachePurge.snapshotStaleEntries(null) shouldBe emptyList()
 
