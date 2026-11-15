@@ -228,23 +228,13 @@ class ImeWindowController(
         outInsets: InputMethodService.Insets,
         isFullscreenInputRequired: Boolean,
     ) {
-        val rootInsets = activeRootInsets.value
-        val windowInsets = activeWindowInsets.value ?: return
-        val rootBounds = rootInsets.boundsPx
-        val windowBounds = windowInsets.boundsPx
-        val windowSpec = activeWindowSpec.value
+        val rootBounds = activeRootInsets.value.boundsPx
+        val windowBounds = activeWindowInsets.value?.boundsPx ?: return
+        val insetsTop = reportedInsetsTop() ?: return
         val editorState = editor.state.value
 
-        when (windowSpec) {
-            is ImeWindowSpec.Fixed -> {
-                outInsets.contentTopInsets = windowBounds.top
-                outInsets.visibleTopInsets = windowBounds.top
-            }
-            is ImeWindowSpec.Floating -> {
-                outInsets.contentTopInsets = rootBounds.bottom
-                outInsets.visibleTopInsets = rootBounds.bottom
-            }
-        }
+        outInsets.contentTopInsets = insetsTop
+        outInsets.visibleTopInsets = insetsTop
         when {
             isFullscreenInputRequired || editorState.isEnabled -> {
                 outInsets.touchableRegion.set(
@@ -264,6 +254,25 @@ class ImeWindowController(
             }
         }
         outInsets.touchableInsets = InputMethodService.Insets.TOUCHABLE_INSETS_REGION
+    }
+
+    /**
+     * The content and visible top insets [onComputeInsets] reports, in px, or null while the window insets
+     * are unknown. The app behind the keyboard lays itself out above this line.
+     *
+     * While an editor move or resize gesture is ongoing this holds the value from when the gesture began.
+     * Following the window instead makes the app behind re-layout on every frame of the drag, which is what
+     * made resizing janky (issue #23). The value catches up once the gesture ends or is cancelled.
+     */
+    internal fun reportedInsetsTop(): Int? {
+        if (editor.state.value.isAnyGesture) {
+            editor.gestureInsetsTop?.let { return it }
+        }
+        val windowBounds = activeWindowInsets.value?.boundsPx ?: return null
+        return when (activeWindowSpec.value) {
+            is ImeWindowSpec.Fixed -> windowBounds.top
+            is ImeWindowSpec.Floating -> activeRootInsets.value.boundsPx.bottom
+        }
     }
 
     fun onConfigurationChanged(@Suppress("UNUSED_PARAMETER") newConfig: Configuration) {
@@ -509,6 +518,12 @@ class ImeWindowController(
         val version: StateFlow<Int>
             field = MutableStateFlow(0)
 
+        /**
+         * The [reportedInsetsTop] from when the current gesture began, held until it ends.
+         */
+        internal var gestureInsetsTop: Int? = null
+            private set
+
         private fun syncFromPrefs() {
             version.update { it + 1 }
         }
@@ -540,6 +555,7 @@ class ImeWindowController(
         }
 
         fun beginMoveGesture(): ImeWindowSpec {
+            gestureInsetsTop = reportedInsetsTop()
             state.value = EditorState.ACTIVE_MOVE_GESTURE
             return activeWindowSpec.value
         }
@@ -572,6 +588,7 @@ class ImeWindowController(
         }
 
         fun beginResizeGesture(): ImeWindowSpec {
+            gestureInsetsTop = reportedInsetsTop()
             state.value = EditorState.ACTIVE_RESIZE_GESTURE
             return activeWindowSpec.value
         }

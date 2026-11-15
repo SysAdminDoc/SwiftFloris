@@ -86,6 +86,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidInternalR
@@ -387,6 +388,14 @@ class FlorisImeService : LifecycleInputMethodService() {
         windowController.activeWindowConfig.collectLatestIn(lifecycleScope) {
             keyboardManager.updateActiveEvaluators() // TODO: wacky solution, but works for now
         }
+        // The content inset holds still during an editor drag. When the finger lifts nothing on screen may
+        // change, so request a traversal to make onComputeInsets report the final inset to the app behind.
+        windowController.editor.state
+            .map { it.isAnyGesture }
+            .distinctUntilChanged()
+            .collectIn(lifecycleScope) { isAnyGesture ->
+                if (!isAnyGesture) window.window?.decorView?.requestLayout()
+            }
 
         combine(
             systemLocalesFlow,
