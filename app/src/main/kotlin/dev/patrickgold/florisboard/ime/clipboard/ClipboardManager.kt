@@ -21,6 +21,7 @@ import android.content.ClipDescription.EXTRA_IS_SENSITIVE
 import android.content.Context
 import android.content.Intent
 import android.os.PersistableBundle
+import androidx.annotation.VisibleForTesting
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
@@ -34,6 +35,7 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.security.AdvancedProtectionPolicy
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import java.io.Closeable
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -118,6 +120,20 @@ class ClipboardManager(
 
     private val primaryClipLastFromCallbackGuard = Mutex(locked = false)
     private var primaryClipLastFromCallback: ClipData? = null
+    // The callback handling the remembered clip. Repeats leave it with the callback they defer
+    // to, so only that one may forget the clip.
+    private var primaryClipLastFromCallbackOwner: CallbackRevision? = null
+    // Newest revision that reached the remembered clip check, so an older callback that gets
+    // there late leaves the clip alone.
+    private var primaryClipLastFromCallbackNewest = 0L
+    private val clipRevisions = ClipboardRevisionGate()
+    private val callbacksInFlight = AtomicInteger(0)
+
+    /** System clipboard callbacks that haven't finished yet, so tests can wait without sleeping. */
+    @VisibleForTesting
+    internal val clipboardCallbacksInFlight: Int
+        get() = callbacksInFlight.get()
+
     @Volatile
     private var directPastePrimaryText: CharSequence? = null
     val primaryClipFlow: StateFlow<ClipboardItem?>
@@ -190,7 +206,7 @@ class ClipboardManager(
             setPlaintextWithoutHistory(text, item.isSensitive)
             return
         }
-        replacePrimaryState(item, directPasteText = null)
+        clipRevisions.local { replacePrimaryState(item, directPasteText = null) }
         if (prefs.clipboard.useInternalClipboard.get()) {
             val syncBehavior = prefs.clipboard.syncToSystem.get()
             val clipData = item?.toClipData(appContext)
@@ -211,23 +227,25 @@ class ClipboardManager(
         val syncBehavior = prefs.clipboard.syncToFloris.get()
         if (!prefs.clipboard.useInternalClipboard.get() || syncBehavior != ClipboardSyncBehavior.NO_EVENTS) {
             val systemPrimaryClip = systemClipboardManager.primaryClip
+            // Taken here, on the main thread, so revisions follow the order the changes happened in.
+            val revision = clipRevisions.arrive()
+            val callback = CallbackRevision(revision)
+            callbacksInFlight.incrementAndGet()
             ioScope.launch {
+                // A clear the sync setting ignores changes nothing, so it also leaves the
+                // remembered clip, and any revision a repeat handed on, alone.
                 if (systemPrimaryClip == null) {
-                    primaryClipLastFromCallbackGuard.withLock {
-                        primaryClipLastFromCallback = null
-                    }
                     if (syncBehavior.shouldSyncClear) {
-                        replaceSystemPrimaryClip(null)
+                        primaryClipLastFromCallbackGuard.withLock { forgetPrimaryClipFromCallback(revision) }
+                        publishFromCallback(revision, item = null, directPasteText = null)
                     }
                     return@launch
                 }
 
                 if (systemPrimaryClip.getItemAt(0).let { it.text == null && it.uri == null }) {
-                    primaryClipLastFromCallbackGuard.withLock {
-                        primaryClipLastFromCallback = null
-                    }
                     if (syncBehavior.shouldSyncClear) {
-                        replaceSystemPrimaryClip(null)
+                        primaryClipLastFromCallbackGuard.withLock { forgetPrimaryClipFromCallback(revision) }
+                        publishFromCallback(revision, item = null, directPasteText = null)
                     }
                     return@launch
                 }
@@ -238,31 +256,57 @@ class ClipboardManager(
 
                 val pasteOnlyText = ClipboardTextRetentionPolicy.pasteOnlyTextOrNull(systemPrimaryClip)
                 if (pasteOnlyText != null) {
-                    primaryClipLastFromCallbackGuard.withLock {
-                        // Oversized text is not compared or retained in the
-                        // callback-deduplication snapshot.
-                        primaryClipLastFromCallback = null
-                    }
-                    replaceSystemPrimaryClipWithDirectPasteText(pasteOnlyText)
+                    // Oversized text is not compared or retained in the
+                    // callback-deduplication snapshot.
+                    primaryClipLastFromCallbackGuard.withLock { forgetPrimaryClipFromCallback(revision) }
+                    publishFromCallback(revision, item = null, directPasteText = pasteOnlyText)
                     return@launch
                 }
 
-                val isDuplicate: Boolean
+                // The repeat check, the hand-off and the claim share one lock section, so no repeat
+                // can hand its revision to this callback after it has settled.
+                val claimedAsPrimary: Boolean
                 primaryClipLastFromCallbackGuard.withLock {
+                    val owner = primaryClipLastFromCallbackOwner
                     val a = primaryClipLastFromCallback?.getItemAt(0)
                     val b = systemPrimaryClip.getItemAt(0)
-                    isDuplicate = when {
+                    val isDuplicate = when {
                         a === b -> true
                         a == null -> false
                         else -> a.text == b.text && a.uri == b.uri
                     }
-                    primaryClipLastFromCallback = systemPrimaryClip
+                    // Callbacks run in parallel, so an older one can get here after a newer one.
+                    // It leaves the newer one's clip in place.
+                    val isNewest = revision > primaryClipLastFromCallbackNewest
+                    if (isNewest) primaryClipLastFromCallbackNewest = revision
+                    if (isDuplicate && owner != null && !owner.finished && revision > owner.arrival) {
+                        // Some phones report one copy twice. A repeat of a copy that's still
+                        // cloning is part of it, and that copy publishes or fails as the newer of
+                        // the two. It keeps that even if a newer copy takes the remembered clip
+                        // before it's done. An older copy that gets here late isn't a repeat, so
+                        // it isn't lost if the newer one fails.
+                        owner.publishAs = maxOf(owner.publishAs, revision)
+                        return@launch
+                    }
+                    if (isNewest) {
+                        primaryClipLastFromCallback = systemPrimaryClip
+                        primaryClipLastFromCallbackOwner = callback
+                    }
+                    // The primary clip already shows this copy: it's the clip the remembered copy
+                    // published, or an equal one (a media clone never equals its source, so an
+                    // image only matches the first way). Claiming the revision makes an older copy
+                    // that's cloning lose. If an older copy published first, it may have closed
+                    // the clip it replaced, so this copy is imported again instead.
+                    val shown = primaryClip
+                    claimedAsPrimary = shown != null &&
+                        ((isDuplicate && shown === owner?.shows) || shown.isEqualTo(systemPrimaryClip)) &&
+                        clipRevisions.claimIfNewest(revision) { primaryClip === shown }
+                    if (claimedAsPrimary) {
+                        callback.shows = shown
+                        callback.finished = true
+                    }
                 }
-                if (isDuplicate) return@launch
-
-                val internalPrimaryClip = primaryClip
-                val isEqual = internalPrimaryClip?.isEqualTo(systemPrimaryClip) == true
-                if (!isEqual) {
+                if (!claimedAsPrimary) {
                     // Decide sensitivity BEFORE cloning. fromClipData(cloneUri = true)
                     // unconditionally writes IMAGE/VIDEO bytes to on-disk clipboard
                     // storage; the `if (!item.isSensitive)` history gate below only
@@ -281,9 +325,38 @@ class ClipboardManager(
                         ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = !isSensitiveClip)
                     } catch (e: Exception) {
                         flogError { "Failed to import system clipboard item: ${e.message.orEmpty()}" }
+                        // A copy that couldn't be read changes nothing, as if it never happened, so
+                        // an older copy or clear still applies. Copying it again isn't a repeat,
+                        // so that gets another try. Only while this callback still owns the
+                        // remembered clip: a repeat that came in meanwhile left it here, a newer
+                        // copy took it.
+                        primaryClipLastFromCallbackGuard.withLock {
+                            if (primaryClipLastFromCallbackOwner === callback) primaryClipLastFromCallback = null
+                            callback.finished = true
+                        }
                         return@launch
                     }
-                    replaceSystemPrimaryClip(item)
+                    // Under the lock, so no repeat can hand its revision on between reading it
+                    // and publishing.
+                    val published = primaryClipLastFromCallbackGuard.withLock {
+                        publishFromCallback(callback.publishAs, item, directPasteText = null).also { won ->
+                            if (won) {
+                                callback.shows = item
+                            } else if (primaryClipLastFromCallbackOwner === callback) {
+                                primaryClipLastFromCallback = null
+                            }
+                            callback.finished = true
+                        }
+                    }
+                    if (!published) {
+                        // A newer copy, a clear or a local change published while this one was
+                        // cloning, so it's dropped whole. Only a file this callback cloned is
+                        // deleted: our own clip echoed back keeps the history item's URI.
+                        if (item.uri != null && item.uri != systemPrimaryClip.getItemAt(0).uri) {
+                            item.close(appContext)
+                        }
+                        return@launch
+                    }
                     // Skip IME-local history when the source app marked the
                     // clip as sensitive via
                     // `ClipDescription.EXTRA_IS_SENSITIVE` (API 33+).
@@ -301,32 +374,62 @@ class ClipboardManager(
                         insertOrMoveBeginning(item)
                     }
                 }
-            }
+            }.invokeOnCompletion { callbacksInFlight.decrementAndGet() }
         }
     }
 
-    private fun replaceSystemPrimaryClip(item: ClipboardItem?) {
-        val previous = primaryClip
-        replacePrimaryState(item, directPasteText = null)
-        if (ClipboardPrimaryClipCleanupPolicy.shouldCloseReplacedPrimaryClip(
-                replacedItem = previous,
-                historyEnabled = prefs.clipboard.historyEnabled.get(),
-            )
-        ) {
-            previous?.close(appContext)
+    /**
+     * A clear the sync setting applies, or text too long to remember, newer than everything that
+     * reached the remembered clip check replaces that clip with nothing. Call with
+     * [primaryClipLastFromCallbackGuard] held.
+     */
+    private fun forgetPrimaryClipFromCallback(revision: Long) {
+        if (revision > primaryClipLastFromCallbackNewest) {
+            primaryClipLastFromCallback = null
+            primaryClipLastFromCallbackOwner = null
+            primaryClipLastFromCallbackNewest = revision
         }
     }
 
-    private fun replaceSystemPrimaryClipWithDirectPasteText(text: CharSequence) {
-        val previous = primaryClip
-        replacePrimaryState(item = null, directPasteText = text)
-        if (ClipboardPrimaryClipCleanupPolicy.shouldCloseReplacedPrimaryClip(
+    /**
+     * A system clipboard callback's revision. A repeat of its copy that arrived after it, made
+     * while it still clones, hands it a newer revision in [publishAs], and it publishes or fails as
+     * that one. Once [finished], a repeat no longer joins it, and [shows] is the clip it published
+     * or claimed, if any. Guarded by [primaryClipLastFromCallbackGuard], except [arrival].
+     */
+    private class CallbackRevision(revision: Long) {
+        val arrival = revision
+        var publishAs = revision
+        var finished = false
+        var shows: ClipboardItem? = null
+    }
+
+    /**
+     * Publishes a system clipboard callback's result unless a newer change published while it ran.
+     * Returns false, having changed nothing, when it lost that race.
+     */
+    private fun publishFromCallback(
+        revision: Long,
+        item: ClipboardItem?,
+        directPasteText: CharSequence?,
+    ): Boolean {
+        var previous: ClipboardItem? = null
+        val change: () -> Unit = {
+            previous = primaryClip
+            replacePrimaryState(item, directPasteText)
+        }
+        val published = clipRevisions.publishIfNewest(revision, change)
+        // A clip that points at the same file as the one it replaces, like our own clip echoed
+        // back, keeps that file. So does one the system clipboard holds again: another app
+        // copied it after this callback's clip, and that newer copy still has to read it.
+        if (published && previous?.uri != item?.uri && ClipboardPrimaryClipCleanupPolicy.shouldCloseReplacedPrimaryClip(
                 replacedItem = previous,
                 historyEnabled = prefs.clipboard.historyEnabled.get(),
-            )
+            ) && systemClipboardManager.primaryClip?.getItemAt(0)?.uri != previous?.uri
         ) {
             previous?.close(appContext)
         }
+        return published
     }
 
     /**
@@ -363,7 +466,7 @@ class ClipboardManager(
             return
         }
 
-        replacePrimaryState(item = null, directPasteText = newText)
+        clipRevisions.local { replacePrimaryState(item = null, directPasteText = newText) }
         val clipData = ClipData.newPlainText(ClipboardItem.FLORIS_CLIP_LABEL, newText)
         if (isSensitive && AndroidVersion.ATLEAST_API33_T) {
             clipData.description.extras = PersistableBundle().apply {
@@ -390,8 +493,15 @@ class ClipboardManager(
         // the clipboard itself.
         if (AdvancedProtectionPolicy.decide(appContext).suspendsClipboardHistoryPersistence) return
         if (prefs.clipboard.historyEnabled.get()) {
+            // Media copied from other apps is cloned to a new URI, so a URI match is one of our
+            // own clips copied back. A second row would share its file and lose it when either
+            // row is deleted.
             val historyElement = currentHistory.all.firstOrNull { item ->
-                item.type == ItemType.TEXT && item.text == newItem.text && item.isSensitive == newItem.isSensitive
+                if (item.type == ItemType.TEXT) {
+                    newItem.type == ItemType.TEXT && item.text == newItem.text && item.isSensitive == newItem.isSensitive
+                } else {
+                    newItem.type != ItemType.TEXT && item.uri != null && item.uri == newItem.uri
+                }
             }
             if (historyElement != null) {
                 moveToTheBeginning(

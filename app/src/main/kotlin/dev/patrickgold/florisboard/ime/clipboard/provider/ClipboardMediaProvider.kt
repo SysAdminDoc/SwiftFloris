@@ -57,6 +57,9 @@ class ClipboardMediaProvider : ContentProvider() {
     // behaviour (lost writes, CME during init's iteration, corrupted bucket table).
     private val cachedFileInfos = java.util.concurrent.ConcurrentHashMap<Long, ClipboardFileInfo>()
     private val ioScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    // One lane for metadata writes, run in the order they were queued, so a clone that's deleted
+    // right after it was made can't have its delete land before its insert and leave the row behind.
+    private val metadataWrites = Dispatchers.IO.limitedParallelism(1)
 
     companion object {
         const val AUTHORITY = "${BuildConfig.APPLICATION_ID}.provider.clipboard"
@@ -238,7 +241,7 @@ class ClipboardMediaProvider : ContentProvider() {
                         mimeTypes,
                     )
                     cachedFileInfos[clonedFile.id] = fileInfo
-                    ioScope.launch {
+                    ioScope.launch(metadataWrites) {
                         requireClipboardFilesDao().insert(fileInfo)
                     }
                     if (m == IMAGE_CLIPS_TABLE) {
@@ -262,7 +265,7 @@ class ClipboardMediaProvider : ContentProvider() {
                 ClipboardFileStorage.deleteById(context!!, id)
                 cachedFileInfos.remove(id)
                 context?.revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                ioScope.launch {
+                ioScope.launch(metadataWrites) {
                     requireClipboardFilesDao().delete(id)
                 }
                 return 1
