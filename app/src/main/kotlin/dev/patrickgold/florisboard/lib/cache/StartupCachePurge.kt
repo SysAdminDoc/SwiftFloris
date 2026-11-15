@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.lib.cache
 
 import java.io.File
+import java.util.UUID
 
 /**
  * Clears leftover cache from a previous process without blocking IME startup.
@@ -39,7 +40,9 @@ import java.io.File
  * set is handed to [purge], which does the expensive recursive work off-thread.
  * Anything created after the snapshot is not in it and cannot be deleted, so
  * this is both faster than the old behaviour and strictly safer than a naive
- * async delete.
+ * async delete. [moveAside] renames the snapshot's entries before the delete
+ * starts, so something created after it under an old name, like a new import
+ * inside `importer`, is safe too.
  */
 object StartupCachePurge {
     /**
@@ -49,6 +52,21 @@ object StartupCachePurge {
     fun snapshotStaleEntries(cacheDir: File?): List<File> {
         if (cacheDir == null) return emptyList()
         return cacheDir.listFiles()?.toList().orEmpty()
+    }
+
+    /**
+     * Renames each of [staleEntries] to a unique name beside it and returns the renamed entries
+     * for [purge]. A stale entry's name can be used again right away: a cold start from a share
+     * creates its import inside `importer` moments after the snapshot, and deleting `importer`
+     * by its name would delete that import with it. One rename per entry, so it's cheap enough
+     * for the calling thread. An entry that can't be renamed is returned as it is.
+     */
+    fun moveAside(staleEntries: List<File>): List<File> {
+        return staleEntries.map { entry ->
+            if (entry.name.startsWith(ASIDE_PREFIX)) return@map entry
+            val aside = File(entry.parentFile, ASIDE_PREFIX + UUID.randomUUID())
+            if (entry.renameTo(aside)) aside else entry
+        }
     }
 
     /**
@@ -67,4 +85,7 @@ object StartupCachePurge {
         }
         return failures
     }
+
+    /** Names [moveAside] gives; one left by a purge that didn't finish is purged as it is. */
+    private const val ASIDE_PREFIX = ".stale-"
 }

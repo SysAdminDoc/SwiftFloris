@@ -158,7 +158,7 @@ class FlorisApplication : Application() {
      * a wholesale async delete would race [ExtensionManager.init]'s extraction.
      */
     private fun purgeStaleCacheAsync() {
-        val staleEntries = StartupCachePurge.snapshotStaleEntries(cacheDir)
+        val staleEntries = StartupCachePurge.moveAside(StartupCachePurge.snapshotStaleEntries(cacheDir))
         if (staleEntries.isEmpty()) return
         scope.launch(Dispatchers.IO) {
             val failures = StartupCachePurge.purge(staleEntries)

@@ -61,6 +61,35 @@ class StartupCachePurgeTest : FunSpec({
         extractedFile.readText() shouldBe "{}"
     }
 
+    test("keeps what is made after the snapshot under a stale entry's name") {
+        // A cold start from a share creates its import inside importer/ right away.
+        val cacheDir = tempCacheDir()
+        val oldImport = File(cacheDir, "importer/old-workspace").apply { mkdirs() }
+        File(oldImport, "theme.flex").writeText("old")
+
+        val stale = StartupCachePurge.moveAside(StartupCachePurge.snapshotStaleEntries(cacheDir))
+
+        val newImport = File(cacheDir, "importer/new-workspace").apply { mkdirs() }
+        val newFile = File(newImport, "pack.zip").apply { writeText("new") }
+
+        StartupCachePurge.purge(stale) shouldBe emptyList()
+
+        newFile.readText() shouldBe "new"
+        oldImport.exists() shouldBe false
+        cacheDir.list()!!.toList() shouldBe listOf("importer")
+    }
+
+    test("purges an entry an earlier purge moved aside but didn't finish") {
+        val cacheDir = tempCacheDir()
+        File(cacheDir, ".stale-left-over/deep").apply { mkdirs() }
+
+        val stale = StartupCachePurge.moveAside(StartupCachePurge.snapshotStaleEntries(cacheDir))
+
+        stale.map { it.name } shouldBe listOf(".stale-left-over")
+        StartupCachePurge.purge(stale) shouldBe emptyList()
+        cacheDir.list()!!.toList() shouldBe emptyList()
+    }
+
     test("treats a missing cache directory as nothing to do") {
         StartupCachePurge.snapshotStaleEntries(null) shouldBe emptyList()
 
