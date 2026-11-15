@@ -24,6 +24,7 @@ import android.os.Bundle
 import android.text.InputType
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dev.patrickgold.florisboard.FlorisApplication
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -34,6 +35,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.security.SecureRandom
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [35])
@@ -56,6 +58,8 @@ class TaskerActionReceiverTest {
         random = FillSecureRandom(0x55)
         val store = TaskerAuthenticationStore(persistence, random)
         TaskerAuthentication.storeFactory = { store }
+        // Before any write, so the app's own load can't land over it.
+        waitForPreferenceStore()
         setExternalAutomationEnabled(true)
     }
 
@@ -322,9 +326,23 @@ class TaskerActionReceiverTest {
         }
     }
 
+    private fun waitForPreferenceStore() {
+        val loaded = (context as FlorisApplication).preferenceStoreLoaded
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+        while (!loaded.value) {
+            check(System.nanoTime() < deadline) { "Timed out waiting for the preference store" }
+            Thread.sleep(10)
+        }
+    }
+
     private fun setExternalAutomationEnabled(enabled: Boolean) {
         runBlocking {
-            prefs.privacy.externalAutomationEnabled.set(enabled).getOrThrow()
+            prefs.privacy.externalAutomationEnabled.set(enabled).onFailure { error ->
+                // JetPref saves by renaming a temp file over the old one, which a Windows JVM
+                // refuses once the file exists. The value is set in memory before that save, and
+                // memory is all these tests read, so that one failure is let through.
+                if (error.message?.startsWith("Failed to rename temp file") != true) throw error
+            }
         }
     }
 }

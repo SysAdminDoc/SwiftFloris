@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionArrangeme
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionJsonConfig
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
+import dev.patrickgold.florisboard.ime.text.keyboard.TouchCalibrationProfile
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.ime.theme.extCoreTheme
 import dev.patrickgold.jetpref.datastore.jetprefDataStoreOf
@@ -261,6 +262,31 @@ class AppPrefsMigrationTest : FunSpec({
         restored.init(LoadStrategy.Disabled, PersistStrategy.Disabled).getOrThrow()
         restored.import(ImportStrategy.Erase, backup).getOrThrow()
         restoredModel.assertChosenValues("after restoring a backup")
+    }
+
+    // These five were defined on the model but missing from its declared entries, so jetpref kept
+    // a change in memory but never saved it, and each went back to its default on every start.
+    test("settings that used to reset on every restart survive a datastore load") {
+        val store = jetprefDataStoreOf(FlorisPreferenceModel::class)
+        val prefs by store
+        store.init(LoadStrategy.Disabled, PersistStrategy.Disabled).getOrThrow()
+        prefs.correction.touchCalibrationProfile.set(TouchCalibrationProfile.CONSERVATIVE).getOrThrow()
+        prefs.keyboard.scrambledNumericPasswordEnabled.set(true).getOrThrow()
+        prefs.localization.cjkMixedScriptSpacing.set(true).getOrThrow()
+        prefs.physicalKeyboard.showSmartbarOnly.set(false).getOrThrow()
+        prefs.privacy.externalAutomationEnabled.set(true).getOrThrow()
+
+        val saved = InMemoryDatastoreBlob()
+        store.export(saved).getOrThrow()
+        val restarted = jetprefDataStoreOf(FlorisPreferenceModel::class)
+        val restartedPrefs by restarted
+        restarted.init(LoadStrategy.UseReader(saved), PersistStrategy.Disabled).getOrThrow()
+
+        restartedPrefs.correction.touchCalibrationProfile.get() shouldBe TouchCalibrationProfile.CONSERVATIVE
+        restartedPrefs.keyboard.scrambledNumericPasswordEnabled.get() shouldBe true
+        restartedPrefs.localization.cjkMixedScriptSpacing.get() shouldBe true
+        restartedPrefs.physicalKeyboard.showSmartbarOnly.get() shouldBe false
+        restartedPrefs.privacy.externalAutomationEnabled.get() shouldBe true
     }
 
     test("fixture catalog covers every retained legacy migration key") {

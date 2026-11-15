@@ -17,15 +17,20 @@
 package dev.patrickgold.florisboard.app
 
 import dev.patrickgold.jetpref.datastore.model.PreferenceData
+import dev.patrickgold.jetpref.datastore.model.PreferenceModel
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import java.lang.reflect.Modifier
+import java.util.Collections
+import java.util.IdentityHashMap
 
 class AppPrefsPartitionTest : FunSpec({
     test("partition keeps app preference keys, types, and defaults stable") {
         val rows = FlorisPreferenceModelImpl().toGoldenRows()
 
-        rows shouldHaveSize 205
+        rows shouldHaveSize 210
         rows shouldBe EXPECTED_APP_PREFS_GOLDEN.trimIndent().lines()
     }
 
@@ -37,7 +42,43 @@ class AppPrefsPartitionTest : FunSpec({
         prefs.smartbar.actionArrangement.key shouldBe "smartbar__action_arrangement"
         prefs.theme.editorLevel.key shouldBe "theme__editor_level"
     }
+
+    // jetpref loads and saves only the declared entries, so a preference left out of them looks
+    // changed but goes back to its default whenever the process starts.
+    test("every preference defined on the model is declared") {
+        val prefs = FlorisPreferenceModelImpl()
+        val declared = prefs.declaredPreferenceEntries.values.map { it.key }.toSet()
+        val defined = prefs.definedPreferenceKeys()
+
+        defined.size shouldBeGreaterThan 200
+        (defined - declared) shouldBe emptySet()
+    }
 })
+
+/**
+ * The key of every preference reachable from the model, found by walking the fields of the model,
+ * its groups and any group inside those.
+ */
+private fun FlorisPreferenceModel.definedPreferenceKeys(): Set<String> {
+    val keys = mutableSetOf<String>()
+    // By identity, since each group also points back at the root model.
+    val walked = Collections.newSetFromMap(IdentityHashMap<PreferenceModel, Boolean>())
+    fun walk(model: PreferenceModel) {
+        if (!walked.add(model)) return
+        generateSequence<Class<*>>(model.javaClass) { it.superclass }
+            .flatMap { it.declaredFields.asSequence() }
+            .filterNot { Modifier.isStatic(it.modifiers) }
+            .forEach { field ->
+                field.isAccessible = true
+                when (val value = field.get(model)) {
+                    is PreferenceData<*> -> keys += value.key
+                    is PreferenceModel -> walk(value)
+                }
+            }
+    }
+    walk(this)
+    return keys
+}
 
 private fun FlorisPreferenceModelImpl.toGoldenRows(): List<String> {
     return declaredPreferenceEntries.values
@@ -84,6 +125,7 @@ correction__heuristic_smart_compose	b	false
 correction__multilingual_suggestions	b	true
 correction__quick_prediction_insert	b	false
 correction__remember_caps_lock_state	b	false
+correction__touch_calibration_profile	s	NORMAL
 devtools__enabled	b	false
 devtools__show_drag_and_drop_helpers	b	false
 devtools__show_inline_autofill_overlay	b	false
@@ -189,6 +231,7 @@ keyboard__merge_hint_popups_enabled	b	false
 keyboard__number_row	b	true
 keyboard__popup_enabled	b	true
 keyboard__quote_auto_close_enabled	b	true
+keyboard__scrambled_numeric_password_enabled	b	false
 keyboard__space_bar_display_mode	s	NOTHING
 keyboard__space_bar_switches_to_characters	b	true
 keyboard__split_keyboard_enabled	b	false
@@ -198,6 +241,7 @@ keyboard__utility_key_action	s	SWITCH_TO_EMOJIS
 keyboard__utility_key_enabled	b	true
 keyboard__window_config	s	{}
 localization__active_subtype_id	l	-1
+localization__cjk_mixed_script_spacing	b	false
 localization__display_keyboard_labels_in_subtype_language	b	false
 localization__display_language_names_in	s	SYSTEM_LOCALE
 localization__follow_app_language_hints	b	true
@@ -212,9 +256,11 @@ other__settings_language	s	auto
 other__settings_theme	s	AUTO
 other__show_app_icon	b	true
 physical_keyboard__show_on_screen_keyboard	b	false
+physical_keyboard__show_smartbar_only	b	true
 privacy__addon_consent_mcp	s	NEEDS_PROMPT
 privacy__addon_consent_smart_compose	s	NEEDS_PROMPT
 privacy__addon_consent_translation	s	NEEDS_PROMPT
+privacy__external_automation_enabled	b	false
 privacy__per_app_keyboard_profiles	s	{}
 smartbar__action_arrangement	s	{"stickyAction":null,"dynamicActions":[{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-131,"label":"undo"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-132,"label":"redo"}},{"$":"insert_key","data":{"$":"text_key","code":-301,"label":"settings"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-109,"label":"toggle_floating_window"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-115,"label":"toggle_resize_mode"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-213,"label":"ime_ui_mode_clipboard"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-212,"label":"ime_ui_mode_media"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-110,"label":"toggle_compact_layout"}},{"$":"insert_key","data":{"$":"text_key","type":"function","code":-245,"label":"toggle_autocorrect"}},{"$":"insert_key","data":{"$":"text_key","type":"function","code":-244,"label":"toggle_incognito_mode"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-23,"label":"arrow_up"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-24,"label":"arrow_down"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-21,"label":"arrow_left"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-22,"label":"arrow_right"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-38,"label":"clipboard_clear_primary_clip"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-31,"label":"clipboard_copy"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-32,"label":"clipboard_cut"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-33,"label":"clipboard_paste"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-35,"label":"clipboard_select_all"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-227,"label":"language_switch"}},{"$":"insert_key","data":{"$":"text_key","type":"enter_editing","code":-9,"label":"forward_delete"}},{"$":"insert_key","data":{"$":"text_key","type":"function","code":-232,"label":"ime_hide_ui"}}],"hiddenActions":[{"$":"insert_task"},{"$":"insert_calendar_event"},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-27,"label":"move_start_of_line"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-28,"label":"move_end_of_line"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-25,"label":"move_start_of_page"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-26,"label":"move_end_of_page"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-29,"label":"page_up"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-30,"label":"page_down"}}]}
 smartbar__enabled	b	true
