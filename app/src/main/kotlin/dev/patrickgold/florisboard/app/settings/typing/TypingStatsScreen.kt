@@ -38,7 +38,6 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore
 import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
-import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay
 import dev.patrickgold.florisboard.ime.nlp.CorrectionAccuracyDelta
 import dev.patrickgold.florisboard.ime.nlp.CorrectionAccuracyTrend
 import dev.patrickgold.florisboard.ime.nlp.CorrectionOutcomePriors
@@ -256,13 +255,25 @@ fun TypingStatsScreen() = FlorisScreen {
                 confirmLabel = stringRes(R.string.settings__typing_stats__erase_everything__confirm_button),
                 onConfirm = {
                     showEraseEverythingConfirm = false
-                    resetAndRefresh(R.string.settings__typing_stats__erase_everything__toast) {
-                        PersonalBigramStore.get(context).resetAndAwait()
-                        PersonalTrigramStore.get(context).resetAndAwait()
-                        CorrectionOutcomePriors.get(context).resetAndAwait()
-                        AdaptiveTouchModel.reset()
-                        DictionaryManager.default().florisUserDictionaryDatabase()?.reset()
-                        UserDictionaryOverlay.get().clearAll()
+                    scope.launch {
+                        val remaining = withContext(Dispatchers.IO) {
+                            PersonalBigramStore.get(context).resetAndAwait()
+                            PersonalTrigramStore.get(context).resetAndAwait()
+                            CorrectionOutcomePriors.get(context).resetAndAwait()
+                            AdaptiveTouchModel.reset()
+                            // Deletes the dictionary even while it's turned off; a reset through
+                            // the open store skipped it then, and its words came back later.
+                            DictionaryManager.default().eraseFlorisUserDictionary()
+                        }
+                        refreshTick = System.currentTimeMillis()
+                        if (remaining.isEmpty()) {
+                            context.showLongToast(R.string.settings__typing_stats__erase_everything__toast)
+                        } else {
+                            context.showLongToast(
+                                R.string.settings__typing_stats__erase_everything__incomplete_toast,
+                                "files" to remaining.joinToString { it.name },
+                            )
+                        }
                     }
                 },
                 dismissLabel = stringRes(R.string.action__cancel),

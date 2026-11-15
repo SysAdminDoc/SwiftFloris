@@ -503,6 +503,28 @@ class DictionaryManager private constructor(context: Context) {
         florisUserDictionaryLoader.acknowledgeReset()
     }
 
+    /**
+     * Deletes the personal dictionary whether or not it's turned on: the open store, its sidecars,
+     * copies kept aside after a reset or migration, the reset notice and the in-memory overlay.
+     * Going through [florisUserDictionaryDatabase] would skip a turned-off dictionary, whose words
+     * come back the moment it's turned on again. Returns the files that couldn't be deleted.
+     */
+    @Synchronized
+    fun eraseFlorisUserDictionary(): List<File> {
+        closeFlorisUserDictionary()
+        val remaining = EncryptedDatabaseFiles.deleteEveryCopy(
+            applicationContext.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME),
+        )
+        UserDictionaryOverlay.get().clearAll()
+        florisUserDictionaryLoader.acknowledgeReset()
+        if (remaining.isNotEmpty()) {
+            flogError(LogTopic.DICTIONARY) {
+                "Erase left ${remaining.size} user dictionary file(s): ${remaining.joinToString { it.name }}"
+            }
+        }
+        return remaining
+    }
+
     private fun loadFlorisUserDictionaryIfNecessary() {
         val context = applicationContext
         if (florisUserDictionaryDatabase != null || !prefs.dictionary.enableFlorisUserDictionary.get()) {

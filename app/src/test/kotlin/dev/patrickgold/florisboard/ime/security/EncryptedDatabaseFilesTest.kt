@@ -157,6 +157,42 @@ class EncryptedDatabaseFilesTest : FunSpec({
         wal.readText() shouldBe "wal"
     }
 
+    test("deleting every copy removes the store, its sidecars, kept copies and markers only") {
+        val dir = tempDir()
+        val store = plaintextDatabase(dir, "words")
+        val ours = listOf(
+            "words-wal", "words-shm", "words-journal",
+            "words.unreadable-1", "words-wal.unreadable-1", "words.plaintext-2", "words.reset-notice",
+        ).map { File(dir, it).apply { writeText(it) } }
+        val unrelated = listOf("words_backup", "wordsmith", "history", "history-wal.unreadable-1")
+            .map { File(dir, it).apply { writeText(it) } }
+
+        EncryptedDatabaseFiles.deleteEveryCopy(store) shouldBe emptyList()
+
+        (ours + store).filter { it.exists() } shouldBe emptyList()
+        unrelated.all { it.readText() == it.name } shouldBe true
+    }
+
+    test("a copy that can't be deleted is reported and the rest are still deleted") {
+        val dir = tempDir()
+        val store = plaintextDatabase(dir, "words")
+        val wal = File(dir, "words-wal").apply { writeText("wal") }
+        // A directory with something in it is the one name File.delete() can't remove.
+        val stuck = File(dir, "words.unreadable-1").apply { mkdirs() }
+        File(stuck, "inside").writeText("x")
+
+        EncryptedDatabaseFiles.deleteEveryCopy(store) shouldBe listOf(stuck)
+
+        store.exists() shouldBe false
+        wal.exists() shouldBe false
+    }
+
+    test("deleting every copy of a store that was never created finds nothing left") {
+        val dir = tempDir()
+        EncryptedDatabaseFiles.deleteEveryCopy(File(dir, "words")) shouldBe emptyList()
+        EncryptedDatabaseFiles.deleteEveryCopy(File(File(dir, "missing-dir"), "words")) shouldBe emptyList()
+    }
+
     test("only proven corruption authorizes quarantine") {
         EncryptedDatabaseFiles.isDefinitiveCorruption(
             SQLiteDatabaseCorruptException("malformed database"),

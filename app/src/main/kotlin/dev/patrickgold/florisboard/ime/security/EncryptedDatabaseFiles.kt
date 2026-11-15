@@ -109,6 +109,19 @@ internal object EncryptedDatabaseFiles {
     }
 
     /**
+     * Deletes the database for good: the file, its WAL / SHM / journal, every copy kept aside under
+     * a `.<suffix>-<timestamp>` name by [moveAside] or [quarantine], and any marker named after it.
+     * Returns whatever is still there afterwards; empty means nothing of the store is left.
+     */
+    fun deleteEveryCopy(databaseFile: File): List<File> {
+        val names = siblingsOf(databaseFile).map { it.name }
+        val copies = databaseFile.parentFile?.listFiles { file ->
+            names.any { name -> file.name == name || file.name.startsWith("$name.") }
+        }.orEmpty()
+        return copies.filter { it.exists() && !it.delete() }
+    }
+
+    /**
      * Preserves an unusable database under a `.<reason>-<timestamp>` name instead of deleting it.
      * Moves every sibling or none: returns false when anything could not be preserved and the store
      * was put back in place, which callers must treat as "do not replace" — deleting data the user

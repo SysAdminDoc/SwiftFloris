@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.ime.dictionary
 
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.security.EncryptedDatabaseFiles
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -25,6 +26,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 
@@ -46,6 +48,8 @@ class PersonalDictionaryManagerRuntimeTest {
     fun tearDown() = runBlocking {
         manager.unloadUserDictionariesIfNecessary()
         context.deleteDatabase(FlorisUserDictionaryDatabase.DB_FILE_NAME)
+        // deleteDatabase leaves the copies the erase test plants beside the store.
+        EncryptedDatabaseFiles.deleteEveryCopy(context.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME))
         prefs.dictionary.enableSystemUserDictionary.set(true).getOrThrow()
         prefs.dictionary.enableFlorisUserDictionary.set(true).getOrThrow()
     }
@@ -75,6 +79,38 @@ class PersonalDictionaryManagerRuntimeTest {
         assertFalse(context.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME).exists())
         assertTrue(manager.florisUserDictionaryDao() == null)
     }
+
+    @Test
+    fun eraseDeletesATurnedOffDictionarySoNoWordComesBackWhenItIsTurnedOn() {
+        val locale = FlorisLocale.fromTag("en-US")
+        val dao = manager.florisUserDictionaryDao() ?: error("personal dictionary DAO unavailable")
+        manager.learnWord("SwiftFloris", locale)
+        awaitEntry(dao, "swiftfloris", locale)
+        val databaseFile = context.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME)
+        // A copy kept aside after an earlier reset holds words too.
+        File(databaseFile.parentFile, "${databaseFile.name}.unreadable-1").writeText("older words")
+
+        runBlocking { prefs.dictionary.enableFlorisUserDictionary.set(false).getOrThrow() }
+        manager.syncUserDictionaryStoresWithPreferences()
+        assertTrue("Turning the dictionary off shouldn't delete it.", databaseFile.exists())
+
+        assertEquals(emptyList<File>(), manager.eraseFlorisUserDictionary())
+        assertEquals(emptyList<String>(), storeFiles(databaseFile))
+        assertFalse(UserDictionaryOverlay.get().contains("swiftfloris", locale))
+
+        // What a restart does: drop every handle, then open from disk once it's turned on again.
+        manager.unloadUserDictionariesIfNecessary()
+        runBlocking { prefs.dictionary.enableFlorisUserDictionary.set(true).getOrThrow() }
+        manager.syncUserDictionaryStoresWithPreferences()
+        val reopened = manager.florisUserDictionaryDao() ?: error("personal dictionary DAO unavailable")
+        assertEquals(emptyList<UserDictionaryEntry>(), reopened.queryAll())
+    }
+
+    /** Every file named after the store; other tests' stores are `<name>_<suffix>` and don't count. */
+    private fun storeFiles(databaseFile: File): List<String> =
+        databaseFile.parentFile?.list()
+            ?.filter { it.startsWith(databaseFile.name) && !it.startsWith("${databaseFile.name}_") }
+            .orEmpty()
 
     private fun awaitEntry(
         dao: UserDictionaryDao,

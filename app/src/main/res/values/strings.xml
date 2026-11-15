@@ -1177,6 +1177,7 @@
     <string name="settings__typing_stats__erase_everything__confirm_message" comment="Confirmation dialog body">This permanently deletes your phrase predictions, correction memory, adaptive touch model, and every word in your personal dictionary. There is no undo.</string>
     <string name="settings__typing_stats__erase_everything__confirm_button" comment="Confirmation dialog destructive button">Erase</string>
     <string name="settings__typing_stats__erase_everything__toast" comment="Toast shown after erasing everything">All on-device learning and your personal dictionary were erased.</string>
+    <string name="settings__typing_stats__erase_everything__incomplete_toast" comment="Toast shown when erasing everything left personal dictionary files behind; {files} lists their names">Your typing learning was erased, but these personal dictionary files couldn\'t be deleted: {files}</string>
     <string name="settings__privacy_posture__title" comment="Screen + preference title">Privacy posture</string>
     <string name="settings__privacy_posture__home_summary" comment="Home preference summary">Network, learning, clipboard, addon, voice, and typing profile status</string>
 
