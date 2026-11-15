@@ -17,8 +17,6 @@
 package dev.patrickgold.florisboard.ime.clipboard
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.annotation.StringRes
@@ -120,6 +118,8 @@ import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.lib.compose.FlorisSnackbarController
+import dev.patrickgold.florisboard.lib.devtools.LogTopic
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import dev.patrickgold.florisboard.lib.observeAsTransformingState
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -1101,27 +1101,17 @@ private suspend fun loadClipboardMediaPreview(
         }
     }.fold(
         onSuccess = { bitmap -> ClipboardMediaPreviewResult.Ready(bitmap) },
-        onFailure = { ClipboardMediaPreviewResult.Failed },
+        onFailure = { cause ->
+            flogWarning(LogTopic.CLIPBOARD) { "Preview of $type at $uri failed: ${cause.stackTraceToString()}" }
+            ClipboardMediaPreviewResult.Failed
+        },
     )
 }
 
 private fun decodeClipboardImagePreview(context: Context, uri: Uri): ImageBitmap {
-    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    context.contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
-        BitmapFactory.decodeFileDescriptor(descriptor.fileDescriptor, null, bounds)
-    } ?: error("Unable to resolve image at $uri")
-    val sampleSize = ClipboardPreviewImagePolicy.sampleSizeForPreview(bounds.outWidth, bounds.outHeight)
-    val rawBitmap = context.contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
-        BitmapFactory.decodeFileDescriptor(
-            descriptor.fileDescriptor,
-            null,
-            BitmapFactory.Options().apply {
-                inSampleSize = sampleSize
-                inPreferredConfig = Bitmap.Config.ARGB_8888
-            },
-        )
-    }
-    return checkNotNull(rawBitmap) { "Unable to decode image at $uri" }.asImageBitmap()
+    return ClipboardPreviewImageDecoder.decode(uri) {
+        context.contentResolver.openFileDescriptor(uri, "r")
+    }.asImageBitmap()
 }
 
 @Suppress("DEPRECATION", "NewApi")

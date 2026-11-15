@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Show previews for images in clipboard history again. Since 1.9.58 every copied image showed "Something went wrong" instead of the picture. The size check that runs before decoding mistook its normal empty result for an image it couldn't open. Videos weren't affected. Part of issue #25.
 - Let the debug build install next to the release. Both declared the same two signature permissions, so Android refused whichever one went on second. The debug build now leaves those declarations to the release.
 - Stop the app behind the keyboard from redrawing its whole layout while you resize or move the keyboard. The keyboard reported its new top edge on every frame of the drag, so the app re-laid itself out under your finger. It now keeps its layout until you let go and adjusts once. Part of issue #23.
 - Stop restyling the whole keyboard when only the shift state or mode changes. Each change rebuilt the Material You color palettes from scratch, and because a rebuilt palette never compares equal to the old one, every key looked up its style again. The palettes are now built once per theme and accent color.
