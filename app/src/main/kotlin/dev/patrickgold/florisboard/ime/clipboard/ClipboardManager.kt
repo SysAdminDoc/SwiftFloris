@@ -110,6 +110,9 @@ class ClipboardManager(
     private val reportScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val cleanUpJob: Job
     private val historyMaintenanceMutex = Mutex(locked = false)
+    // Local history writes start here one at a time, so they reach the maintenance lock in the
+    // order they were asked for: a delete of a clip copied just before waits for its row.
+    private val historyWrites = Dispatchers.IO.limitedParallelism(1)
     private var clipHistoryDb: ClipboardHistoryDatabase? = null
     private val clipHistoryDao: ClipboardHistoryDao? get() = clipHistoryDb?.clipboardItemDao()
     private val clipHistoryDaoReady = CompletableDeferred<ClipboardHistoryDao>()
@@ -337,16 +340,38 @@ class ClipboardManager(
                         }
                         return@launch
                     }
-                    // Under the lock, so no repeat can hand its revision on between reading it
+                    // Under the guard, so no repeat can hand its revision on between reading it
                     // and publishing.
-                    val published = primaryClipLastFromCallbackGuard.withLock {
-                        publishFromCallback(callback.publishAs, item, directPasteText = null).also { won ->
+                    suspend fun publish(clip: ClipboardItem) = primaryClipLastFromCallbackGuard.withLock {
+                        publishFromCallback(callback.publishAs, clip, directPasteText = null).also { won ->
                             if (won) {
-                                callback.shows = item
+                                callback.shows = clip
                             } else if (primaryClipLastFromCallbackOwner === callback) {
                                 primaryClipLastFromCallback = null
                             }
                             callback.finished = true
+                        }
+                    }
+                    // Skip IME-local history when the source app marked the clip as sensitive via
+                    // `ClipDescription.EXTRA_IS_SENSITIVE` (API 33+). Password managers (Bitwarden,
+                    // 1Password, KeePassXC, Proton Pass) and TOTP apps set this flag on every
+                    // copied credential. The system clipboard still receives it (the OS is the
+                    // source of truth for primary-clip behaviour), but our IME-local history must
+                    // not retain a copy that would resurface on the next clipboard-palette open.
+                    // The flag was already parsed into `ClipboardItem.isSensitive` by
+                    // `fromClipData`. A clip history won't keep doesn't wait for the history lock,
+                    // so a long clear can't hold it up.
+                    val published = if (item.isSensitive || !historyKeeps(item)) {
+                        publish(item)
+                    } else {
+                        // Publishing and adding the history row share the history lock, so a
+                        // delete of the primary clip waits for its row, and rows go in in the
+                        // order their clips were published. The time is taken here for the same
+                        // reason: a clip that finished cloning first but published second is
+                        // still the newer one.
+                        historyMaintenanceMutex.withLock {
+                            val copied = item.copy(creationTimestampMs = System.currentTimeMillis())
+                            publish(copied).also { won -> if (won) insertOrMoveBeginningNow(copied) }
                         }
                     }
                     if (!published) {
@@ -357,22 +382,6 @@ class ClipboardManager(
                             item.close(appContext)
                         }
                         return@launch
-                    }
-                    // Skip IME-local history when the source app marked the
-                    // clip as sensitive via
-                    // `ClipDescription.EXTRA_IS_SENSITIVE` (API 33+).
-                    // Password managers (Bitwarden, 1Password, KeePassXC,
-                    // Proton Pass) and TOTP apps set this flag on every
-                    // copied credential. The system clipboard still
-                    // receives it (the OS is the source of truth for
-                    // primary-clip behaviour), but our IME-local history
-                    // must not retain a copy that would resurface on the
-                    // next clipboard-palette open. The flag was already
-                    // parsed into `ClipboardItem.isSensitive` by
-                    // `fromClipData`; this is the missing gate that
-                    // *uses* the flag.
-                    if (!item.isSensitive) {
-                        insertOrMoveBeginning(item)
                     }
                 }
             }.invokeOnCompletion { callbacksInFlight.decrementAndGet() }
@@ -484,31 +493,41 @@ class ClipboardManager(
     }
 
     /**
-     * Adds a new item to the clipboard history (if enabled).
+     * Adds a new item to the clipboard history (if enabled), after every history write asked for
+     * before it.
      */
     private fun insertOrMoveBeginning(newItem: ClipboardItem) {
-        if (!ClipboardTextRetentionPolicy.shouldRetain(newItem)) return
+        ioScope.launch(historyWrites) {
+            historyMaintenanceMutex.withLock { insertOrMoveBeginningNow(newItem) }
+        }
+    }
+
+    /** Whether history takes a new copy of [item] right now. */
+    private fun historyKeeps(item: ClipboardItem): Boolean {
+        if (!ClipboardTextRetentionPolicy.shouldRetain(item)) return false
         // Under Android Advanced Protection Mode nothing the user copies is
         // written to history, whatever the saved preference says. The clip is
         // still pasteable right now — this withholds the on-disk record, not
         // the clipboard itself.
-        if (AdvancedProtectionPolicy.decide(appContext).suspendsClipboardHistoryPersistence) return
-        if (prefs.clipboard.historyEnabled.get()) {
-            // A media URI match is one of our own clips copied back. A second row would share its
-            // file and lose it when either row is deleted.
-            val historyElement = currentHistory.all.firstOrNull { holdsSameClip(it, newItem) }
-            if (historyElement != null) {
-                moveToTheBeginning(
-                    oldItem = historyElement,
-                    newItem = if (historyElement.isPinned) {
-                        newItem.copy(isPinned = true)
-                    } else {
-                        newItem
-                    }
-                )
-            } else {
-                insertClip(newItem)
-            }
+        if (AdvancedProtectionPolicy.decide(appContext).suspendsClipboardHistoryPersistence) return false
+        return prefs.clipboard.historyEnabled.get()
+    }
+
+    /**
+     * Adds [newItem] to history (if enabled), or moves the row already holding it to the top, and
+     * gives [newItem] that row's id. Call with [historyMaintenanceMutex] held, off the main thread.
+     */
+    private fun insertOrMoveBeginningNow(newItem: ClipboardItem) {
+        if (!historyKeeps(newItem)) return
+        val dao = clipHistoryDao ?: return
+        // The stored rows, not currentHistory, which lags behind them: a clip copied again right
+        // after the first time would get a second row. A media URI match is one of our own clips
+        // copied back. A second row would share its file and lose it when either row is deleted.
+        val stored = dao.getAll().firstOrNull { holdsSameClip(it, newItem) }
+        newItem.id = if (stored != null) {
+            dao.deleteAndInsert(stored.id, if (stored.isPinned) newItem.copy(isPinned = true) else newItem)
+        } else {
+            dao.insert(newItem)
         }
     }
 
@@ -548,12 +567,6 @@ class ClipboardManager(
         )
     }
 
-    private fun moveToTheBeginning(oldItem: ClipboardItem, newItem: ClipboardItem) {
-        ioScope.launch {
-            clipHistoryDao?.deleteAndInsert(oldItem.id, newItem)
-        }
-    }
-
     fun insertClip(item: ClipboardItem) {
         if (!ClipboardTextRetentionPolicy.shouldRetain(item)) return
         ioScope.launch {
@@ -590,10 +603,11 @@ class ClipboardManager(
     /**
      * Runs a history delete in the manager's own scope, so a caller that goes away (the clipboard
      * screen closing) doesn't cut it short, and under the maintenance lock, so a pin can't land
-     * between reading which items to delete and deleting them.
+     * between reading which items to delete and deleting them. It queues behind the history writes
+     * asked for before it, so a clip copied just before has its row by then.
      */
     private suspend fun maintainHistory(delete: () -> ClipboardDeletionResult): ClipboardDeletionResult {
-        return ioScope.async { historyMaintenanceMutex.withLock { delete() } }.await()
+        return ioScope.async(historyWrites) { historyMaintenanceMutex.withLock { delete() } }.await()
     }
 
     /**

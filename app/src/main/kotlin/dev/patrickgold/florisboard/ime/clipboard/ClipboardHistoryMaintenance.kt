@@ -20,7 +20,11 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 
 internal object ClipboardHistoryMaintenance {
     fun sortedHistory(items: List<ClipboardItem>): ClipboardHistory {
-        return ClipboardHistory(items.sortedByDescending { it.creationTimestampMs })
+        // Clips copied within the same millisecond go newest row first. Row ids only grow, and new
+        // clips get their rows in the order they were published.
+        return ClipboardHistory(
+            items.sortedWith(compareByDescending<ClipboardItem> { it.creationTimestampMs }.thenByDescending { it.id }),
+        )
     }
 
     fun withoutEvictedItems(history: ClipboardHistory, evictedItems: List<ClipboardItem>): ClipboardHistory {

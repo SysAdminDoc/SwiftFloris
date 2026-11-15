@@ -47,6 +47,15 @@ class ClipboardHistoryEvictionTest : FunSpec({
             listOf(newest, middle, oldest)
     }
 
+    test("clips copied in the same millisecond go newest row first") {
+        val first = clip(1, 2_000L)
+        val older = clip(3, 1_000L)
+        val second = clip(2, 2_000L)
+
+        ClipboardHistoryMaintenance.sortedHistory(listOf(first, older, second)).all shouldBe
+            listOf(second, first, older)
+    }
+
     test("history size overflow selects the oldest unpinned items") {
         val now = System.currentTimeMillis()
         val newest = clip(1, now)

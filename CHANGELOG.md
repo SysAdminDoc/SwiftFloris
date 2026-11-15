@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Remove a clip from history when you clear it right after copying. Its history entry was added a moment after the clip showed up, so a clear in between missed it and left the entry and its picture behind. Two copies made back to back also land in history in the order you made them, and copying the same text twice in a row keeps one entry
 - Fix the Obtainium link in the README. It still looked for `app-release` APKs, which releases stopped shipping, so adding SwiftFloris from that link found no update even after the Obtainium files themselves were fixed.
 - Say a clipboard delete or clear is done only once it is. Deleting a clip or clearing history said so right away while the work ran in the background, so a picture whose file couldn't be deleted stayed on the phone behind a "deleted" message. The message now waits for the result. If anything stays behind, you get "Couldn't delete everything" with Retry, and what's left stays in clipboard history where you can see it. Closing the clipboard screen doesn't cut a delete short anymore, a clip you pin while a clear is running stays put, and the automatic cleanup of old clips keeps any clip whose file it couldn't delete and tries again next time.
 - Keep a file you share to SwiftFloris when the app wasn't running. The cleanup of the last run's cache ran in the background while the import copied into the same folder, so it could delete the copy. Old cache is now moved out of the way first and deleted from there.

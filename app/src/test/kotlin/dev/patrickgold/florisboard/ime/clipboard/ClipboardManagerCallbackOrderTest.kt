@@ -45,7 +45,13 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.thread
 import kotlin.random.Random
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -56,8 +62,8 @@ import org.robolectric.annotation.Config
 
 /**
  * Drives the app's own ClipboardManager through the system clipboard, with the media provider
- * swapped for one that can hold a clone mid-copy. History stays off (the default), so these cases
- * check the primary clip and the media files, not history rows.
+ * swapped for one that can hold a clone mid-copy. History stays off (the default) unless a case
+ * turns it on, so most cases check the primary clip and the media files, not history rows.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [35])
@@ -86,7 +92,11 @@ class ClipboardManagerCallbackOrderTest {
             try {
                 setUseInternalClipboard(false)
             } finally {
-                setSyncToFloris(ClipboardSyncBehavior.ALL_EVENTS)
+                try {
+                    setSyncToFloris(ClipboardSyncBehavior.ALL_EVENTS)
+                } finally {
+                    setHistoryEnabled(false)
+                }
             }
         }
     }
@@ -730,6 +740,82 @@ class ClipboardManagerCallbackOrderTest {
 
         manager.primaryClip shouldBe null
         media.deleted shouldContainExactly media.inserted
+    }
+
+    @Test
+    fun deletingTheClipJustCopiedRemovesItsHistoryRowAndFile() {
+        setHistoryEnabled(true)
+        historyRows()
+        val result = AtomicReference<ClipboardDeletionResult?>()
+        // Deletes the primary clip the moment it's published, before its callback goes on, the
+        // way the clear key can. A delete that has to wait for the row lets the callback go on.
+        val watcher = CoroutineScope(Dispatchers.Unconfined).launch {
+            val shown = manager.primaryClipFlow.first { it?.uri != null }!!
+            thread { result.set(runBlocking { manager.deleteClip(shown, onlyIfUnpinned = true) }) }
+                .join(1_500)
+        }
+        system.setPrimaryClip(imageClip())
+        waitUntil { result.get() != null }
+        watcher.cancel()
+
+        result.get()!!.succeeded shouldBe true
+        media.deleted shouldContainExactly media.inserted
+        historyRows().shouldBeEmpty()
+    }
+
+    @Test
+    fun clearingTextTheKeyboardJustCopiedRemovesItsHistoryRow() {
+        setHistoryEnabled(true)
+        historyRows()
+        manager.addNewPlaintext("local")
+        // What the clear key does: drop the primary clip, then its row.
+        val shown = manager.primaryClip!!
+        manager.updatePrimaryClip(null)
+        val result = runBlocking { manager.deleteClip(shown, onlyIfUnpinned = true) }
+        waitUntil { manager.clipboardCallbacksInFlight == 0 }
+        runBlocking { manager.clearExactHistory(emptyList(), onlyIfUnpinned = false) }
+
+        result.succeeded shouldBe true
+        historyRows().shouldBeEmpty()
+    }
+
+    @Test
+    fun clipsCopiedBackToBackStayInTheOrderTheyArrived() {
+        setHistoryEnabled(true)
+        historyRows()
+        // Ten rounds stay inside the default history limit of 20, so nothing is evicted.
+        repeat(10) { round ->
+            system.setPrimaryClip(ClipData.newPlainText("", "first $round"))
+            system.setPrimaryClip(ClipData.newPlainText("", "second $round"))
+            waitUntil { manager.clipboardCallbacksInFlight == 0 }
+        }
+
+        // A first copy that the second beat to publishing is dropped, so it may have no row.
+        val history = ClipboardHistoryMaintenance.sortedHistory(historyRows()).all.map { it.text }
+        val arrivedNewestFirst = (9 downTo 0).flatMap { listOf("second $it", "first $it") }
+        history shouldContainExactly arrivedNewestFirst.filter { it in history }
+        history.filter { it!!.startsWith("second") }.size shouldBe 10
+    }
+
+    @Test
+    fun copyingTheSameTextTwiceInARowKeepsOneRow() {
+        setHistoryEnabled(true)
+        historyRows()
+        manager.addNewPlaintext("again")
+        manager.addNewPlaintext("again")
+        waitUntil { historyRows().isNotEmpty() }
+        // History deletes queue behind the writes asked for before them, so this one runs after both.
+        runBlocking { manager.clearExactHistory(emptyList(), onlyIfUnpinned = false) }
+        waitUntil { manager.clipboardCallbacksInFlight == 0 }
+
+        historyRows().map { it.text } shouldContainExactly listOf("again")
+    }
+
+    /** The history rows as stored. The first call also waits for the history database to open. */
+    private fun historyRows(): List<ClipboardItem> = runBlocking { manager.snapshotHistoryForRestore() }
+
+    private fun setHistoryEnabled(enabled: Boolean) {
+        savePref { prefs.clipboard.historyEnabled.set(enabled) }
     }
 
     private fun setSyncToFloris(behavior: ClipboardSyncBehavior) {
