@@ -119,7 +119,6 @@ import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
-import dev.patrickgold.florisboard.lib.compose.FlorisConfirmDeleteDialog
 import dev.patrickgold.florisboard.lib.compose.FlorisSnackbarController
 import dev.patrickgold.florisboard.lib.observeAsTransformingState
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
@@ -215,7 +214,7 @@ fun ClipboardInputLayout(
     val deletedItemMessage = stringRes(R.string.clipboard__item_deleted)
     val undoActionLabel = stringRes(R.string.action__undo)
 
-    fun isPopupSurfaceActive() = popupItem != null || showClearAllHistory
+    fun isPopupSurfaceActive() = popupItem != null || showClearAllHistory || pendingMediaDelete != null
 
     LaunchedEffect(isFilterRowShown) {
         delay(AnimationDuration.toLong())
@@ -240,6 +239,12 @@ fun ClipboardInputLayout(
     LaunchedEffect(deviceLocked, isIncognitoMode) {
         if (deviceLocked || isIncognitoMode) {
             revealedSensitiveItemId = null
+        }
+    }
+
+    LaunchedEffect(deviceLocked, historyEnabled) {
+        if (deviceLocked || !historyEnabled) {
+            pendingMediaDelete = null
         }
     }
 
@@ -869,7 +874,7 @@ fun ClipboardInputLayout(
                                 icon = Icons.Default.Delete,
                                 text = stringRes(R.string.clip__delete_item),
                             ) {
-                                if (activePopupItem.type == ItemType.TEXT) {
+                                if (!ClipboardMediaDeletePolicy.needsConfirmation(activePopupItem.type)) {
                                     clipboardManager.deleteClip(activePopupItem, onlyIfUnpinned = false)
                                     FlorisSnackbarController.show(
                                         message = deletedItemMessage,
@@ -896,64 +901,45 @@ fun ClipboardInputLayout(
             }
 
             if (showClearAllHistory) {
-                SnyggRow(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectTapGestures { showClearAllHistory = false }
-                        },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceAround,
-                ) {
-                    SnyggColumn(
-                        elementName = FlorisImeUi.ClipboardClearAllDialog.elementName,
-                        modifier = Modifier
-                            .width(DialogWidth)
-                            .pointerInput(Unit) {
-                                detectTapGestures { /* Do nothing */ }
-                            },
-                    ) {
-                        SnyggText(
-                            elementName = FlorisImeUi.ClipboardClearAllDialogMessage.elementName,
-                            text = stringRes(
-                                if (hasActiveFilters) {
-                                    R.string.clipboard__confirm_clear_filtered_history__message
-                                } else {
-                                    R.string.clipboard__confirm_clear_unfiltered_history__message
-                                }
-                            ),
-                        )
-                        SnyggRow(FlorisImeUi.ClipboardClearAllDialogButtons.elementName) {
-                            Spacer(modifier = Modifier.weight(1f))
-                            SnyggButton(
-                                elementName = FlorisImeUi.ClipboardClearAllDialogButton.elementName,
-                                attributes = mapOf("action" to "no"),
-                                onClick = {
-                                    showClearAllHistory = false
-                                },
-                            ) {
-                                SnyggText(
-                                    text = stringRes(R.string.action__no),
-                                )
-                            }
-                            SnyggButton(
-                                elementName = FlorisImeUi.ClipboardClearAllDialogButton.elementName,
-                                attributes = mapOf("action" to "yes"),
-                                onClick = {
-                                    clipboardManager.clearExactHistory(filteredHistory.unpinned)
-                                    scope.launch {
-                                        context.showShortToast(R.string.clipboard__cleared_history)
-                                    }
-                                    showClearAllHistory = false
-                                },
-                            ) {
-                                SnyggText(
-                                    text = stringRes(R.string.action__yes),
-                                )
-                            }
+                ClipboardConfirmPanel(
+                    message = stringRes(
+                        if (hasActiveFilters) {
+                            R.string.clipboard__confirm_clear_filtered_history__message
+                        } else {
+                            R.string.clipboard__confirm_clear_unfiltered_history__message
                         }
-                    }
-                }
+                    ),
+                    dismissLabel = stringRes(R.string.action__no),
+                    confirmLabel = stringRes(R.string.action__yes),
+                    onDismiss = { showClearAllHistory = false },
+                    onConfirm = {
+                        clipboardManager.clearExactHistory(filteredHistory.unpinned)
+                        scope.launch {
+                            context.showShortToast(R.string.clipboard__cleared_history)
+                        }
+                        showClearAllHistory = false
+                    },
+                )
+            }
+
+            // Image and video clips delete their backing file, so they cannot be
+            // undone like text and get a confirmation first. It is drawn inside the
+            // keyboard: a Compose Dialog needs an activity window token and throws
+            // BadTokenException when it is added from the input method window.
+            pendingMediaDelete?.let { item ->
+                ClipboardConfirmPanel(
+                    message = stringRes(
+                        R.string.action__delete_confirm_message,
+                        "name" to stringRes(ClipboardMediaDeletePolicy.descriptionRes(item.type)),
+                    ),
+                    dismissLabel = stringRes(R.string.action__cancel),
+                    confirmLabel = stringRes(R.string.action__delete),
+                    onDismiss = { pendingMediaDelete = null },
+                    onConfirm = {
+                        clipboardManager.deleteClip(item, onlyIfUnpinned = false)
+                        pendingMediaDelete = null
+                    },
+                )
             }
         }
     }
@@ -986,23 +972,6 @@ fun ClipboardInputLayout(
             ) {
                 SnyggText(
                     text = stringRes(R.string.clipboard__disabled__enable_button),
-                )
-            }
-
-            pendingMediaDelete?.let { item ->
-                FlorisConfirmDeleteDialog(
-                    onConfirm = {
-                        clipboardManager.deleteClip(item, onlyIfUnpinned = false)
-                        pendingMediaDelete = null
-                    },
-                    onDismiss = { pendingMediaDelete = null },
-                    what = stringRes(
-                        when (item.type) {
-                            ItemType.IMAGE -> R.string.clipboard__item_description_image
-                            ItemType.VIDEO -> R.string.clipboard__item_description_video
-                            ItemType.TEXT -> R.string.clipboard__item_description_text
-                        },
-                    ),
                 )
             }
         }
@@ -1240,5 +1209,77 @@ private fun PopupAction(
             modifier = Modifier.weight(1f),
             text = text,
         )
+    }
+}
+
+/**
+ * Decides how a clip is deleted from the clipboard panel. Text clips are removed
+ * at once and offer undo. Image and video clips delete their backing file, which
+ * undo cannot bring back, so they ask first.
+ */
+internal object ClipboardMediaDeletePolicy {
+    fun needsConfirmation(type: ItemType): Boolean = type != ItemType.TEXT
+
+    @StringRes
+    fun descriptionRes(type: ItemType): Int = when (type) {
+        ItemType.IMAGE -> R.string.clipboard__item_description_image
+        ItemType.VIDEO -> R.string.clipboard__item_description_video
+        ItemType.TEXT -> R.string.clipboard__item_description_text
+    }
+}
+
+/**
+ * A yes/no confirmation drawn inside the keyboard over the clipboard history.
+ * Never replace this with a Compose `Dialog`: the input method window has no
+ * activity token, so adding a dialog window from it throws BadTokenException.
+ */
+@Composable
+internal fun ClipboardConfirmPanel(
+    message: String,
+    dismissLabel: String,
+    confirmLabel: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SnyggRow(
+        modifier = modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTapGestures { onDismiss() }
+            },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceAround,
+    ) {
+        SnyggColumn(
+            elementName = FlorisImeUi.ClipboardClearAllDialog.elementName,
+            modifier = Modifier
+                .width(DialogWidth)
+                .pointerInput(Unit) {
+                    detectTapGestures { /* Do nothing */ }
+                },
+        ) {
+            SnyggText(
+                elementName = FlorisImeUi.ClipboardClearAllDialogMessage.elementName,
+                text = message,
+            )
+            SnyggRow(FlorisImeUi.ClipboardClearAllDialogButtons.elementName) {
+                Spacer(modifier = Modifier.weight(1f))
+                SnyggButton(
+                    elementName = FlorisImeUi.ClipboardClearAllDialogButton.elementName,
+                    attributes = mapOf("action" to "no"),
+                    onClick = onDismiss,
+                ) {
+                    SnyggText(text = dismissLabel)
+                }
+                SnyggButton(
+                    elementName = FlorisImeUi.ClipboardClearAllDialogButton.elementName,
+                    attributes = mapOf("action" to "yes"),
+                    onClick = onConfirm,
+                ) {
+                    SnyggText(text = confirmLabel)
+                }
+            }
+        }
     }
 }

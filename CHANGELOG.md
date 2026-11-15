@@ -1,7 +1,8 @@
 # Changelog
 
-## v1.9.67 (2026-09-05)
+## Unreleased
 
+- Stop the keyboard crashing when you delete an image or video from clipboard history. The confirmation opened as a system dialog, and Android doesn't let a keyboard open one, so the whole keyboard went down instead. The confirmation, and the one for clearing history, now show inside the keyboard. Reported as issue #25.
 - Stop the keyboard throwing away settings you chose. Nine preferences were pinned by the preference-migration step, which runs on every launch and again on every restore, so turning the number row off, switching either hint mode on, picking Follow-system theming, choosing a scrollable candidate row, the dynamic language/emoji utility key, the current-language space bar, or the FlorisBoard day and night themes only lasted until the keyboard next started. Restoring a backup could not bring any of them back either, because the same step runs on import. The starting point the fork wants is carried by each preference's own default, which is what a fresh install already got, so none of that was buying anything. Reported as issue #22.
 - Size autofill chips to the keyboard rather than the screen. The password-manager and autofill suggestions above the keys were requested and inflated at the full display width, so on a floating, one-handed, split, or resized keyboard they ran off the edge. They now follow the width the keyboard is actually drawn at. Part of issue #23.
 - Point the F-Droid recipe at an APK that exists. It named `app-release.apk` while every published release carries `SwiftFloris-v<version>-release.apk`, so the URL F-Droid downloads for its reproducible-build comparison had been returning 404 for as long as it had existed, and the comparison quietly never ran. The release signing certificate is now pinned in the recipe and published in the README, so an APK signed by anyone else fails the comparison instead of passing it.
