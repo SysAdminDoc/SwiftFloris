@@ -902,10 +902,6 @@ class FlorisImeService : LifecycleInputMethodService() {
 
         flogInfo(LogTopic.IMS_EVENTS) { "Creating inline suggestions request" }
         val stylesBundle = themeManager.createInlineSuggestionUiStyleBundle(this)
-        if (stylesBundle == null) {
-            flogWarning(LogTopic.IMS_EVENTS) { "Failed to retrieve inline suggestions style bundle" }
-            return null
-        }
         val maxSize = InlineSuggestionSizePolicy.presentationMaxSize(
             keyboardWidthPx = NlpInlineAutofill.presentationMaxWidthPx(),
             chipHeightPx = NlpInlineAutofill.suggestionsChipHeightPx,

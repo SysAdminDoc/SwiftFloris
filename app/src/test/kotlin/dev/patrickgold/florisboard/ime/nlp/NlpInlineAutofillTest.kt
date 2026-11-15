@@ -115,6 +115,53 @@ class NlpInlineAutofillTest : FunSpec({
         size.widthPx shouldBe 320
         InlineSuggestionSizePolicy.isValidInlineDimensions(size) shouldBe true
     }
+
+    // Issue #23, first login field after the keyboard starts: Android asked for
+    // the request before the Smartbar had composed, so the chip height was still
+    // 0 and the spec went out with a 48 px maximum. By the response the S25's
+    // Smartbar had settled on 107 px chips, inflate threw for 107 > 48, and
+    // Bitwarden's only chip was dropped.
+    test("a cold keyboard's request leaves room for the chip height it settles on") {
+        val coldSpecMax = InlineSuggestionSizePolicy.presentationMaxDimensions(
+            keyboardWidthPx = 0,
+            chipHeightPx = 0,
+        )
+        val size = InlineSuggestionSizePolicy.inflateSize(
+            chipHeightPx = 107,
+            specMinHeightPx = InlineSuggestionSizePolicy.presentationMinDimensions.heightPx,
+            specMaxHeightPx = coldSpecMax.heightPx,
+        )
+
+        size.heightPx shouldBe 107
+        InlineSuggestionSizePolicy.isValidInlineDimensions(coldSpecMax) shouldBe true
+    }
+
+    test("a chip inflates inside the spec it was requested with even if the keyboard grew since") {
+        val size = InlineSuggestionSizePolicy.inflateSize(
+            chipHeightPx = 107,
+            specMinHeightPx = 1,
+            specMaxHeightPx = 48,
+        )
+
+        size.widthPx shouldBe WRAP_CONTENT
+        size.heightPx shouldBe 48
+    }
+
+    test("a chip inflates inside the spec it was requested with even if the keyboard shrank since") {
+        InlineSuggestionSizePolicy.inflateSize(
+            chipHeightPx = 40,
+            specMinHeightPx = 60,
+            specMaxHeightPx = 120,
+        ).heightPx shouldBe 60
+    }
+
+    test("a malformed spec never stops a chip from inflating at the keyboard's height") {
+        InlineSuggestionSizePolicy.inflateSize(
+            chipHeightPx = 107,
+            specMinHeightPx = 200,
+            specMaxHeightPx = 100,
+        ).heightPx shouldBe 107
+    }
 })
 
 private const val WRAP_CONTENT = -2 // android.view.ViewGroup.LayoutParams.WRAP_CONTENT

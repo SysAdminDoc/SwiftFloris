@@ -31,7 +31,6 @@ import androidx.autofill.inline.common.ImageViewStyle
 import androidx.autofill.inline.common.TextViewStyle
 import androidx.autofill.inline.common.ViewStyle
 import androidx.autofill.inline.v1.InlineSuggestionUi
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 import dev.patrickgold.florisboard.BuildConfig
@@ -40,6 +39,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.smartbar.CachedInlineSuggestionsChipStyleSet
+import dev.patrickgold.florisboard.ime.smartbar.InlineSuggestionChipColorPolicy
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.ext.ExtensionPackagePolicy
@@ -284,10 +284,15 @@ class ThemeManager(context: Context) {
      */
     @SuppressLint("RestrictedApi")
     @RequiresApi(Build.VERSION_CODES.R)
-    fun createInlineSuggestionUiStyleBundle(context: Context): Bundle? {
-        val styleSet = CachedInlineSuggestionsChipStyleSet ?: return null
-        val bgColor = styleSet.background(default = Color.White)
-        val fgColor = styleSet.foreground(default = Color.Black)
+    fun createInlineSuggestionUiStyleBundle(context: Context): Bundle {
+        val themeInfo = activeThemeInfo.value
+        val chipColors = InlineSuggestionChipColorPolicy.resolve(
+            cached = CachedInlineSuggestionsChipStyleSet,
+            stylesheet = themeInfo.stylesheet,
+            isNightTheme = themeInfo.config.isNightTheme,
+        )
+        val bgColor = chipColors.background
+        val fgColor = chipColors.foreground
 
         val bgDrawableId = R.drawable.inline_autofill_chip_bg
         val bgDrawable = Icon.createWithResource(context, bgDrawableId).apply {

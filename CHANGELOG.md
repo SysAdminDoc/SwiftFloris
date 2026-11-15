@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Show autofill chips on the first login field you open after the keyboard starts. Android asks the keyboard for its chip request before the keyboard has drawn anything, and the chip colors were only read once it had, so that first request was dropped and the password manager showed its own popup instead. The colors now come straight from the active theme, so the request goes out every time. The chip height had the same timing problem: the request carried a guessed height smaller than the real one, so the chip that came back couldn't be drawn and was thrown away. The request now leaves room for the real height, and a chip is always drawn within the size it was asked for. Part of issue #23.
 - Show previews for images in clipboard history again. Since 1.9.58 every copied image showed "Something went wrong" instead of the picture. The size check that runs before decoding mistook its normal empty result for an image it couldn't open. Videos weren't affected. Part of issue #25.
 - Let the debug build install next to the release. Both declared the same two signature permissions, so Android refused whichever one went on second. The debug build now leaves those declarations to the release.
 - Stop the app behind the keyboard from redrawing its whole layout while you resize or move the keyboard. The keyboard reported its new top edge on every frame of the drag, so the app re-laid itself out under your finger. It now keeps its layout until you let go and adjusts once. Part of issue #23.

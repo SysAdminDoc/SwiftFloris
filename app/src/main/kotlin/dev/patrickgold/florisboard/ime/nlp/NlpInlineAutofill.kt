@@ -96,14 +96,18 @@ object NlpInlineAutofill {
         }
 
         scope.launch {
-            val size = InlineSuggestionSizePolicy.inflateSize(
-                chipHeightPx = suggestionsChipHeightPx,
-            ).toAndroidSize()
+            val chipHeightPx = suggestionsChipHeightPx
             val latch = CountDownLatch(rawSuggestions.size)
             val suggestionsArray = Array<NlpInlineAutofillSuggestion?>(rawSuggestions.size) { null }
 
             flogInfo { "showInlineSuggestions: [${sequenceId}] start inflating suggestions" }
             for ((index, rawSuggestion) in rawSuggestions.withIndex()) {
+                val spec = rawSuggestion.info.inlinePresentationSpec
+                val size = InlineSuggestionSizePolicy.inflateSize(
+                    chipHeightPx = chipHeightPx,
+                    specMinHeightPx = spec.minSize.height,
+                    specMaxHeightPx = spec.maxSize.height,
+                ).toAndroidSize()
                 try {
                     rawSuggestion.inflate(context, size, context.mainExecutor) { view ->
                         suggestionsArray[index] = NlpInlineAutofillSuggestion(rawSuggestion.info, view)
@@ -173,10 +177,17 @@ object InlineSuggestionSizePolicy {
     val presentationMinSize: Size
         get() = presentationMinDimensions.toAndroidSize()
 
+    /**
+     * The chip height is published from composition, and Android asks for the
+     * request before a freshly started keyboard has composed. The response
+     * arrives after it has, so an unknown height leaves room for whatever the
+     * Smartbar settles on. A small guess here made [InlineSuggestion.inflate]
+     * reject the real height and drop every chip on the first login field.
+     */
     fun presentationMaxDimensions(keyboardWidthPx: Int, chipHeightPx: Int): InlineSuggestionDimensions {
         return InlineSuggestionDimensions(
             sanitizeDimension(keyboardWidthPx, fallback = FallbackWidthPx, max = MaxWidthPx),
-            sanitizeDimension(chipHeightPx, fallback = FallbackHeightPx, max = MaxHeightPx),
+            sanitizeDimension(chipHeightPx, fallback = MaxHeightPx, max = MaxHeightPx),
         )
     }
 
@@ -202,11 +213,22 @@ object InlineSuggestionSizePolicy {
      * A fixed width makes every chip as wide as the keyboard, so even a short
      * "Vault is locked" chip pushes its label past the screen edge (#23).
      * [InlineSuggestion.inflate] accepts WRAP_CONTENT for either dimension.
+     *
+     * The height is kept inside the presentation spec the suggestion was built
+     * against, because inflate throws for anything outside it. The keyboard can
+     * change height between sending the request and getting the response.
      */
-    fun inflateSize(chipHeightPx: Int): InlineSuggestionDimensions {
+    fun inflateSize(
+        chipHeightPx: Int,
+        specMinHeightPx: Int = MinDimensionPx,
+        specMaxHeightPx: Int = MaxHeightPx,
+    ): InlineSuggestionDimensions {
+        val heightPx = sanitizeDimension(chipHeightPx, fallback = FallbackHeightPx, max = MaxHeightPx)
+        val lowPx = specMinHeightPx.coerceAtLeast(MinDimensionPx)
+        val highPx = specMaxHeightPx.coerceAtMost(MaxHeightPx)
         return InlineSuggestionDimensions(
             WrapContentPx,
-            sanitizeDimension(chipHeightPx, fallback = FallbackHeightPx, max = MaxHeightPx),
+            if (lowPx <= highPx) heightPx.coerceIn(lowPx, highPx) else heightPx,
         )
     }
 
