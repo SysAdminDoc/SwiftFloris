@@ -18,7 +18,6 @@ package dev.patrickgold.florisboard.ime.media.emoji
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.stream.Collectors
 import android.content.Context
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.core.Subtype
@@ -52,10 +51,14 @@ class EmojiSuggestionProvider(private val context: Context) : SuggestionProvider
     }
 
     override suspend fun preload(subtype: Subtype) {
-        subtype.locales().forEach { locale ->
-            cachedEmojiMappings.get(locale) {
-                EmojiData.get(context, locale).bySkinTone
-            }
+        (subtype.locales() + ShortcodeFallbackLocale).forEach { locale ->
+            mappingsFor(locale)
+        }
+    }
+
+    private suspend fun mappingsFor(locale: FlorisLocale): EmojiDataBySkinTone {
+        return cachedEmojiMappings.get(locale) {
+            EmojiData.get(context, locale).bySkinTone
         }
     }
 
@@ -80,37 +83,35 @@ class EmojiSuggestionProvider(private val context: Context) : SuggestionProvider
         } else {
             ""
         }
-        val emojis = cachedEmojiMappings.get(subtype.primaryLocale)?.get(preferredSkinTone) ?: emptyList()
-        // ROADMAP §7 Next-9.4 — custom user tags participate in predict-by-tag
-        // ranking. User tags carry the highest weight (1.0) because the user
-        // typed them themselves and wants them to win.
-        val customTagStore = CustomEmojiTagStore.get(context)
-        val candidates = withContext(Dispatchers.Default) {
-            emojis.parallelStream()
-                .map { emoji ->
-                    val nameWeight = emoji.name.containsWeighted(query, ignoreCase = true)
-                    val keywordWeight = emoji.keywords
-                        .any { it.contains(query, ignoreCase = true) }
-                        .let { if (it) 1.0 else 0.0 }
-                    val customTagWeight = customTagStore.tagsFor(emoji.value)
-                        .any { it.contains(query, ignoreCase = true) }
-                        .let { if (it) 1.0 else 0.0 }
-                    emoji to (nameWeight * 0.55 + keywordWeight * 0.25 + customTagWeight * 0.20)
-                }
-                .sorted { (_, a), (_, b) -> b.compareTo(a) }
-                .limit(maxCandidateCount.toLong())
-                .filter { (_, a) -> a > 0 }
-                .map { (emoji, _) ->
-                    EmojiSuggestionCandidate(
-                        emoji = emoji,
-                        showName = showName,
-                        precedingText = precedingText,
-                        sourceProvider = this@EmojiSuggestionProvider,
-                    )
-                }
-                .collect(Collectors.toList())
+        // Emoji names only ship for a handful of languages, so the keyboard
+        // language alone finds nothing for `:pensive` on most subtypes (#24).
+        // Shortcodes are English by convention, so English names are always
+        // searched after the keyboard's own language.
+        val sources = buildList {
+            add(mappingsFor(subtype.primaryLocale)[preferredSkinTone].orEmpty())
+            if (subtype.primaryLocale.language != ShortcodeFallbackLocale.language) {
+                add(mappingsFor(ShortcodeFallbackLocale)[preferredSkinTone].orEmpty())
+            }
         }
-        return candidates
+        // ROADMAP §7 Next-9.4 — custom user tags participate in predict-by-tag
+        // ranking.
+        val customTagStore = CustomEmojiTagStore.get(context)
+        val emojis = withContext(Dispatchers.Default) {
+            EmojiSuggestionRanker.rank(
+                query = query,
+                sources = sources,
+                customTagsFor = customTagStore::tagsFor,
+                maxCount = maxCandidateCount,
+            )
+        }
+        return emojis.map { emoji ->
+            EmojiSuggestionCandidate(
+                emoji = emoji,
+                showName = showName,
+                precedingText = precedingText,
+                sourceProvider = this@EmojiSuggestionProvider,
+            )
+        }
     }
 
     override suspend fun notifySuggestionAccepted(subtype: Subtype, candidate: SuggestionCandidate) {
@@ -152,6 +153,55 @@ class EmojiSuggestionProvider(private val context: Context) : SuggestionProvider
             return null
         }
         return emojiPartialName
+    }
+
+    private companion object {
+        val ShortcodeFallbackLocale = FlorisLocale.ENGLISH
+    }
+}
+
+/**
+ * Scores emoji against a suggestion query. [rank] takes the emoji lists in
+ * priority order (keyboard language first, then the English fallback) and
+ * emits each emoji value once with its best score, keeping the first list's
+ * emoji so a localized name wins the display.
+ */
+internal object EmojiSuggestionRanker {
+    // Custom user tags carry the highest weight (1.0) because the user typed
+    // them themselves and wants them to win.
+    fun score(emoji: Emoji, query: String, customTags: Collection<String>): Double {
+        val nameWeight = emoji.name.containsWeighted(query, ignoreCase = true)
+        val keywordWeight = if (emoji.keywords.any { it.contains(query, ignoreCase = true) }) 1.0 else 0.0
+        val customTagWeight = if (customTags.any { it.contains(query, ignoreCase = true) }) 1.0 else 0.0
+        return nameWeight * 0.55 + keywordWeight * 0.25 + customTagWeight * 0.20
+    }
+
+    fun rank(
+        query: String,
+        sources: List<List<Emoji>>,
+        customTagsFor: (String) -> Collection<String>,
+        maxCount: Int,
+    ): List<Emoji> {
+        if (query.isEmpty() || maxCount <= 0) return emptyList()
+        val best = LinkedHashMap<String, Pair<Emoji, Double>>()
+        sources.forEach { emojis ->
+            emojis.forEach { emoji ->
+                if (emoji.value.isEmpty()) return@forEach
+                val score = score(emoji, query, customTagsFor(emoji.value))
+                if (score <= 0.0) return@forEach
+                val existing = best[emoji.value]
+                if (existing == null) {
+                    best[emoji.value] = emoji to score
+                } else if (score > existing.second) {
+                    best[emoji.value] = existing.first to score
+                }
+            }
+        }
+        // sortedByDescending is stable, so ties keep the source order.
+        return best.values
+            .sortedByDescending { it.second }
+            .take(maxCount)
+            .map { it.first }
     }
 }
 

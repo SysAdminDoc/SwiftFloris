@@ -379,11 +379,13 @@ class NlpManager(
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < requestId) {
                     activeCandidateSignals = candidateSignals
-                    internalSuggestions = requestId to buildList {
-                        addAll(wordSuggestions)
-                        addAll(emojiSuggestions)
-                        ghostTextCandidate?.let { add(it) }
-                    }
+                    internalSuggestions = requestId to InternalSuggestionOrder.merge(
+                        wordSuggestions = wordSuggestions,
+                        emojiSuggestions = emojiSuggestions,
+                        ghostTextCandidate = ghostTextCandidate,
+                        composingText = content.composingText,
+                        emojiTriggerPrefix = prefs.emoji.suggestionType.get().prefix,
+                    )
                 }
             }
         }

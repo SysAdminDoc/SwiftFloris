@@ -157,12 +157,12 @@ fun EmojiPaletteView(
     val activeSubtype by subtypeManager.activeSubtypeFlow.collectAsState()
     val enrolledSubtypes by subtypeManager.subtypesFlow.collectAsState()
     val searchLocales = remember(activeSubtype, enrolledSubtypes) {
-        buildList {
-            addAll(activeSubtype.locales())
-            enrolledSubtypes.forEach { subtype -> addAll(subtype.locales()) }
-        }
-            .distinctBy { locale -> locale.languageTag() }
-            .take(EmojiSearch.MaxLocaleMappings)
+        EmojiSearch.searchLocales(
+            buildList {
+                addAll(activeSubtype.locales())
+                enrolledSubtypes.forEach { subtype -> addAll(subtype.locales()) }
+            },
+        )
     }
     var loadedSearchMappings by remember { mutableStateOf(emptyList<EmojiDataByCategory>()) }
     LaunchedEffect(searchLocales) {

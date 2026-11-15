@@ -103,3 +103,33 @@ internal object SuggestionCandidateMerger {
         }
     }
 }
+
+/**
+ * Orders one request's own candidates. Emoji go after the word guesses, except
+ * when the composing text is an emoji shortcode such as `:pensive`: then the
+ * user is asking for an emoji, and the CLASSIC row only shows three slots, so
+ * emoji appended after up to eight words never show up at all (#24).
+ */
+internal object InternalSuggestionOrder {
+    fun merge(
+        wordSuggestions: List<SuggestionCandidate>,
+        emojiSuggestions: List<SuggestionCandidate>,
+        ghostTextCandidate: SuggestionCandidate?,
+        composingText: CharSequence,
+        emojiTriggerPrefix: String,
+    ): List<SuggestionCandidate> {
+        val isShortcodeQuery = emojiTriggerPrefix.isNotEmpty() &&
+            composingText.startsWith(emojiTriggerPrefix) &&
+            emojiSuggestions.isNotEmpty()
+        return buildList {
+            if (isShortcodeQuery) {
+                addAll(emojiSuggestions)
+                addAll(wordSuggestions)
+            } else {
+                addAll(wordSuggestions)
+                addAll(emojiSuggestions)
+            }
+            ghostTextCandidate?.let { add(it) }
+        }
+    }
+}

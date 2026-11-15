@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.media.emoji
 
+import dev.patrickgold.florisboard.lib.FlorisLocale
 import java.util.Locale
 
 object EmojiSearch {
@@ -24,6 +25,50 @@ object EmojiSearch {
     private const val MAX_EMOJI_SETS_PER_LOCALE = 4096
     private const val MAX_INDEXED_EMOJI_VALUES = 4096
     private const val DEFAULT_MAX_RESULTS = 96
+    private const val MAX_BUILT_IN_LABELS = 6
+
+    /**
+     * The languages whose emoji names the palette searches: the keyboard's own
+     * first, then English. Names only ship for a few languages, so without
+     * English a keyboard in any other language finds nothing for "pensive" and
+     * every emoji looks unlabeled (#24).
+     */
+    internal fun searchLocales(keyboardLocales: List<FlorisLocale>): List<FlorisLocale> {
+        val distinct = keyboardLocales.distinctBy { locale -> locale.languageTag() }
+        val limited = distinct.take(MaxLocaleMappings)
+        if (limited.any { it.language == FlorisLocale.ENGLISH.language }) return limited
+        return distinct.take(MaxLocaleMappings - 1) + FlorisLocale.ENGLISH
+    }
+
+    /**
+     * The bundled name and keywords for [emojiValue], from the first language
+     * in [mappingsByLocale] that names it. Empty when none does.
+     */
+    internal fun builtInLabels(
+        mappingsByLocale: List<EmojiDataByCategory>,
+        emojiValue: String,
+        maxLabels: Int = MAX_BUILT_IN_LABELS,
+    ): List<String> {
+        if (emojiValue.isEmpty() || maxLabels <= 0) return emptyList()
+        for (mappings in mappingsByLocale) {
+            val emoji = mappings.asSequence()
+                .filter { (category, _) -> category != EmojiCategory.RECENTLY_USED }
+                .flatMap { (_, emojiSets) -> emojiSets.asSequence() }
+                .flatMap { emojiSet -> emojiSet.emojis.asSequence() }
+                .firstOrNull { it.value == emojiValue && it.name.isNotBlank() }
+                ?: continue
+            // The name already covers its own words ("pensive face" finds
+            // "pensive"), so the keywords listed are the extra ones.
+            val name = emoji.name.trim()
+            val extraKeywords = emoji.keywords
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && !name.contains(it, ignoreCase = true) }
+            return (listOf(name) + extraKeywords)
+                .distinctBy { it.lowercase(Locale.ROOT) }
+                .take(maxLabels)
+        }
+        return emptyList()
+    }
 
     /**
      * Search emoji by name / Emojibase keyword / **custom user tag**
