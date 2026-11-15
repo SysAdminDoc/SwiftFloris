@@ -94,7 +94,7 @@ SwiftFloris ships through GitHub Releases (canonical), Obtainium for GitHub-back
 **One-tap subscribe:**
 
 ```
-obtainium://app/{"id":"io.github.sysadmindoc.swiftfloris","url":"https://github.com/SysAdminDoc/SwiftFloris","author":"SysAdminDoc","name":"SwiftFloris","preferredApkIndex":0,"additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"trackOnly\":false,\"versionDetection\":true,\"apkFilterRegEx\":\"app-release.*\\\\.apk\"}"}
+obtainium://app/{"id":"io.github.sysadmindoc.swiftfloris","url":"https://github.com/SysAdminDoc/SwiftFloris","author":"SysAdminDoc","name":"SwiftFloris","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"trackOnly\":false,\"versionDetection\":true,\"apkFilterRegEx\":\"SwiftFloris-.*-release\\\\.apk\"}"}
 ```
 
 Open the link above on a device with Obtainium installed (or paste it into Obtainium's "Add app from URL" field). Obtainium will subscribe to this repository's GitHub Releases feed and auto-prompt for installs on each new tag.
