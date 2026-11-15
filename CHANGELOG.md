@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Stop two voice model installs or deletes from running over each other. The lock only covered one part of the app at a time, so a delete could remove a model folder another install was still copying into.
 - Guard glide typing's list of alternative words. The suggestion row reads and trims it in the background while typing adds to it, and nothing kept the two from running at the same time.
 - Keep shift and the keyboard mode from sticking on an old state. Two changes made at nearly the same moment on different threads could reach the keyboard out of order, and it then showed the older one until something else changed.
 - Keep settings light with the "System default (AMOLED)" theme while the phone is in light mode. It turned the settings backgrounds black even in light mode, while text, icons and the status bar stayed set up for a light screen. It now looks the same as "System default" until the phone switches to dark, and then uses pure black.

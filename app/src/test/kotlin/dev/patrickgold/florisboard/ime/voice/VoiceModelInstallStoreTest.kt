@@ -23,6 +23,8 @@ import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class VoiceModelInstallStoreTest : FunSpec({
     test("install copies the artifact into a model-specific private directory") {
@@ -173,6 +175,100 @@ class VoiceModelInstallStoreTest : FunSpec({
             stale2.exists() shouldBe false
             root.resolve(model.id).resolve(model.artifactFileName).exists() shouldBe true
         } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("a second store on the same folder waits for an install that's still copying") {
+        // Each settings screen makes its own store, and an install sweeps leftover staging
+        // folders, so without a shared lock it would delete the first install's folder mid-copy.
+        val root = Files.createTempDirectory("voice-models").toFile()
+        val vosk = VoiceModelCatalog.byId("vosk-en-us-small-0-15")!!
+        val whisper = VoiceModelCatalog.byId("whisper-en-tiny-en")!!
+        val copyStarted = CountDownLatch(1)
+        val finishCopy = CountDownLatch(1)
+        val slowArtifact = object : ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)) {
+            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                copyStarted.countDown()
+                check(finishCopy.await(5, TimeUnit.SECONDS)) { "The test never released the copy." }
+                return super.read(b, off, len)
+            }
+
+            override fun read(b: ByteArray): Int = read(b, 0, b.size)
+        }
+        val failures = java.util.Collections.synchronizedList(mutableListOf<Throwable>())
+        try {
+            val first = Thread {
+                runCatching { VoiceModelInstallStore(root).install(vosk, "first.zip", slowArtifact) }
+                    .onFailure { failures += it }
+            }
+            first.start()
+            copyStarted.await(5, TimeUnit.SECONDS) shouldBe true
+
+            val second = Thread {
+                runCatching {
+                    VoiceModelInstallStore(root).install(whisper, whisper.artifactFileName, ByteArrayInputStream(byteArrayOf(5, 6)))
+                }.onFailure { failures += it }
+            }
+            second.start()
+            val deadline = System.nanoTime() + 5_000_000_000L
+            while (second.state != Thread.State.BLOCKED) {
+                check(second.isAlive) { "The second install finished without waiting for the first." }
+                check(System.nanoTime() < deadline) { "The second install never reached the lock." }
+                Thread.yield()
+            }
+            finishCopy.countDown()
+            first.join(5_000L)
+            second.join(5_000L)
+
+            failures shouldBe emptyList()
+            val store = VoiceModelInstallStore(root)
+            store.state(vosk).diskBytes shouldBe 4L
+            store.state(whisper).diskBytes shouldBe 2L
+        } finally {
+            finishCopy.countDown()
+            root.deleteRecursively()
+        }
+    }
+
+    test("reading what's installed doesn't wait for an install that's still copying") {
+        // A settings screen opened during a long install would otherwise show every model as
+        // missing until the copy finished.
+        val root = Files.createTempDirectory("voice-models").toFile()
+        val vosk = VoiceModelCatalog.byId("vosk-en-us-small-0-15")!!
+        val whisper = VoiceModelCatalog.byId("whisper-en-tiny-en")!!
+        val copyStarted = CountDownLatch(1)
+        val finishCopy = CountDownLatch(1)
+        val slowArtifact = object : ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)) {
+            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                copyStarted.countDown()
+                check(finishCopy.await(5, TimeUnit.SECONDS)) { "The test never released the copy." }
+                return super.read(b, off, len)
+            }
+
+            override fun read(b: ByteArray): Int = read(b, 0, b.size)
+        }
+        try {
+            // One store for the install and the read, as one screen uses: a lock on the store
+            // itself would hold the read here, where a second store would slip past it.
+            val store = VoiceModelInstallStore(root)
+            store.install(whisper, whisper.artifactFileName, ByteArrayInputStream(byteArrayOf(5, 6)))
+            val installing = Thread {
+                runCatching { store.install(vosk, "slow.zip", slowArtifact) }
+            }.apply { isDaemon = true }
+            installing.start()
+            copyStarted.await(5, TimeUnit.SECONDS) shouldBe true
+
+            var states: Map<String, VoiceModelInstallState>? = null
+            val reader = Thread { states = store.states(listOf(vosk, whisper)) }
+                .apply { isDaemon = true }
+            reader.start()
+            reader.join(2_000L)
+            reader.isAlive shouldBe false
+            states!!.getValue(whisper.id).installed shouldBe true
+            states!!.getValue(vosk.id).installed shouldBe false
+        } finally {
+            finishCopy.countDown()
             root.deleteRecursively()
         }
     }

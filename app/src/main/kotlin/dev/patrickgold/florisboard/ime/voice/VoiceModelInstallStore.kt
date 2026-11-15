@@ -34,10 +34,15 @@ data class VoiceModelInstallState(
     val artifactName: String?,
 )
 
+/**
+ * Installs and deletes lock across every instance, not just this one: each settings screen
+ * creates its own store on the same folder, and an install sweeps leftover staging folders,
+ * which would delete another store's install while it's still copying. Reading state doesn't
+ * lock, so a screen opened during a long install still shows what's installed.
+ */
 class VoiceModelInstallStore(
     private val rootDir: File,
 ) {
-    @Synchronized
     fun state(entry: VoiceModelCatalogEntry): VoiceModelInstallState {
         val dir = entry.modelDir()
         val files = dir.listFiles()?.filter { it.isFile }.orEmpty()
@@ -50,17 +55,14 @@ class VoiceModelInstallStore(
         )
     }
 
-    @Synchronized
-    fun states(entries: List<VoiceModelCatalogEntry>): Map<String, VoiceModelInstallState> {
-        return entries.associate { entry -> entry.id to state(entry) }
-    }
+    fun states(entries: List<VoiceModelCatalogEntry>): Map<String, VoiceModelInstallState> =
+        entries.associate { entry -> entry.id to state(entry) }
 
-    @Synchronized
     fun install(
         entry: VoiceModelCatalogEntry,
         displayName: String?,
         inputStream: InputStream,
-    ): VoiceModelInstallState {
+    ): VoiceModelInstallState = synchronized(InstallLock) {
         rootDir.mkdirs()
         sweepStaleStagingDirs()
         val dir = entry.modelDir()
@@ -80,7 +82,7 @@ class VoiceModelInstallStore(
                 tmpFile.delete()
             }
             activateStagedInstall(dir, stagingDir)
-            return state(entry)
+            state(entry)
         } catch (cause: Throwable) {
             stagingDir.deleteRecursively()
             throw cause
@@ -102,9 +104,8 @@ class VoiceModelInstallStore(
         }
     }
 
-    @Synchronized
-    fun delete(entry: VoiceModelCatalogEntry): Boolean {
-        return entry.modelDir().deleteRecursively()
+    fun delete(entry: VoiceModelCatalogEntry): Boolean = synchronized(InstallLock) {
+        entry.modelDir().deleteRecursively()
     }
 
     private fun VoiceModelCatalogEntry.modelDir(): File {
@@ -147,6 +148,7 @@ class VoiceModelInstallStore(
     }
 
     companion object {
+        private val InstallLock = Any()
         private val SafeModelIdPattern = Regex("""[A-Za-z0-9][A-Za-z0-9._-]{0,127}""")
         private val UnsafeArtifactNameChars = Regex("""[\p{Cntrl}/\\:*?"<>|]+""")
         private const val ArtifactSizeHeadroomMb = 32
