@@ -116,13 +116,17 @@ object ClipboardFileStorage {
     }
 
     /**
-     * Deletes the file corresponding to an id.
+     * Deletes the stored file for [id] and its decrypted temp copies. Returns true once none of
+     * them is left, including when there was nothing to delete. Synchronized with the plaintext
+     * migration, which would otherwise move the file it was encrypting back into place.
      */
-    fun deleteById(context: Context, id: Long) {
+    @Synchronized
+    fun deleteById(context: Context, id: Long): Boolean {
         flogDebug(LogTopic.CLIPBOARD) { "Cleaning up $id" }
         val file = context.clipboardFilesDir.subFile(id.toString())
-        file.delete()
-        deleteTransientFilesForId(context, id)
+        val storedGone = file.delete() || !file.exists()
+        val transientGone = deleteTransientFilesForId(context, id)
+        return storedGone && transientGone
     }
 
     fun getFileForId(context: Context, id: Long): FsFile {
@@ -274,6 +278,11 @@ object ClipboardFileStorage {
                 target = tempFile,
                 maxPlaintextBytes = mediaKind.maxCloneBytes,
             )
+            // A delete that ran while this copy was written may have missed it. Checked under
+            // deleteById's lock, so the copy is either seen by a later delete or dropped here.
+            synchronized(this) {
+                check(source.isFile) { "Clipboard media file $id was deleted while it was read." }
+            }
             tempFile
         } catch (error: Throwable) {
             tempFile.delete()
@@ -285,10 +294,14 @@ object ClipboardFileStorage {
         context.clipboardTransientDir.listFiles()?.forEach { it.delete() }
     }
 
-    private fun deleteTransientFilesForId(context: Context, id: Long) {
-        context.clipboardTransientDir.listFiles()
-            ?.filter { it.name.startsWith("$id-") }
-            ?.forEach { it.delete() }
+    /** A temp dir that's there but can't be listed may still hold copies, so that's a failure. */
+    private fun deleteTransientFilesForId(context: Context, id: Long): Boolean {
+        val dir = context.clipboardTransientDir
+        val files = dir.listFiles() ?: return !dir.exists()
+        return files
+            .filter { it.name.startsWith("$id-") }
+            .map { it.delete() || !it.exists() }
+            .all { it }
     }
 
     @Synchronized

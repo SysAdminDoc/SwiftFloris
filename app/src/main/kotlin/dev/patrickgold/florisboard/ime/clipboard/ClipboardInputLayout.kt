@@ -130,7 +130,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.AndroidVersion
-import org.florisboard.lib.android.showShortToast
+import org.florisboard.lib.android.postShortToast
 import org.florisboard.lib.android.systemService
 import org.florisboard.lib.compose.LocalLocalizedDateTimeFormatter
 import org.florisboard.lib.compose.autoMirrorForRtl
@@ -221,6 +221,25 @@ fun ClipboardInputLayout(
     var revealedSensitiveItemId by remember { mutableStateOf<Long?>(null) }
     val deletedItemMessage = stringRes(R.string.clipboard__item_deleted)
     val undoActionLabel = stringRes(R.string.action__undo)
+    val deleteFailedMessage = stringRes(R.string.clipboard__delete_failed)
+    val retryActionLabel = stringRes(R.string.action__retry)
+
+    // Nothing reports success until every store confirmed the delete. What stayed is still in
+    // history, and Retry deletes exactly that, under the same pin rule as the first try. Deletes
+    // run and report in the clipboard manager's scope, so closing this screen, before or after the
+    // snackbar shows, stops neither the delete nor its report.
+    fun showDeletionFailed(result: ClipboardDeletionResult, onlyIfUnpinned: Boolean) {
+        FlorisSnackbarController.show(
+            message = deleteFailedMessage,
+            actionLabel = retryActionLabel.takeIf { result.retained.isNotEmpty() },
+            onAction = {
+                clipboardManager.deleteThenReport(
+                    delete = { clearExactHistory(result.retained, onlyIfUnpinned) },
+                    report = { retried -> if (!retried.succeeded) showDeletionFailed(retried, onlyIfUnpinned) },
+                )
+            },
+        )
+    }
 
     fun isPopupSurfaceActive() = popupItem != null || showClearAllHistory || pendingMediaDelete != null
 
@@ -880,12 +899,20 @@ fun ClipboardInputLayout(
                                 text = stringRes(R.string.clip__delete_item),
                             ) {
                                 if (!ClipboardMediaDeletePolicy.needsConfirmation(activePopupItem.type)) {
-                                    clipboardManager.deleteClip(activePopupItem, onlyIfUnpinned = false)
-                                    FlorisSnackbarController.show(
-                                        message = deletedItemMessage,
-                                        actionLabel = undoActionLabel,
-                                        onAction = {
-                                            clipboardManager.restoreHistory(listOf(activePopupItem))
+                                    clipboardManager.deleteThenReport(
+                                        delete = { deleteClip(activePopupItem, onlyIfUnpinned = false) },
+                                        report = { result ->
+                                            if (!result.succeeded) {
+                                                showDeletionFailed(result, onlyIfUnpinned = false)
+                                            } else {
+                                                FlorisSnackbarController.show(
+                                                    message = deletedItemMessage,
+                                                    actionLabel = undoActionLabel,
+                                                    onAction = {
+                                                        clipboardManager.restoreHistory(listOf(activePopupItem))
+                                                    },
+                                                )
+                                            }
                                         },
                                     )
                                 } else {
@@ -918,11 +945,19 @@ fun ClipboardInputLayout(
                     confirmLabel = stringRes(R.string.action__yes),
                     onDismiss = { showClearAllHistory = false },
                     onConfirm = {
-                        clipboardManager.clearExactHistory(filteredHistory.unpinned)
-                        scope.launch {
-                            context.showShortToast(R.string.clipboard__cleared_history)
-                        }
+                        val items = filteredHistory.unpinned
                         showClearAllHistory = false
+                        // Anything pinned after this list was taken stays.
+                        clipboardManager.deleteThenReport(
+                            delete = { clearExactHistory(items, onlyIfUnpinned = true) },
+                            report = { result ->
+                                if (result.succeeded) {
+                                    context.postShortToast(R.string.clipboard__cleared_history)
+                                } else {
+                                    showDeletionFailed(result, onlyIfUnpinned = true)
+                                }
+                            },
+                        )
                     },
                 )
             }
@@ -941,8 +976,11 @@ fun ClipboardInputLayout(
                     confirmLabel = stringRes(R.string.action__delete),
                     onDismiss = { pendingMediaDelete = null },
                     onConfirm = {
-                        clipboardManager.deleteClip(item, onlyIfUnpinned = false)
                         pendingMediaDelete = null
+                        clipboardManager.deleteThenReport(
+                            delete = { deleteClip(item, onlyIfUnpinned = false) },
+                            report = { result -> if (!result.succeeded) showDeletionFailed(result, onlyIfUnpinned = false) },
+                        )
                     },
                 )
             }

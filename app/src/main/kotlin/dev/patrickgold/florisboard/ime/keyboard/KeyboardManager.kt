@@ -1237,14 +1237,29 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.CLIPBOARD_PASTE -> editorInstance.performClipboardPaste()
             KeyCode.CLIPBOARD_SELECT -> handleClipboardSelect()
             KeyCode.CLIPBOARD_SELECT_ALL -> editorInstance.performClipboardSelectAll()
-            KeyCode.CLIPBOARD_CLEAR_HISTORY -> clipboardManager.clearHistory()
-            KeyCode.CLIPBOARD_CLEAR_FULL_HISTORY -> clipboardManager.clearFullHistory()
-            KeyCode.CLIPBOARD_CLEAR_PRIMARY_CLIP -> {
-                if (prefs.clipboard.clearPrimaryClipAffectsHistoryIfUnpinned.get()) {
-                    clipboardManager.primaryClip?.let { clipboardManager.deleteClip(it, onlyIfUnpinned = true) }
+            KeyCode.CLIPBOARD_CLEAR_HISTORY -> scope.launch {
+                if (!clipboardManager.clearHistory().succeeded) {
+                    appContext.postShortToast(R.string.clipboard__delete_failed)
                 }
+            }
+            KeyCode.CLIPBOARD_CLEAR_FULL_HISTORY -> scope.launch {
+                if (!clipboardManager.clearFullHistory().succeeded) {
+                    appContext.postShortToast(R.string.clipboard__delete_failed)
+                }
+            }
+            KeyCode.CLIPBOARD_CLEAR_PRIMARY_CLIP -> {
+                val clip = clipboardManager.primaryClip
+                val alsoFromHistory = clip != null && prefs.clipboard.clearPrimaryClipAffectsHistoryIfUnpinned.get()
                 clipboardManager.updatePrimaryClip(null)
-                appContext.postShortToast(R.string.clipboard__cleared_primary_clip)
+                scope.launch {
+                    // Says it's cleared only once an unpinned history copy is confirmed gone too. A
+                    // pinned copy stays, as the setting says.
+                    val deleted = clip == null || !alsoFromHistory ||
+                        clipboardManager.deleteClip(clip, onlyIfUnpinned = true).succeeded
+                    appContext.postShortToast(
+                        if (deleted) R.string.clipboard__cleared_primary_clip else R.string.clipboard__delete_failed,
+                    )
+                }
             }
             KeyCode.TOGGLE_FLOATING_WINDOW -> windowController.actions.toggleFloatingWindow()
             KeyCode.TOGGLE_COMPACT_LAYOUT -> windowController.actions.toggleCompactLayout()

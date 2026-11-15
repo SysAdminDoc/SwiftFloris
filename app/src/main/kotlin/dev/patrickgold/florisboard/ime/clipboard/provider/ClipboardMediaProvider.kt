@@ -37,15 +37,19 @@ import dev.patrickgold.florisboard.lib.devtools.flogError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
 import org.florisboard.lib.kotlin.tryOrNull
 
 /**
  * Allows apps to access images and videos on the clipboard.
  *
- * This is sometimes called by the UI thread, so all functions are non blocking.
- * Database accesses are performed async.
+ * This is sometimes called by the UI thread, so all functions are non blocking, except [delete].
+ * Database accesses are performed async. A delete waits for its file and metadata row to be gone,
+ * since callers report it to the user as done.
  */
 class ClipboardMediaProvider : ContentProvider() {
     private val clipboardFilesDaoLock = Any()
@@ -262,13 +266,22 @@ class ClipboardMediaProvider : ContentProvider() {
         when (Matcher.match(uri)) {
             IMAGE_CLIP_ITEM, VIDEO_CLIP_ITEM -> {
                 val id = ContentUris.parseId(uri)
-                ClipboardFileStorage.deleteById(context!!, id)
-                cachedFileInfos.remove(id)
                 context?.revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                ioScope.launch(metadataWrites) {
-                    requireClipboardFilesDao().delete(id)
+                // Returns 1 only once the file and its row are gone, so a privacy delete never
+                // reports done while either is left. The row goes on the metadata lane, after
+                // the clone's own insert.
+                if (!ClipboardFileStorage.deleteById(context!!, id)) return 0
+                cachedFileInfos.remove(id)
+                return try {
+                    CompletableFuture.runAsync({ requireClipboardFilesDao().delete(id) }, metadataWrites.asExecutor()).get()
+                    1
+                } catch (e: ExecutionException) {
+                    flogError { "Failed to delete clipboard media metadata: ${e.cause?.message.orEmpty()}" }
+                    0
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    0
                 }
-                return 1
             }
             else -> error("Unable to identify type of $uri")
         }

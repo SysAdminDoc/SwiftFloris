@@ -42,6 +42,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,7 +58,6 @@ import org.florisboard.lib.android.clearPrimaryClipAnyApi
 import org.florisboard.lib.android.postShortToast
 import org.florisboard.lib.android.setOrClearPrimaryClip
 import org.florisboard.lib.android.systemService
-import org.florisboard.lib.kotlin.tryOrNull
 
 /**
  * [ClipboardManager] manages the clipboard and clipboard history.
@@ -107,6 +107,7 @@ class ClipboardManager(
     private val systemClipboardManager = context.systemService(AndroidClipboardManager::class)
 
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val reportScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val cleanUpJob: Job
     private val historyMaintenanceMutex = Mutex(locked = false)
     private var clipHistoryDb: ClipboardHistoryDatabase? = null
@@ -186,8 +187,8 @@ class ClipboardManager(
                 ClipboardHistoryMaintenance.sortedHistory(retainedItems)
             }
             val overflowItems = overflowHistoryItems(clipHistory)
-            evictClipboardHistoryItemsNow((rejectedItems + overflowItems).distinctBy { it.id })
-            historyFlow.value = ClipboardHistoryMaintenance.withoutEvictedItems(clipHistory, overflowItems)
+            val evicted = evictClipboardHistoryItemsNow((rejectedItems + overflowItems).distinctBy { it.id })
+            historyFlow.value = ClipboardHistoryMaintenance.withoutEvictedItems(clipHistory, evicted)
         }
     }
 
@@ -493,16 +494,9 @@ class ClipboardManager(
         // the clipboard itself.
         if (AdvancedProtectionPolicy.decide(appContext).suspendsClipboardHistoryPersistence) return
         if (prefs.clipboard.historyEnabled.get()) {
-            // Media copied from other apps is cloned to a new URI, so a URI match is one of our
-            // own clips copied back. A second row would share its file and lose it when either
-            // row is deleted.
-            val historyElement = currentHistory.all.firstOrNull { item ->
-                if (item.type == ItemType.TEXT) {
-                    newItem.type == ItemType.TEXT && item.text == newItem.text && item.isSensitive == newItem.isSensitive
-                } else {
-                    newItem.type != ItemType.TEXT && item.uri != null && item.uri == newItem.uri
-                }
-            }
+            // A media URI match is one of our own clips copied back. A second row would share its
+            // file and lose it when either row is deleted.
+            val historyElement = currentHistory.all.firstOrNull { holdsSameClip(it, newItem) }
             if (historyElement != null) {
                 moveToTheBeginning(
                     oldItem = historyElement,
@@ -540,16 +534,16 @@ class ClipboardManager(
                 sensitiveEnabled = prefs.clipboard.historyAutoCleanSensitiveEnabled.get(),
                 sensitiveAfterSeconds = prefs.clipboard.historyAutoCleanSensitiveAfter.get(),
             )
-            evictClipboardHistoryItemsNow(expiredItems)
-            historyFlow.value = ClipboardHistoryMaintenance.withoutEvictedItems(clipHistory, expiredItems)
+            val evicted = evictClipboardHistoryItemsNow(expiredItems)
+            historyFlow.value = ClipboardHistoryMaintenance.withoutEvictedItems(clipHistory, evicted)
         }
     }
 
-    private suspend fun evictClipboardHistoryItemsNow(items: List<ClipboardItem>) {
-        if (items.isEmpty()) return
-        ClipboardHistoryEviction.closeThenDelete(
+    /** Returns the items that are gone. One whose media stayed keeps its row and stays visible. */
+    private fun evictClipboardHistoryItemsNow(items: List<ClipboardItem>): List<ClipboardItem> {
+        return ClipboardHistoryEviction.closeThenDelete(
             items = items,
-            closeItem = { it.close(appContext) },
+            closeItem = { it.deleteMedia(appContext) },
             deleteItems = { clipHistoryDao?.delete(it) },
         )
     }
@@ -568,42 +562,49 @@ class ClipboardManager(
         }
     }
 
-    fun clearExactHistory(items: List<ClipboardItem>) {
-        ioScope.launch {
-            for (item in items) {
-                item.close(appContext)
-            }
-            clipHistoryDao?.delete(items)
+    /**
+     * Deletes [items] and their media from the clipboard history and returns what's still stored.
+     * With [onlyIfUnpinned], an item pinned since [items] was read stays. Like the other deletes
+     * here, it returns only once every store answered.
+     */
+    suspend fun clearExactHistory(items: List<ClipboardItem>, onlyIfUnpinned: Boolean): ClipboardDeletionResult {
+        return maintainHistory {
+            ClipboardHistoryDeletion.deleteExact(appContext, clipHistoryDao, items, onlyIfUnpinned)
         }
     }
 
     /**
-     * Clears all unpinned items from the clipboard history
+     * Clears all unpinned items from the clipboard history. Pinned ones keep their rows and media.
      */
-    fun clearHistory() {
-        ioScope.launch {
-            // Only close (and thereby delete backing media of) unpinned items:
-            // the DB keeps pinned rows, so closing them too would strand pinned
-            // image/video clips with their content provider files gone.
-            val snapshot = currentHistory.unpinned.toList()
-            for (item in snapshot) {
-                item.close(appContext)
-            }
-            clipHistoryDao?.deleteAllUnpinned()
-        }
+    suspend fun clearHistory(): ClipboardDeletionResult {
+        return maintainHistory { ClipboardHistoryDeletion.deleteUnpinned(appContext, clipHistoryDao) }
     }
 
     /**
      * Clears the full clipboard history
      */
-    fun clearFullHistory() {
-        ioScope.launch {
-            val snapshot = currentHistory.all.toList()
-            for (item in snapshot) {
-                item.close(appContext)
-            }
-            clipHistoryDao?.deleteAll()
-        }
+    suspend fun clearFullHistory(): ClipboardDeletionResult {
+        return maintainHistory { ClipboardHistoryDeletion.deleteAll(appContext, clipHistoryDao) }
+    }
+
+    /**
+     * Runs a history delete in the manager's own scope, so a caller that goes away (the clipboard
+     * screen closing) doesn't cut it short, and under the maintenance lock, so a pin can't land
+     * between reading which items to delete and deleting them.
+     */
+    private suspend fun maintainHistory(delete: () -> ClipboardDeletionResult): ClipboardDeletionResult {
+        return ioScope.async { historyMaintenanceMutex.withLock { delete() } }.await()
+    }
+
+    /**
+     * Runs [delete] and hands its result to [report] on the main thread, in the manager's scope:
+     * the clipboard screen can close at any point and the delete still runs and gets reported.
+     */
+    fun deleteThenReport(
+        delete: suspend ClipboardManager.() -> ClipboardDeletionResult,
+        report: (ClipboardDeletionResult) -> Unit,
+    ) {
+        reportScope.launch { report(delete()) }
     }
 
 
@@ -675,32 +676,23 @@ class ClipboardManager(
         }
     }
 
-    fun deleteClip(item: ClipboardItem, onlyIfUnpinned: Boolean) {
-        ioScope.launch {
-            val deletedRows = if (onlyIfUnpinned) {
-                clipHistoryDao?.deleteIfUnpinned(item.id)
-            } else {
-                clipHistoryDao?.delete(item.id)
-            } ?: 0
-            if (onlyIfUnpinned && deletedRows <= 0) return@launch
-            tryOrNull {
-                val uri = item.uri
-                if (uri != null) {
-                    appContext.contentResolver.delete(uri, null, null)
-                }
-            }
-        }
+    /**
+     * Deletes [item] and its media. With [onlyIfUnpinned], a pinned item, or one no longer in
+     * history, is left alone and counts as done.
+     */
+    suspend fun deleteClip(item: ClipboardItem, onlyIfUnpinned: Boolean): ClipboardDeletionResult {
+        return maintainHistory { ClipboardHistoryDeletion.deleteOne(appContext, clipHistoryDao, item, onlyIfUnpinned) }
     }
 
     fun pinClip(item: ClipboardItem) {
         ioScope.launch {
-            clipHistoryDao?.update(item.copy(isPinned = true))
+            historyMaintenanceMutex.withLock { clipHistoryDao?.update(item.copy(isPinned = true)) }
         }
     }
 
     fun unpinClip(item: ClipboardItem) {
         ioScope.launch {
-            clipHistoryDao?.update(item.copy(isPinned = false))
+            historyMaintenanceMutex.withLock { clipHistoryDao?.update(item.copy(isPinned = false)) }
         }
     }
 
@@ -755,6 +747,7 @@ class ClipboardManager(
         // launches a long-lived clipboard-history flow collector in the same scope,
         // and cancelling only cleanUpJob would leak it (and any in-flight launches).
         ioScope.cancel()
+        reportScope.cancel()
     }
 }
 

@@ -53,6 +53,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardTextRetentionPolicy
+import dev.patrickgold.florisboard.lib.devtools.flogError
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -278,8 +279,27 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
      * because they have no provider-backed URI.
      */
     fun close(context: Context) {
-        if (type == ItemType.IMAGE || type == ItemType.VIDEO) {
-            tryOrNull { context.contentResolver.delete(this.uri!!, null, null) }
+        deleteMedia(context)
+    }
+
+    /**
+     * Deletes this item's media like [close] and returns true once nothing the keyboard stored for
+     * it is left: always for text, and for media in the keyboard's own provider only when the
+     * provider confirms the file and its metadata row are gone. A URI from another app is still
+     * asked to delete, as before, but nothing of ours sits behind it.
+     */
+    fun deleteMedia(context: Context): Boolean {
+        if (type != ItemType.IMAGE && type != ItemType.VIDEO) return true
+        val uri = uri ?: return true
+        if (uri.authority != ClipboardMediaProvider.AUTHORITY) {
+            tryOrNull { context.contentResolver.delete(uri, null, null) }
+            return true
+        }
+        return try {
+            context.contentResolver.delete(uri, null, null) > 0
+        } catch (error: Exception) {
+            flogError { "Failed to delete clipboard media: ${error.javaClass.simpleName}" }
+            false
         }
     }
 
@@ -344,6 +364,9 @@ interface ClipboardHistoryDao {
 
     @Update
     fun update(items: List<ClipboardItem>)
+
+    @Query("SELECT * FROM $CLIPBOARD_HISTORY_TABLE WHERE ${BaseColumns._ID} = :id")
+    fun getById(id: Long): ClipboardItem?
 
     @Query("DELETE FROM $CLIPBOARD_HISTORY_TABLE WHERE ${BaseColumns._ID} = :id")
     fun delete(id: Long): Int

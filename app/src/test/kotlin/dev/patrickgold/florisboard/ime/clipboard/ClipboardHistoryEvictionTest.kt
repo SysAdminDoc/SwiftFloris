@@ -99,12 +99,43 @@ class ClipboardHistoryEvictionTest : FunSpec({
         val second = clip(2, creationTimestampMs = 2_000L)
         val events = mutableListOf<String>()
 
-        ClipboardHistoryEviction.closeThenDelete(
+        val evicted = ClipboardHistoryEviction.closeThenDelete(
             items = listOf(first, second),
-            closeItem = { events += "close:${it.id}" },
+            closeItem = { events += "close:${it.id}"; true },
             deleteItems = { items -> events += "delete:${items.joinToString(",") { it.id.toString() }}" },
         )
 
         events shouldBe listOf("close:1", "close:2", "delete:1,2")
+        evicted shouldBe listOf(first, second)
+    }
+
+    test("closeThenDelete keeps the row of an item whose media stayed") {
+        val stuck = clip(1, creationTimestampMs = 1_000L)
+        val gone = clip(2, creationTimestampMs = 2_000L)
+        val deletedRows = mutableListOf<ClipboardItem>()
+
+        val evicted = ClipboardHistoryEviction.closeThenDelete(
+            items = listOf(stuck, gone),
+            closeItem = { it !== stuck },
+            deleteItems = { deletedRows += it },
+        )
+
+        deletedRows shouldBe listOf(gone)
+        evicted shouldBe listOf(gone)
+        ClipboardHistoryMaintenance.withoutEvictedItems(ClipboardHistory(listOf(stuck, gone)), evicted).all shouldBe
+            listOf(stuck)
+    }
+
+    test("closeThenDelete deletes no rows when no media could be deleted") {
+        var rowDeletes = 0
+
+        val evicted = ClipboardHistoryEviction.closeThenDelete(
+            items = listOf(clip(1, creationTimestampMs = 1_000L)),
+            closeItem = { false },
+            deleteItems = { rowDeletes++ },
+        )
+
+        rowDeletes shouldBe 0
+        evicted shouldBe emptyList()
     }
 })

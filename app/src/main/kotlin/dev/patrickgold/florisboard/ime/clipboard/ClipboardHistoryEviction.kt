@@ -50,15 +50,18 @@ internal object ClipboardHistoryEviction {
         return itemsToRemove.toList()
     }
 
+    /**
+     * Deletes each item's media with [closeItem], which returns true once it's gone, then the rows
+     * of those items, and returns them. An item whose media stayed keeps its row, so it stays in
+     * history and the next pass tries again instead of leaving a file nothing lists.
+     */
     fun closeThenDelete(
         items: List<ClipboardItem>,
-        closeItem: (ClipboardItem) -> Unit,
+        closeItem: (ClipboardItem) -> Boolean,
         deleteItems: (List<ClipboardItem>) -> Unit,
-    ) {
-        if (items.isEmpty()) return
-        for (item in items) {
-            closeItem(item)
-        }
-        deleteItems(items)
+    ): List<ClipboardItem> {
+        val closed = items.filter(closeItem)
+        if (closed.isNotEmpty()) deleteItems(closed)
+        return closed
     }
 }
