@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Stop resizing or moving the keyboard from making it bigger each time. With the Keyboard height slider set to anything other than 100%, the keyboard saved the height it was showing, the slider applied itself again the next time the keyboard came up, and every resize or move grew it (or shrank it) a little more. Part of issue #23.
 - Make the emoji search, sticker search, clipboard search, emoji tag and pin group fields typeable. Android never connects a keyboard to its own text fields, so tapping them did nothing. Tapping one now sends the letter keys to it, with a bar above the keys showing what you've typed. Enter or the check mark applies it, and the back arrow cancels. The tag sheet also lists the names an emoji already has, so you can see what search finds it by. Part of issue #24.
 - Make `:pensive` suggest 😔 whatever language the keyboard is in. Emoji names only ship for German, English, Spanish, French, Italian and Portuguese, and only the keyboard's own languages were searched, so everyone else got nothing. English names are now the fallback for shortcodes and for the emoji panel's search. A `:` shortcode also puts the emoji first in the suggestion row, where before it sat behind word guesses the three-slot row never showed. Reported as issue #24.
 - Keep autofill chips inside the suggestion strip. Every chip was drawn as wide as the keyboard, so even a short one pushed its text past the edge of the screen. Chips now take the width their text needs, up to the room the strip has next to its buttons. Part of issue #23.

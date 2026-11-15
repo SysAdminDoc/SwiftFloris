@@ -134,6 +134,18 @@ sealed class ImeWindowSpec {
         override val constraints: ImeWindowConstraints.Fixed,
         override val userPreferredOptions: UserPreferredOptions,
     ) : ImeWindowSpec() {
+        /**
+         * The props to save in the window config for this spec. [props] holds the keyboard height after the
+         * user's height scale, while the config holds it before: the controller multiplies by the scale again
+         * every time it computes a spec, so saving [props] as-is grows (or shrinks) the keyboard on every
+         * resize or move gesture.
+         */
+        fun storedProps(): ImeWindowProps.Fixed {
+            val scale = userPreferredOptions.keyboardHeightScale
+            if (scale <= 0f || scale == 1f) return props
+            return props.copy(keyboardHeight = props.keyboardHeight / scale)
+        }
+
         override fun movedBy(
             offset: DpOffset,
             rowCount: Int,

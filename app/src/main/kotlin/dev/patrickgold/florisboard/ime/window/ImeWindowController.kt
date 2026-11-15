@@ -556,7 +556,7 @@ class ImeWindowController(
                 when (spec) {
                      is ImeWindowSpec.Fixed -> {
                          keepEnabled = true
-                         config.copy(fixedProps = config.fixedProps.plus(spec.fixedMode to spec.props))
+                         config.copy(fixedProps = config.fixedProps.plus(spec.fixedMode to spec.storedProps()))
                      }
                     is ImeWindowSpec.Floating -> {
                         if (spec.props.offsetBottom <= spec.constraints.dockToFixedHeight) {
@@ -582,7 +582,7 @@ class ImeWindowController(
                 when (spec) {
                     is ImeWindowSpec.Fixed -> {
                         keepEnabled = true
-                        config.copy(fixedProps = config.fixedProps.plus(spec.fixedMode to spec.props))
+                        config.copy(fixedProps = config.fixedProps.plus(spec.fixedMode to spec.storedProps()))
                     }
                     is ImeWindowSpec.Floating -> {
                         keepEnabled = true
