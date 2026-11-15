@@ -180,6 +180,25 @@ object EmojiSearch {
         val score: Int,
         val localePriority: Int,
     )
+
+    /** What the palette shows under a non-blank search query. */
+    internal enum class Panel {
+        RESULTS,
+        NO_MATCH,
+        LOADING,
+    }
+
+    /**
+     * The emoji names load in the background each time the palette opens, so a query that comes back
+     * from the letter keys runs before they arrive (#24). "No emojis match" is only true once they have.
+     */
+    internal fun panel(hasResults: Boolean, namesLoaded: Boolean): Panel {
+        return when {
+            hasResults -> Panel.RESULTS
+            namesLoaded -> Panel.NO_MATCH
+            else -> Panel.LOADING
+        }
+    }
 }
 
 private fun String.normalizedForEmojiSearch(): String {

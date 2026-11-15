@@ -25,6 +25,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -166,15 +167,18 @@ fun EmojiPaletteView(
         )
     }
     var loadedSearchMappings by remember { mutableStateOf(emptyList<EmojiDataByCategory>()) }
+    var searchNamesLoaded by remember { mutableStateOf(false) }
     LaunchedEffect(searchLocales) {
         // Clear the previous locale index immediately so a subtype change cannot show stale annotations while the new
         // asset files are being loaded.
+        searchNamesLoaded = false
         loadedSearchMappings = emptyList()
         loadedSearchMappings = withContext(Dispatchers.IO) {
             searchLocales.mapNotNull { locale ->
                 runCatching { EmojiData.get(context, locale).byCategory }.getOrNull()
             }
         }
+        searchNamesLoaded = true
     }
     val systemFontPaint = remember(Typeface.DEFAULT) {
         Paint().apply {
@@ -515,16 +519,16 @@ fun EmojiPaletteView(
         )
         if (searchQuery.isNotBlank()) {
             val lazyGridState = rememberLazyGridState()
-            if (searchResults.isEmpty()) {
-                Column(
+            when (EmojiSearch.panel(searchResults.isNotEmpty(), searchNamesLoaded)) {
+                EmojiSearch.Panel.LOADING -> Spacer(modifier = Modifier.fillMaxSize())
+                EmojiSearch.Panel.NO_MATCH -> Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(all = 12.dp),
                 ) {
                     EmojiPaletteStateText(text = stringRes(R.string.emoji__search__empty))
                 }
-            } else {
-                LazyVerticalGrid(
+                EmojiSearch.Panel.RESULTS -> LazyVerticalGrid(
                     modifier = Modifier
                         .fillMaxSize()
                         .florisScrollbar(lazyGridState),

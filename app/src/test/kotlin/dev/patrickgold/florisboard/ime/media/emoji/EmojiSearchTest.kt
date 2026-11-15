@@ -77,6 +77,13 @@ class EmojiSearchTest : FunSpec({
             query = "sonrisa",
         ).map { it.base().value } shouldContainExactly listOf("😀")
     }
+
+    test("no match is only claimed once the emoji names have loaded") {
+        EmojiSearch.panel(hasResults = false, namesLoaded = false) shouldBe EmojiSearch.Panel.LOADING
+        EmojiSearch.panel(hasResults = false, namesLoaded = true) shouldBe EmojiSearch.Panel.NO_MATCH
+        EmojiSearch.panel(hasResults = true, namesLoaded = false) shouldBe EmojiSearch.Panel.RESULTS
+        EmojiSearch.panel(hasResults = true, namesLoaded = true) shouldBe EmojiSearch.Panel.RESULTS
+    }
 })
 
 private fun emojiMappings(sets: List<EmojiSet>): EmojiDataByCategory {
