@@ -122,6 +122,10 @@ class NlpManager(
             _activeCandidatesFlow.value = v
         }
     private var activeCandidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap()
+    private val candidateAssembly = LatestOnlyAssembly<List<SuggestionCandidate>>(scope) { candidates ->
+        activeCandidates = candidates
+        autoExpandCollapseSmartbarActions(candidates, NlpInlineAutofill.suggestions.value)
+    }
 
     val debugOverlaySuggestionsInfos = LruCache<Long, Pair<String, SpellingResult>>(10)
     var debugOverlayVersion = MutableStateFlow(0)
@@ -979,18 +983,18 @@ class NlpManager(
     }
 
     private fun assembleCandidates() {
-        scope.launch {
+        // Only the newest request publishes, so a slow older assembly can't bring back
+        // candidates that a newer, emptier state already cleared.
+        candidateAssembly.request {
             val suggestions = internalSuggestionsGuard.withLock {
                 internalSuggestions.second
             }
-            val candidates = candidateAssembler.assemble(
+            candidateAssembler.assemble(
                 isSuggestionOn = isSuggestionOn(),
                 internalSuggestions = suggestions,
                 autoCommitUndoCandidate = autoCommitUndoSession.activeUndoCandidate,
                 glideAlternativeCandidates = glideAlternativeSession.activeCandidates(),
             )
-            activeCandidates = candidates
-            autoExpandCollapseSmartbarActions(candidates, NlpInlineAutofill.suggestions.value)
         }
     }
 

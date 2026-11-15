@@ -22,6 +22,9 @@ import dev.patrickgold.florisboard.ime.editor.EditorInstance
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicLong
 
 internal class NlpCandidateAssembler(
     private val clipboardSuggestionProvider: SuggestionProvider,
@@ -63,6 +66,8 @@ internal class SmartbarAutoExpandController(
     private val scope: CoroutineScope,
 ) {
     private val prefs by FlorisPreferenceStore
+    private val expansionGeneration = AtomicLong(0L)
+    private val expansionWrites = Mutex()
 
     fun onCandidateStateChanged(
         candidateSuggestions: List<*>?,
@@ -73,9 +78,15 @@ internal class SmartbarAutoExpandController(
         }
         val isSelection = editorInstance.activeContent.selection.isSelectionMode
         val isExpanded = candidateSuggestions.isNullOrEmpty() && inlineSuggestions.isNullOrEmpty() || isSelection
+        val mine = expansionGeneration.incrementAndGet()
         scope.launch {
-            prefs.smartbar.sharedActionsExpandWithAnimation.set(false)
-            prefs.smartbar.sharedActionsExpanded.set(isExpanded)
+            // Launches on a multi-threaded scope can start out of order; the newest state writes
+            // last because an older one that gets the lock late skips its write.
+            expansionWrites.withLock {
+                if (mine != expansionGeneration.get()) return@withLock
+                prefs.smartbar.sharedActionsExpandWithAnimation.set(false)
+                prefs.smartbar.sharedActionsExpanded.set(isExpanded)
+            }
         }
     }
 }

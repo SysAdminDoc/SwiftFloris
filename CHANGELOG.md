@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Stop old suggestions from replacing newer ones. Suggestions are worked out in the background after each change, and a slow round for an earlier word could finish last and put its words back in the row, even after the row had been cleared. Only the newest round shows its suggestions now, and older ones are cancelled.
 - Make "Erase everything" delete your personal dictionary even when it's turned off. It only cleared the dictionary while it was open, so with the dictionary turned off it said everything was erased, and your words came back the moment you turned it on again. Now it deletes the dictionary's files directly, including any copy kept after an earlier reset. If a file can't be deleted, it tells you which one instead of saying it's done.
 - Keep your imported words when you close the import summary with Back or a tap outside it. Either one ran Undo and took the whole import back out. Only the Undo button does that now.
 - Make dictionary imports all or nothing. Each word was saved on its own, so an import that failed halfway left the first half in your dictionary, with words you already had overwritten and no Undo for any of it. The whole file now goes in as one change, older backup files included, and a failure leaves the dictionary exactly as it was. Undo works the same way. It used to crash the settings screen because it ran on the main thread. Now it runs in the background, and if it can't remove the words the import summary stays open so you can try again.
