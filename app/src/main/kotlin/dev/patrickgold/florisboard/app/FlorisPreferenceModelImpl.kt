@@ -187,6 +187,7 @@ class FlorisPreferenceModelImpl : FlorisPreferenceModel() {
             localization.displayKeyboardLabelsInSubtypeLanguage to "localization.displayKeyboardLabelsInSubtypeLanguage",
             localization.rememberSubtypePerAppEnabled to "localization.rememberSubtypePerAppEnabled",
             localization.perAppSubtypeMemory to "localization.perAppSubtypeMemory",
+            localization.followAppLanguageHints to "localization.followAppLanguageHints",
             localization.activeSubtypeId to "localization.activeSubtypeId",
             localization.subtypes to "localization.subtypes",
             privacy.smartComposeConsent to "privacy.smartComposeConsent",

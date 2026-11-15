@@ -91,6 +91,10 @@ open class LocalizationPrefs : PreferenceModel() {
         key = "localization__per_app_subtype_memory",
         default = "{}",
     )
+    val followAppLanguageHints = boolean(
+        key = "localization__follow_app_language_hints",
+        default = true,
+    )
     val activeSubtypeId = long(
         key = "localization__active_subtype_id",
         default = Subtype.DEFAULT.id,

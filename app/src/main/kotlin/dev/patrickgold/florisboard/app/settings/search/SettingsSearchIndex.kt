@@ -449,6 +449,7 @@ object SettingsSearchIndex {
         // localization/PerAppLanguageScreen.kt
         entry("per-app-language.enabled", R.string.settings__per_app_language__title, R.string.settings__per_app_language__enabled, destination = SettingsSearchDestination.PER_APP_LANGUAGE),
         entry("per-app-language.clear", R.string.settings__per_app_language__title, R.string.settings__per_app_language__clear, destination = SettingsSearchDestination.PER_APP_LANGUAGE),
+        entry("per-app-language.follow-hints", R.string.settings__per_app_language__title, R.string.settings__per_app_language__follow_hints, destination = SettingsSearchDestination.PER_APP_LANGUAGE),
         entry("per-app-language.privacy", R.string.settings__per_app_language__title, R.string.settings__per_app_language__privacy_title, destination = SettingsSearchDestination.PER_APP_LANGUAGE),
 
         // smartbar/SmartbarScreen.kt

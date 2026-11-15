@@ -57,6 +57,8 @@ import dev.patrickgold.florisboard.app.settings.advanced.HardwareKeyboardDeviceO
 import dev.patrickgold.florisboard.app.settings.advanced.PhysicalKeyboardPolicy
 import dev.patrickgold.florisboard.ime.addon.AddonEnumerator
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
+import dev.patrickgold.florisboard.ime.core.LocaleHints
+import dev.patrickgold.florisboard.ime.core.LocaleHints.toLocales
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
 import dev.patrickgold.florisboard.ime.editor.InputAttributes
@@ -716,7 +718,14 @@ class FlorisImeService : LifecycleInputMethodService() {
         if (info == null) return
         val editorInfo = FlorisEditorInfo.wrap(info)
         flagSecureEditorInfo = editorInfo
-        subtypeManager.onEditorPackageFocus(editorInfo.packageName)
+        val focusedPackageName = editorInfo.packageName
+        val appContext = applicationContext
+        subtypeManager.onEditorPackageFocus(
+            focusedPackageName,
+            hintLocales = info.hintLocales.toLocales(),
+            // Kept until the saved keyboards load when the keyboard just started, so it holds no service.
+            appLocales = { LocaleHints.applicationLocales(appContext, focusedPackageName) },
+        )
         activeState.batchEdit {
             activeState.isSelectionMode = editorInfo.initialSelection.isSelectionMode
             editorInstance.handleStartInputView(editorInfo, isRestart = restarting)

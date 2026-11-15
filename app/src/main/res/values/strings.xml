@@ -377,8 +377,10 @@
         <item quantity="other">Currently remembering {count} apps.</item>
     </plurals>
     <string name="settings__per_app_language__group_behavior">Behavior</string>
+    <string name="settings__per_app_language__follow_hints">Match the app\'s language</string>
+    <string name="settings__per_app_language__follow_hints_summary">When a text field or app says which language it\'s in, switch to the keyboard language you set up for it, then back to yours in fields that don\'t. Nothing is downloaded, and a language you pick yourself in that app comes first.</string>
     <string name="settings__per_app_language__privacy_title">Local package-name map</string>
-    <string name="settings__per_app_language__privacy_summary">SwiftFloris stores only app package names and subtype IDs in local preferences. This feature does not request app-locale permissions.</string>
+    <string name="settings__per_app_language__privacy_summary">SwiftFloris stores only app package names and subtype IDs in local preferences. Matching the app\'s language reads the language a field or app reports while you type in it, needs no permission and saves nothing.</string>
     <string name="settings__localization__group_subtypes__label" comment="Label of subtypes group">Active keyboard languages</string>
     <string name="settings__localization__subtype_add_summary" comment="Summary under the add-language row on the language pack screen">Most languages are already built in. Pick one here to start typing in it.</string>
     <string name="settings__localization__subtype_add_title" comment="Title of subtype dialog when adding a new subtype">Add keyboard language</string>

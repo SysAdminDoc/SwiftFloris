@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -34,7 +33,6 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
-import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
@@ -45,7 +43,6 @@ fun PerAppLanguageScreen() = FlorisScreen {
     iconSpaceReserved = false
 
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     val prefs by FlorisPreferenceStore
     val subtypeManager by context.subtypeManager()
     val subtypes by subtypeManager.subtypesFlow.collectAsState()
@@ -71,15 +68,18 @@ fun PerAppLanguageScreen() = FlorisScreen {
                     "count" to rememberedAppCount.toString(),
                 ),
                 enabledIf = { rememberedAppCount > 0 },
-                onClick = {
-                    coroutineScope.launch {
-                        prefs.localization.perAppSubtypeMemory.set(PerAppSubtypeMemory.EmptyJson)
-                    }
-                },
+                // Through the keyboard's own save queue, so a remembered language it was saving
+                // can't land after the clear and bring an app back.
+                onClick = { subtypeManager.clearPerAppSubtypeMemory() },
             )
         }
 
         PreferenceGroup(title = stringRes(R.string.settings__per_app_language__group_behavior)) {
+            SwitchPreference(
+                prefs.localization.followAppLanguageHints,
+                title = stringRes(R.string.settings__per_app_language__follow_hints),
+                summary = stringRes(R.string.settings__per_app_language__follow_hints_summary),
+            )
             Preference(
                 icon = Icons.Default.Language,
                 title = stringRes(R.string.settings__per_app_language__privacy_title),
