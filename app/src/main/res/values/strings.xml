@@ -1463,6 +1463,7 @@
     <string name="settings__udm__import_summary__source" comment="Caption showing the detected source format. Placeholder is the format label.">Imported from: {format}</string>
     <string name="settings__udm__import_summary__rollback" comment="Action button on the post-import dialog that undoes the import">Undo import</string>
     <string name="settings__udm__import_summary__keep" comment="Action button on the post-import dialog that dismisses the dialog without undoing">Keep imported words</string>
+    <string name="settings__udm__import_summary__rollback_failed" comment="Toast shown when undoing an import failed and nothing was removed. {error_message} = reason">Couldn\'t undo the import, so nothing was removed: {error_message}</string>
     <string name="settings__udm__import_summary__rollback_done" comment="Toast shown after a successful rollback. Placeholder is the integer count of rows deleted.">Removed {count} imported words.</string>
     <string name="settings__udm__import_preview__title" comment="Title of the pre-import preview dialog">Preview import</string>
     <string name="settings__udm__import_preview__summary" comment="Summary for the pre-import preview dialog. Placeholder is the integer count of parsed entries.">Review {count} parsed entries before saving. Selected rows will be imported.</string>

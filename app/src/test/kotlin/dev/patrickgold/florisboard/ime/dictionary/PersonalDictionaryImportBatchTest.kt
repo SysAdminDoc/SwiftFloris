@@ -17,6 +17,8 @@
 package dev.patrickgold.florisboard.ime.dictionary
 
 import dev.patrickgold.florisboard.lib.FlorisLocale
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
@@ -31,6 +33,7 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             parsedEntries = emptyList(),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
 
         result.insertedCount shouldBe 0
@@ -55,6 +58,7 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             ),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
 
         dao.queryAll().single().locale shouldBe "en_GB"
@@ -69,11 +73,13 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             parsedEntries = listOf(entry),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
         val second = PersonalDictionaryImportBatch.import(
             parsedEntries = listOf(entry.copy(frequency = 240)),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
 
         first.insertedCount shouldBe 1
@@ -94,6 +100,7 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             ),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
 
         dao.queryAll().single().locale shouldBe null
@@ -110,6 +117,7 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             ),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
 
         result.insertedCount shouldBe 3
@@ -132,6 +140,7 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             ),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
 
         result.insertedCount shouldBe 1 // bread only
@@ -156,6 +165,7 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             ),
             dao = dao,
             format = DictionaryImportFormat.CSV,
+            runInTransaction = dao::runInTransaction,
         )
 
         result.insertedCount shouldBe 1
@@ -177,6 +187,7 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             dao = dao,
             format = DictionaryImportFormat.JSON,
             excludedEntryIndexes = setOf(1),
+            runInTransaction = dao::runInTransaction,
         )
 
         result.insertedCount shouldBe 2
@@ -201,6 +212,7 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             ),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
 
         dao.queryAll().first { it.word == "tooLow" }.freq shouldBe FREQUENCY_MIN
@@ -219,9 +231,10 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             ),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
 
-        val deleted = PersonalDictionaryImportBatch.rollback(result, dao)
+        val deleted = PersonalDictionaryImportBatch.rollback(result, dao, dao::runInTransaction)
 
         deleted shouldBe 2 // bread + eggs only
         // Original apples is preserved but with the new freq from the update.
@@ -240,11 +253,12 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             ),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
         // User manually deletes "bread" before clicking Undo.
         dao.delete(dao.queryAll().first { it.word == "bread" })
 
-        val deleted = PersonalDictionaryImportBatch.rollback(result, dao)
+        val deleted = PersonalDictionaryImportBatch.rollback(result, dao, dao::runInTransaction)
 
         deleted shouldBe 1 // apples only — bread was already gone
         dao.queryAll().size shouldBe 0
@@ -260,10 +274,11 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             ),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
 
         result.isRollbackable shouldBe false
-        val deleted = PersonalDictionaryImportBatch.rollback(result, dao)
+        val deleted = PersonalDictionaryImportBatch.rollback(result, dao, dao::runInTransaction)
         deleted shouldBe 0
         dao.queryAll().size shouldBe 1
     }
@@ -277,6 +292,7 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             ),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
 
         val inserted = dao.queryAll().single()
@@ -295,12 +311,85 @@ class PersonalDictionaryImportBatchTest : FunSpec({
             ),
             dao = dao,
             format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
         )
 
         // The entry still gets inserted; FlorisLocale.fromTag failure
         // must not abort the whole batch.
         result.insertedCount shouldBe 1
         dao.queryAll().single().word shouldBe "weird"
+    }
+
+    test("a write that fails at any point leaves the dictionary exactly as it was") {
+        // Four writes: update apples, insert bread, update kiwi, insert eggs.
+        for (failingWrite in 0 until 4) {
+            val (dao, entries) = seededMixedBatch()
+            val before = dao.queryAll()
+            val nextIdBefore = dao.nextId
+            dao.mutationsBeforeFailure = failingWrite
+
+            shouldThrow<InjectedWriteFailure> {
+                PersonalDictionaryImportBatch.import(
+                    parsedEntries = entries,
+                    dao = dao,
+                    format = DictionaryImportFormat.JSON,
+                    runInTransaction = dao::runInTransaction,
+                )
+            }
+
+            withClue("failure at write $failingWrite") {
+                dao.mutations shouldBe failingWrite
+                dao.transactions shouldBe 1
+                dao.queryAll() shouldBe before
+                dao.nextId shouldBe nextIdBefore
+            }
+        }
+    }
+
+    test("the same batch with no failure keeps its summary counts") {
+        val (dao, entries) = seededMixedBatch()
+
+        val result = PersonalDictionaryImportBatch.import(
+            parsedEntries = entries,
+            dao = dao,
+            format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
+        )
+
+        dao.transactions shouldBe 1
+        dao.mutations shouldBe 4
+        result.insertedCount shouldBe 2
+        result.updatedExistingCount shouldBe 2
+        result.skippedCount shouldBe 1
+        result.totalParsedCount shouldBe 5
+        dao.queryAll().map { it.word to it.freq } shouldContainExactlyInAnyOrder listOf(
+            "apples" to 220,
+            "kiwi" to 90,
+            "bread" to 180,
+            "eggs" to 160,
+        )
+    }
+
+    test("an Undo that fails partway removes nothing, and a retry removes the import") {
+        val (dao, entries) = seededMixedBatch()
+        val result = PersonalDictionaryImportBatch.import(
+            parsedEntries = entries,
+            dao = dao,
+            format = DictionaryImportFormat.JSON,
+            runInTransaction = dao::runInTransaction,
+        )
+        val afterImport = dao.queryAll()
+        // Let the first delete through and fail the second.
+        dao.mutationsBeforeFailure = dao.mutations + 1
+
+        shouldThrow<InjectedWriteFailure> {
+            PersonalDictionaryImportBatch.rollback(result, dao, dao::runInTransaction)
+        }
+        dao.queryAll() shouldBe afterImport
+
+        dao.mutationsBeforeFailure = null
+        PersonalDictionaryImportBatch.rollback(result, dao, dao::runInTransaction) shouldBe 2
+        dao.queryAll().map { it.word } shouldContainExactlyInAnyOrder listOf("apples", "kiwi")
     }
 })
 
@@ -313,7 +402,41 @@ class PersonalDictionaryImportBatchTest : FunSpec({
  */
 private class FakeUserDictionaryDao : UserDictionaryDao {
     private val rows = mutableListOf<UserDictionaryEntry>()
-    private var nextId = 1L
+    var nextId = 1L
+        private set
+
+    /** Writes allowed before the next insert, update or delete throws; null never fails. */
+    var mutationsBeforeFailure: Int? = null
+    var mutations = 0
+        private set
+    var transactions = 0
+        private set
+
+    /**
+     * Stands in for Room's runInTransaction: a throw puts back the rows and
+     * the id counter as they were when the block started, then rethrows.
+     */
+    fun runInTransaction(block: () -> Unit) {
+        transactions++
+        val savedRows = rows.toList()
+        val savedNextId = nextId
+        try {
+            block()
+        } catch (error: Throwable) {
+            rows.clear()
+            rows += savedRows
+            nextId = savedNextId
+            throw error
+        }
+    }
+
+    private fun mutate() {
+        val limit = mutationsBeforeFailure
+        if (limit != null && mutations >= limit) {
+            throw InjectedWriteFailure("write $mutations failed")
+        }
+        mutations++
+    }
 
     fun seed(word: String, freq: Int, locale: String?) {
         rows += UserDictionaryEntry(
@@ -337,15 +460,18 @@ private class FakeUserDictionaryDao : UserDictionaryDao {
     }
 
     override fun insert(entry: UserDictionaryEntry) {
+        mutate()
         rows += entry.copy(id = nextId++)
     }
 
     override fun update(entry: UserDictionaryEntry) {
+        mutate()
         val idx = rows.indexOfFirst { it.id == entry.id }
         if (idx >= 0) rows[idx] = entry
     }
 
     override fun delete(entry: UserDictionaryEntry) {
+        mutate()
         rows.removeAll { it.id == entry.id }
     }
 
@@ -366,4 +492,20 @@ private class FakeUserDictionaryDao : UserDictionaryDao {
 
     private fun fail(name: String): Nothing =
         throw AssertionError("FakeUserDictionaryDao.$name should not be called by PersonalDictionaryImportBatch")
+}
+
+private class InjectedWriteFailure(message: String) : RuntimeException(message)
+
+/** Two updates and two inserts around a blank row, so every write index is both kinds. */
+private fun seededMixedBatch(): Pair<FakeUserDictionaryDao, List<PersonalDictionaryEntry>> {
+    val dao = FakeUserDictionaryDao()
+    dao.seed("apples", 100, "en")
+    dao.seed("kiwi", 50, "en")
+    return dao to listOf(
+        PersonalDictionaryEntry(word = "apples", frequency = 220, shortcut = "ap", locale = "en"),
+        PersonalDictionaryEntry(word = "bread", frequency = 180, shortcut = null, locale = "en"),
+        PersonalDictionaryEntry(word = " ", frequency = 10, shortcut = null, locale = "en"),
+        PersonalDictionaryEntry(word = "kiwi", frequency = 90, shortcut = null, locale = "en"),
+        PersonalDictionaryEntry(word = "eggs", frequency = 160, shortcut = null, locale = "en"),
+    )
 }

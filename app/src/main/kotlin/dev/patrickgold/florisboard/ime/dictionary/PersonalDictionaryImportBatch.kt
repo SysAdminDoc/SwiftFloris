@@ -53,12 +53,18 @@ object PersonalDictionaryImportBatch {
      *    these, but defending again here keeps the contract uniform).
      *  - `frequency` falls outside [FREQUENCY_MIN, FREQUENCY_MAX] → clamped
      *    (NOT skipped — we'd rather keep the entry than drop it).
+     *
+     * Every read and write runs inside one [runInTransaction] call (Room's
+     * `runInTransaction` in the app), so a failure on any row rolls back the
+     * inserts and the in-place updates before it, and the exception reaches
+     * the caller. An import either lands whole or leaves the dictionary as it was.
      */
     fun import(
         parsedEntries: List<PersonalDictionaryEntry>,
         dao: UserDictionaryDao,
         format: DictionaryImportFormat?,
         excludedEntryIndexes: Set<Int> = emptySet(),
+        runInTransaction: (block: () -> Unit) -> Unit,
     ): PersonalDictionaryImportResult {
         if (parsedEntries.isEmpty()) {
             return PersonalDictionaryImportResult(
@@ -70,6 +76,19 @@ object PersonalDictionaryImportBatch {
                 format = format,
             )
         }
+        lateinit var result: PersonalDictionaryImportResult
+        runInTransaction {
+            result = applyEntries(parsedEntries, dao, format, excludedEntryIndexes)
+        }
+        return result
+    }
+
+    private fun applyEntries(
+        parsedEntries: List<PersonalDictionaryEntry>,
+        dao: UserDictionaryDao,
+        format: DictionaryImportFormat?,
+        excludedEntryIndexes: Set<Int>,
+    ): PersonalDictionaryImportResult {
         // Snapshot all known ids before we mutate. queryAll() returns the
         // full table; for a personal dictionary this is bounded (typical
         // size is sub-10k entries even for power users) so the snapshot
@@ -158,21 +177,25 @@ object PersonalDictionaryImportBatch {
      *
      * Returns the number of rows actually deleted, which can be less than
      * `result.insertedIds.size` if the user has manually edited any of
-     * the imported entries between import and rollback.
+     * the imported entries between import and rollback. The deletes share
+     * one [runInTransaction] call, so an Undo that fails removes nothing.
      */
     fun rollback(
         result: PersonalDictionaryImportResult,
         dao: UserDictionaryDao,
+        runInTransaction: (block: () -> Unit) -> Unit,
     ): Int {
         if (result.insertedIds.isEmpty()) return 0
-        val remainingIds = dao.queryAll().mapTo(HashSet()) { it.id }
         var deleted = 0
-        for (id in result.insertedIds) {
-            if (id !in remainingIds) continue
-            // The DAO's @Delete uses the primary key; freq / locale /
-            // shortcut on the passed entry are ignored.
-            dao.delete(UserDictionaryEntry(id = id, word = "", freq = 0, locale = null, shortcut = null))
-            deleted++
+        runInTransaction {
+            val remainingIds = dao.queryAll().mapTo(HashSet()) { it.id }
+            for (id in result.insertedIds) {
+                if (id !in remainingIds) continue
+                // The DAO's @Delete uses the primary key; freq / locale /
+                // shortcut on the passed entry are ignored.
+                dao.delete(UserDictionaryEntry(id = id, word = "", freq = 0, locale = null, shortcut = null))
+                deleted++
+            }
         }
         return deleted
     }

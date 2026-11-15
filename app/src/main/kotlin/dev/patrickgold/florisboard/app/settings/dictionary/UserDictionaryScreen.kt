@@ -74,6 +74,7 @@ import dev.patrickgold.florisboard.ime.dictionary.EncryptedDictionaryException
 import dev.patrickgold.florisboard.ime.dictionary.EncryptedDictionaryExport
 import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MAX
 import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MIN
+import dev.patrickgold.florisboard.ime.dictionary.FlorisUserDictionaryDatabase
 import dev.patrickgold.florisboard.ime.dictionary.PersonalDictionaryImportBatch
 import dev.patrickgold.florisboard.ime.dictionary.PersonalDictionaryImportResult
 import dev.patrickgold.florisboard.ime.dictionary.PersonalDictionaryEntry
@@ -94,6 +95,7 @@ import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -166,6 +168,7 @@ fun UserDictionaryScreen(
     // successful modular DictionaryImporter run so the user can
     // see what landed and optionally roll the inserts back.
     var importSummary by remember { mutableStateOf<PersonalDictionaryImportResult?>(null) }
+    var importRollbackRunning by remember { mutableStateOf(false) }
     var pendingImportPreview by remember { mutableStateOf<PersonalDictionaryImportPreview?>(null) }
     var encryptedExportDialogVisible by rememberSaveable { mutableStateOf(false) }
     var encryptedImportUri by remember { mutableStateOf<Uri?>(null) }
@@ -310,7 +313,7 @@ fun UserDictionaryScreen(
         }
     }
 
-    fun mutableUserDictionaryDatabase(): UserDictionaryDatabase? {
+    fun mutableUserDictionaryDatabase(): FlorisUserDictionaryDatabase? {
         return if (UserDictionaryEntryPolicy.canMutateDictionary(type)) {
             dictionaryManager.florisUserDictionaryDatabase()
         } else {
@@ -409,8 +412,8 @@ fun UserDictionaryScreen(
         if (!canStartDictionaryMutation()) {
             return
         }
-        val dao = mutableUserDictionaryDao()
-        if (dao == null) {
+        val database = mutableUserDictionaryDatabase()
+        if (database == null) {
             scope.launch {
                 context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
             }
@@ -423,9 +426,10 @@ fun UserDictionaryScreen(
                     withContext(Dispatchers.IO) {
                         PersonalDictionaryImportBatch.import(
                             parsedEntries = parsed.entries,
-                            dao = dao,
+                            dao = database.userDictionaryDao(),
                             format = parsed.format,
                             excludedEntryIndexes = excludedEntryIndexes,
+                            runInTransaction = database::inTransaction,
                         )
                     }
                 }.onSuccess { result ->
@@ -450,13 +454,6 @@ fun UserDictionaryScreen(
             }
             return
         }
-        val dao = mutableUserDictionaryDao()
-        if (dao == null) {
-            scope.launch {
-                context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
-            }
-            return
-        }
         scope.launch {
             startDictionaryTransfer(UserDictionaryTransferOperation.Importing)
             try {
@@ -475,8 +472,9 @@ fun UserDictionaryScreen(
                                 DictionaryImportFlowResult.Applied(
                                     PersonalDictionaryImportBatch.import(
                                         parsedEntries = parsed.entries,
-                                        dao = dao,
+                                        dao = db.userDictionaryDao(),
                                         format = parsed.format,
+                                        runInTransaction = db::inTransaction,
                                     )
                                 )
                             }
@@ -511,8 +509,8 @@ fun UserDictionaryScreen(
             passphrase.fill('\u0000')
             return
         }
-        val dao = mutableUserDictionaryDao()
-        if (dao == null) {
+        val database = mutableUserDictionaryDatabase()
+        if (database == null) {
             passphrase.fill('\u0000')
             scope.launch {
                 context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
@@ -542,8 +540,9 @@ fun UserDictionaryScreen(
                                 DictionaryImportFlowResult.Applied(
                                     PersonalDictionaryImportBatch.import(
                                         parsedEntries = parsed,
-                                        dao = dao,
+                                        dao = database.userDictionaryDao(),
                                         format = format,
+                                        runInTransaction = database::inTransaction,
                                     )
                                 )
                             }
@@ -1192,19 +1191,47 @@ fun UserDictionaryScreen(
         if (summary != null) {
             PersonalDictionaryImportSummaryDialog(
                 result = summary,
-                onKeep = { importSummary = null },
-                onRollback = {
-                    val deleted = PersonalDictionaryImportBatch.rollback(
-                        result = summary,
-                        dao = mutableUserDictionaryDao() ?: return@PersonalDictionaryImportSummaryDialog,
-                    )
-                    importSummary = null
-                    buildUi()
+                // Back during a running Undo would hide its result, so the summary waits for it.
+                onKeep = { if (!importRollbackRunning) importSummary = null },
+                onRollback = rollback@{
+                    if (importRollbackRunning) return@rollback
+                    importRollbackRunning = true
+                    // Room refuses database access on the main thread, so Undo, and the open it
+                    // may need, runs on IO. The summary stays up until it works, so a failed Undo
+                    // can be tried again.
                     scope.launch {
-                        context.showLongToast(
-                            R.string.settings__udm__import_summary__rollback_done,
-                            "count" to deleted,
-                        )
+                        runCatching {
+                            withContext(Dispatchers.IO) {
+                                mutableUserDictionaryDatabase()?.let { database ->
+                                    PersonalDictionaryImportBatch.rollback(
+                                        result = summary,
+                                        dao = database.userDictionaryDao(),
+                                        runInTransaction = database::inTransaction,
+                                    )
+                                }
+                            }
+                        }.onSuccess { deleted ->
+                            if (deleted == null) {
+                                context.showLongToast(
+                                    R.string.settings__udm__import_summary__rollback_failed,
+                                    "error_message" to context.stringRes(R.string.settings__udm__storage_retry_title),
+                                )
+                            } else {
+                                if (importSummary === summary) importSummary = null
+                                context.showLongToast(
+                                    R.string.settings__udm__import_summary__rollback_done,
+                                    "count" to deleted,
+                                )
+                            }
+                        }.onFailure { error ->
+                            if (error is CancellationException) throw error
+                            context.showLongToast(
+                                R.string.settings__udm__import_summary__rollback_failed,
+                                "error_message" to encryptedDictionaryErrorMessage(error),
+                            )
+                        }
+                        importRollbackRunning = false
+                        buildUi()
                     }
                 },
             )

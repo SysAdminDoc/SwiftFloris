@@ -153,6 +153,12 @@ interface UserDictionaryDatabase {
 
     fun reset()
 
+    /**
+     * Runs [block] as one database transaction where the store has them, so a change of many rows
+     * lands whole or not at all. A read-only store has nothing to roll back and just runs it.
+     */
+    fun inTransaction(block: () -> Unit) = block()
+
     fun importCombinedList(context: Context, uri: Uri) {
         val inputStream = context.contentResolver.openInputStream(uri)
             ?: error("Could not open import source for reading.")
@@ -219,6 +225,11 @@ interface UserDictionaryDatabase {
     private fun importCombinedListEntries(entries: List<PersonalDictionaryEntry>) {
         val dao = mutableUserDictionaryDao()
             ?: error("This user dictionary is read-only.")
+        // One transaction, so a row that fails partway leaves no earlier insert or overwrite behind.
+        inTransaction { importCombinedListRows(dao, entries) }
+    }
+
+    private fun importCombinedListRows(dao: UserDictionaryDao, entries: List<PersonalDictionaryEntry>) {
         for (entry in entries) {
             val parsedLocale = entry.locale?.let { runCatching { FlorisLocale.fromTag(it) }.getOrNull() }
             // Persist the spelling the lookup binds. `locale` is a raw string
@@ -361,6 +372,8 @@ abstract class FlorisUserDictionaryDatabase : RoomDatabase(), UserDictionaryData
     override fun reset() {
         userDictionaryDao().deleteAll()
     }
+
+    override fun inTransaction(block: () -> Unit) = runInTransaction(Runnable(block))
 
     class Converters {
         @TypeConverter
