@@ -210,6 +210,10 @@ internal object BackupArchiveBuilder {
             "Encrypted backups require a passphrase."
         }
         require(secret.isNotEmpty()) { "Encrypted backups require a non-empty passphrase." }
+        // Restore turns down anything bigger, so say that instead of failing inside the encryption.
+        if (plaintextZip.length() > PortableBackupEnvelope.MaxPlaintextBytes) {
+            throw BackupVerificationException(BackupVerificationException.Problem.TooLarge)
+        }
         val encryptedArchive = outputDir.subFile(
             Backup.defaultFileName(metadata, encrypted = true),
         )

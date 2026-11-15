@@ -35,8 +35,10 @@ class ArchiveEntryTooLargeException(
 ) : IllegalArgumentException("Archive entry exceeds the $maxBytes-byte limit")
 
 object ZipUtils {
-    private const val MaxUnzippedEntrySizeBytes = 100_000_000L
-    private const val MaxUnzippedArchiveSizeBytes = 250_000_000L
+    /** [unzip] leaves out a file past this many bytes without failing. */
+    internal const val MaxUnzippedEntrySizeBytes = 100_000_000L
+    /** [unzip] leaves out every file once the ones before it reach this many bytes. */
+    internal const val MaxUnzippedArchiveSizeBytes = 250_000_000L
 
     // Cap on entry count to defeat archives that ship millions of empty entries
     // (zip bombs that pass per-entry / total-byte gates but exhaust inodes,
@@ -350,7 +352,8 @@ object ZipUtils {
         if (maxRemainingArchiveBytes <= 0L || srcEntry.size > maxEntryBytes) {
             return 0L
         }
-        dstFile.parentFile?.mkdirs()
+        // Unlike mkdirs(), this throws with the reason, so a full disk reads as one.
+        dstFile.parentFile?.let { java.nio.file.Files.createDirectories(it.toPath()) }
         var copiedBytes = 0L
         var exceededBound = false
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)

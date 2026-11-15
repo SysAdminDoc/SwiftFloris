@@ -33,6 +33,9 @@ internal class ScheduledBackupWorker(
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams) {
     override suspend fun doWork(): Result {
+        // Read before the folder and passphrase, so a change to either after this point drops
+        // the remembered archives instead of mixing them with the old settings.
+        val checkedGeneration = ScheduledBackupStore.checkedArchivesGeneration(applicationContext)
         val settings = ScheduledBackupStore.load(applicationContext)
         if (!settings.enabled) return Result.success()
 
@@ -63,6 +66,11 @@ internal class ScheduledBackupWorker(
                 passphrase = passphrase,
                 forceEncryption = true,
             )
+            val receipt = BackupPublicationVerifier.inspect(
+                archive = built.archiveFile,
+                passphrase = passphrase,
+                scratchDir = workspaceRoot,
+            )
             val published = ScheduledBackupSaf.publish(
                 context = applicationContext,
                 treeUri = treeUri,
@@ -71,13 +79,18 @@ internal class ScheduledBackupWorker(
                     versionCode = built.metadata.versionCode,
                     timestamp = built.metadata.timestamp,
                 ),
+                receipt = receipt,
             )
-            ScheduledBackupSaf.pruneVerified(
+            // This run's archive was opened and read back already, so it isn't decrypted again.
+            val checkedArchives = ScheduledBackupSaf.pruneVerified(
                 context = applicationContext,
                 treeUri = treeUri,
                 retentionCount = settings.retentionCount,
                 passphrase = passphrase,
+                checkedKeys = ScheduledBackupStore.checkedArchives(applicationContext, checkedGeneration) +
+                    listOfNotNull(ScheduledBackupSaf.checkedKey(published.name, built.archiveFile.length())),
             )
+            ScheduledBackupStore.saveCheckedArchives(applicationContext, checkedGeneration, checkedArchives)
             ScheduledBackupStore.recordSuccess(applicationContext, published.name)
             ScheduledBackupNotifications.showSuccess(applicationContext, published.name)
             Result.success()

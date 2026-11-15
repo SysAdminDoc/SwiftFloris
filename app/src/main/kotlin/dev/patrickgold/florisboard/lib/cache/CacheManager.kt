@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.patrickgold.florisboard.app.ext.EditorAction
 import dev.patrickgold.florisboard.app.settings.advanced.Backup
+import dev.patrickgold.florisboard.app.settings.advanced.BackupReceipt
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.theme.ThemeExtensionEditor
 import dev.patrickgold.florisboard.ime.keyboard3.Keyboard3Compiler
@@ -451,6 +452,10 @@ class CacheManager(context: Context) {
         lateinit var metadata: Backup.Metadata
         var archiveWasEncrypted: Boolean = false
         var archiveWasLegacyPlaintext: Boolean = false
+        /** What the built archive was checked to hold, before it is saved anywhere. */
+        internal var backupReceipt: BackupReceipt? = null
+        /** The sections the archive was built from, so a changed choice builds a new one. */
+        var backupSelection: Backup.FilesSelection? = null
         var restoreWarningId: Int? = null
         var restoreErrorId: Int? = null
 

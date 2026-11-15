@@ -17,10 +17,10 @@
 package dev.patrickgold.florisboard.app.settings.advanced
 
 import android.content.Context
+import android.content.SharedPreferences
 import dev.patrickgold.florisboard.ime.security.TinkStringPreferenceCrypto
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.UUID
-import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 /** User-selectable cadence supported by Android's persisted periodic work. */
 internal enum class ScheduledBackupCadence(
@@ -81,8 +81,13 @@ internal object ScheduledBackupStore {
     private const val KEY_LAST_FAILURE_AT = "last_failure_at"
     private const val KEY_LAST_FAILURE_MESSAGE = "last_failure_message"
     private const val KEY_LAST_ARCHIVE_NAME = "last_archive_name"
+    private const val KEY_CHECKED_ARCHIVE_NAMES = "checked_archive_names"
+    private const val KEY_CHECKED_ARCHIVES_GENERATION = "checked_archives_generation"
     private const val KEY_PASSPHRASE = "passphrase_tink_v1"
     private const val KEYSTORE_ALIAS = "swiftfloris_scheduled_backup_passphrase_v1"
+
+    /** Covers reading, saving and forgetting the remembered archives against their generation. */
+    private val CheckedArchivesLock = Any()
 
     data class Settings(
         val enabled: Boolean,
@@ -113,9 +118,13 @@ internal object ScheduledBackupStore {
         )
     }
 
-    fun setTreeUri(context: Context, uri: String): Boolean = prefs(context).edit()
-        .putString(KEY_TREE_URI, uri)
-        .commit()
+    fun setTreeUri(context: Context, uri: String): Boolean = synchronized(CheckedArchivesLock) {
+        val prefs = prefs(context)
+        prefs.edit()
+            .putString(KEY_TREE_URI, uri)
+            .forgetCheckedArchives(prefs)
+            .commit()
+    }
 
     fun setCadence(context: Context, cadence: ScheduledBackupCadence): Boolean = prefs(context).edit()
         .putString(KEY_CADENCE, cadence.id)
@@ -129,8 +138,47 @@ internal object ScheduledBackupStore {
         .putBoolean(KEY_ENABLED, enabled)
         .commit()
 
+    /**
+     * Counts every folder or passphrase change. A run reads it before the folder and passphrase,
+     * then uses and saves the remembered archives only while it hasn't moved, so a change made
+     * mid-run can't bring back archives checked against the old settings.
+     */
+    fun checkedArchivesGeneration(context: Context): Long =
+        synchronized(CheckedArchivesLock) { prefs(context).getLong(KEY_CHECKED_ARCHIVES_GENERATION, 0L) }
+
+    /**
+     * Archives in the backup folder already known to open with the stored passphrase, keyed by
+     * [ScheduledBackupSaf.checkedKey], so retention doesn't decrypt them again on every run.
+     * Empty once the folder or passphrase changed after [generation] was read.
+     */
+    fun checkedArchives(context: Context, generation: Long): Set<String> = synchronized(CheckedArchivesLock) {
+        val prefs = prefs(context)
+        if (prefs.getLong(KEY_CHECKED_ARCHIVES_GENERATION, 0L) != generation) return emptySet()
+        prefs.getStringSet(KEY_CHECKED_ARCHIVE_NAMES, null).orEmpty().toSet()
+    }
+
+    /** Saves [keys] unless the folder or passphrase changed after [generation] was read. */
+    fun saveCheckedArchives(context: Context, generation: Long, keys: Set<String>): Boolean =
+        synchronized(CheckedArchivesLock) {
+            val prefs = prefs(context)
+            if (prefs.getLong(KEY_CHECKED_ARCHIVES_GENERATION, 0L) != generation) return false
+            prefs.edit().putStringSet(KEY_CHECKED_ARCHIVE_NAMES, keys.toSet()).commit()
+        }
+
+    private fun forgetCheckedArchives(context: Context): Boolean = synchronized(CheckedArchivesLock) {
+        val prefs = prefs(context)
+        prefs.edit().forgetCheckedArchives(prefs).commit()
+    }
+
+    private fun SharedPreferences.Editor.forgetCheckedArchives(prefs: SharedPreferences) =
+        remove(KEY_CHECKED_ARCHIVE_NAMES)
+            .putLong(KEY_CHECKED_ARCHIVES_GENERATION, prefs.getLong(KEY_CHECKED_ARCHIVES_GENERATION, 0L) + 1L)
+
     fun savePassphrase(context: Context, passphrase: CharArray): Boolean {
         require(passphrase.isNotEmpty()) { "Scheduled backup passphrase must not be empty." }
+        // Before, so nothing reads the old memo next to the new passphrase. After, so a run that
+        // read the old passphrase in between can't save what it checked.
+        forgetCheckedArchives(context)
         val bytes = String(passphrase).toByteArray(UTF_8)
         return try {
             TinkStringPreferenceCrypto.writeBytes(
@@ -142,6 +190,7 @@ internal object ScheduledBackupStore {
             )
         } finally {
             bytes.fill(0)
+            forgetCheckedArchives(context)
         }
     }
 
@@ -159,9 +208,13 @@ internal object ScheduledBackupStore {
         }
     }
 
-    fun clearPassphrase(context: Context): Boolean = prefs(context).edit()
-        .remove(KEY_PASSPHRASE)
-        .commit()
+    fun clearPassphrase(context: Context): Boolean = synchronized(CheckedArchivesLock) {
+        val prefs = prefs(context)
+        prefs.edit()
+            .remove(KEY_PASSPHRASE)
+            .forgetCheckedArchives(prefs)
+            .commit()
+    }
 
     fun recordSuccess(context: Context, archiveName: String, timestamp: Long = System.currentTimeMillis()) {
         prefs(context).edit()
@@ -172,7 +225,7 @@ internal object ScheduledBackupStore {
     }
 
     fun recordFailure(context: Context, error: Throwable, timestamp: Long = System.currentTimeMillis()) {
-        val message = error.summarizeForUser(error::class.java.simpleName)
+        val message = error.backupFailureMessage(context, error::class.java.simpleName, scheduled = true)
         prefs(context).edit()
             .putLong(KEY_LAST_FAILURE_AT, timestamp)
             .putString(KEY_LAST_FAILURE_MESSAGE, message)

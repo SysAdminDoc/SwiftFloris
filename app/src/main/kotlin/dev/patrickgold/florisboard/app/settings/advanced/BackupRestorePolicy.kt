@@ -198,6 +198,8 @@ internal enum class BackupFlowNotice {
     ClipboardPrivacyWarning,
     Cancelled,
     Failure,
+    /** A save finished but its copy didn't read back as the archive, which is kept for a retry. */
+    SaveNotVerified,
     ShareSheetOpened,
     Success,
 }

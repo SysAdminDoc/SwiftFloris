@@ -293,41 +293,13 @@ fun RestoreScreen() = FlorisScreen {
             } catch (e: FileNotFoundException) {
                 error("Invalid archive: either backup_metadata.json is missing or file is not a ZIP archive.")
             }
-            val workspaceFilesDir = workspace.outputDir.subDir("files")
-            val clipboardFilesDir = workspace.outputDir.subDir("clipboard")
             val validation = BackupRestorePolicy.validateRestoreArchive(
                 metadata = workspace.metadata,
                 currentVersionCode = BuildConfig.VERSION_CODE,
                 minimumVersionCode = Restore.MIN_VERSION_CODE,
                 expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
-                hasRestorableContent = BackupRestorePolicy.hasRestorableContent(
-                    hasJetprefDatastore = workspace.outputDir
-                        .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)
-                        .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
-                        .exists(),
-                    hasImeKeyboard = workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH).exists(),
-                    hasKeypressSounds = workspaceFilesDir
-                        .subDir(BackupArchiveStores.KeypressSoundsDirName)
-                        .exists(),
-                    hasImeTheme = workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH).exists(),
-                    hasLocalStickerPacks = workspaceFilesDir
-                        .subDir(LocalStickerPackRepository.StorageDirName)
-                        .exists(),
-                    hasSnippets = workspaceFilesDir
-                        .subDir(BackupArchiveStores.SnippetsDirName)
-                        .exists(),
-                    hasHardwareKeyboardLayouts = workspaceFilesDir
-                        .subFile(BackupArchiveStores.HardwareKeyboardLayoutFileName)
-                        .isFile,
-                    hasCustomEmojiTags = workspaceFilesDir
-                        .subFile(BackupArchiveStores.CustomEmojiTagsFileName)
-                        .isFile,
-                    hasEmojiPinGroups = workspaceFilesDir
-                        .subFile(BackupArchiveStores.EmojiPinGroupsFileName)
-                        .isFile,
-                    hasClipboardTextItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME).exists(),
-                    hasClipboardImageItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME).exists(),
-                    hasClipboardVideoItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME).exists(),
+                hasRestorableContent = BackupArchiveContents.hasRestorableContent(
+                    BackupArchiveContents.sectionsIn(workspace.outputDir),
                 ),
             )
             workspace.restoreWarningId = validation.warningId ?: if (workspace.archiveWasLegacyPlaintext) {

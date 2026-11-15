@@ -17,6 +17,8 @@
 package dev.patrickgold.florisboard.app.settings.advanced
 
 import android.content.Intent
+import android.provider.DocumentsContract
+import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
@@ -28,6 +30,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -51,13 +54,18 @@ import androidx.core.content.FileProvider
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.findActivity
 import dev.patrickgold.florisboard.cacheManager
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.io.FileRegistry
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import java.text.NumberFormat
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -70,11 +78,11 @@ import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisNeutralCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisProgressCard
+import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
-import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 object Backup {
     const val FILE_PROVIDER_AUTHORITY = "${BuildConfig.APPLICATION_ID}.provider.file"
@@ -308,7 +316,7 @@ object Backup {
         val clipboardTextItems: Boolean,
         val clipboardImageItems: Boolean,
         val clipboardVideoItems: Boolean,
-    ) {
+    ) : java.io.Serializable {
         val containsClipboard: Boolean
             get() = clipboardTextItems || clipboardImageItems || clipboardVideoItems
     }
@@ -339,17 +347,30 @@ fun BackupScreen() = FlorisScreen {
     val cacheManager by context.cacheManager()
     val scope = rememberCoroutineScope()
 
-    var backupDestination by remember { mutableStateOf(Backup.Destination.FILE_SYS) }
-    val backupFilesSelector = remember { Backup.FilesSelector() }
+    // Saved across rotation: a kept archive is offered again only for the sections it was built
+    // from, so a selector reset by turning the phone would quietly build a different archive.
+    var backupDestination by rememberSaveable { mutableStateOf(Backup.Destination.FILE_SYS) }
+    val backupFilesSelector = rememberSaveable(saver = Backup.FilesSelector.Saver) { Backup.FilesSelector() }
     var backupWorkspaceUuid by rememberSaveable { mutableStateOf<String?>(null) }
     var backupWorkspace by remember {
         mutableStateOf(
-            backupWorkspaceUuid?.let(cacheManager.backupAndRestore::getWorkspaceByUuid),
+            // Closing a workspace deletes its folder but leaves it listed, so only an open one
+            // means a save is still running.
+            backupWorkspaceUuid?.let(cacheManager.backupAndRestore::getWorkspaceByUuid)?.takeIf { it.isOpen() },
         )
     }
-    var isBackupInProgress by remember { mutableStateOf(backupWorkspace != null) }
-    var lastBackupNotice by remember { mutableStateOf<BackupFlowNotice?>(null) }
-    var lastBackupErrorMessage by remember { mutableStateOf<String?>(null) }
+    // Kept across rotation, since an open workspace can also be a kept archive waiting to be saved
+    // again. A workspace that's gone (the app was restarted) means no save is running.
+    var isBackupInProgress by rememberSaveable(
+        stateSaver = Saver<Boolean, Boolean>(save = { it }, restore = { it && backupWorkspace != null }),
+    ) { mutableStateOf(false) }
+    var lastBackupNotice by rememberSaveable { mutableStateOf<BackupFlowNotice?>(null) }
+    var lastBackupErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    // A failed check already says what to do, so the generic storage advice isn't added to it.
+    var lastBackupFailureHasOwnAdvice by rememberSaveable { mutableStateOf(false) }
+    // Saved with the notice, so a success notice that survives rotation still has its receipt.
+    var lastBackupReceipt by rememberSaveable { mutableStateOf<BackupReceipt?>(null) }
+    var lastBackupSelection by rememberSaveable { mutableStateOf<Backup.FilesSelection?>(null) }
     var showEncryptionPassphraseDialog by remember { mutableStateOf(false) }
 
     fun setBackupWorkspace(workspace: CacheManager.BackupAndRestoreWorkspace?) {
@@ -362,14 +383,77 @@ fun BackupScreen() = FlorisScreen {
         setBackupWorkspace(null)
     }
 
+    // A checked archive kept after a save that didn't verify is saved again as it is, unless
+    // the chosen sections changed since it was built.
+    fun hasReusableBackupWorkspace(): Boolean {
+        val workspace = backupWorkspace ?: return false
+        val receipt = workspace.backupReceipt ?: return false
+        return !workspace.isClosed() &&
+            receipt.stillDescribes(workspace.archiveFile) &&
+            workspace.backupSelection == backupFilesSelector.snapshot()
+    }
+
     // Close screen-owned plaintext/ciphertext workspaces on every exit. Shared
     // artifacts transfer to CacheManager's bounded grant lease and are nulled
     // here, so onDispose never races a receiving app.
-    val currentBackupWorkspace by rememberUpdatedState(backupWorkspace)
-    val currentIsBackupInProgress by rememberUpdatedState(isBackupInProgress)
+    // Turning the phone keeps the workspace, since the recreated screen picks it up by its UUID.
+    // The disposers read the state itself, not a copy updated on recomposition: an outcome taken
+    // just before the screen goes for good hasn't recomposed yet.
+    val activity = context.findActivity()
+    val currentActivity by rememberUpdatedState(activity)
     DisposableEffect(Unit) {
         onDispose {
-            if (!currentIsBackupInProgress) currentBackupWorkspace?.close()
+            val isConfigurationChange = currentActivity?.isChangingConfigurations == true
+            if (!isConfigurationChange && !isBackupInProgress) backupWorkspace?.close()
+        }
+    }
+
+    // A save outlives the screen (see the launcher), so it reports to ManualBackupSaveOutcomes.
+    // Holding the workspace tells the save a screen will offer its archive again, and the
+    // outcome lands here even when this screen replaced the one that started the save.
+    val heldWorkspaceUuid = backupWorkspaceUuid
+    DisposableEffect(heldWorkspaceUuid) {
+        heldWorkspaceUuid?.let(ManualBackupSaveOutcomes::hold)
+        onDispose {
+            val uuid = heldWorkspaceUuid ?: return@onDispose
+            val dropped = ManualBackupSaveOutcomes.screenGone(
+                workspaceUuid = uuid,
+                turning = currentActivity?.isChangingConfigurations == true,
+                stillShown = backupWorkspaceUuid == uuid,
+                saveRunning = isBackupInProgress,
+            )
+            // An archive the dropped outcome kept to save again would stay in the cache with
+            // nobody to offer it.
+            if ((dropped as? ManualBackupSaveOutcomes.Outcome.Failed)?.keptToSaveAgain == true) {
+                cacheManager.backupAndRestore.getWorkspaceByUuid(uuid)?.close()
+            }
+        }
+    }
+    LaunchedEffect(heldWorkspaceUuid) {
+        val uuid = heldWorkspaceUuid ?: return@LaunchedEffect
+        // A kept archive is saved again under the same workspace, so every save's outcome is taken.
+        while (true) {
+            when (val outcome = ManualBackupSaveOutcomes.take(uuid)) {
+                is ManualBackupSaveOutcomes.Outcome.Saved -> {
+                    isBackupInProgress = false
+                    setBackupWorkspace(null)
+                    lastBackupNotice = BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Success)
+                    lastBackupErrorMessage = null
+                    lastBackupReceipt = outcome.receipt
+                    lastBackupSelection = outcome.selection
+                }
+                is ManualBackupSaveOutcomes.Outcome.Failed -> {
+                    isBackupInProgress = false
+                    lastBackupErrorMessage = outcome.message
+                    lastBackupFailureHasOwnAdvice = outcome.hasOwnAdvice
+                    if (outcome.keptToSaveAgain) {
+                        lastBackupNotice = BackupFlowNotice.SaveNotVerified
+                    } else {
+                        setBackupWorkspace(null)
+                        lastBackupNotice = BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Failure)
+                    }
+                }
+            }
         }
     }
 
@@ -390,38 +474,67 @@ fun BackupScreen() = FlorisScreen {
                 lastBackupErrorMessage = null
                 return@rememberLauncherForActivityResult
             }
-            scope.launch {
-                val workspace = backupWorkspace
-                runCatching {
-                    checkNotNull(workspace) {
-                        "Prepared backup workspace is no longer available."
+            val workspace = backupWorkspace
+            if (workspace == null) {
+                // The archive went with a screen that was closed, so there's nothing to save.
+                isBackupInProgress = false
+                lastBackupNotice = BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Failure)
+                lastBackupErrorMessage = null
+                return@rememberLauncherForActivityResult
+            }
+            // A write that started can't be called back, so leaving or turning the screen doesn't
+            // cancel the save: it runs to the end and reports what really happened, not a failure.
+            // ATOMIC, since a screen gone before the save was first dispatched would otherwise
+            // drop it unrun and leave the next screen waiting for an outcome forever.
+            scope.launch(start = CoroutineStart.ATOMIC) { withContext(NonCancellable) {
+                val outcome = runCatching {
+                    val receipt = checkNotNull(workspace.backupReceipt) {
+                        "Prepared backup was not checked."
                     }
                     withContext(Dispatchers.IO) {
-                        context.contentResolver.writeFromFile(uri, workspace.archiveFile)
+                        // A finished write is not a backup until the copy reads back the same.
+                        ManualBackupSave.save(
+                            archive = workspace.archiveFile,
+                            receipt = receipt,
+                            open = { context.contentResolver.openInputStream(uri) },
+                            write = { file -> context.contentResolver.writeFromFile(uri, file) },
+                            delete = { DocumentsContract.deleteDocument(context.contentResolver, uri) },
+                        )
                     }
-                    workspace.close()
-                }.onSuccess {
-                    setBackupWorkspace(null)
-                    isBackupInProgress = false
-                    lastBackupNotice =
-                        BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Success)
-                    lastBackupErrorMessage = null
-                    context.showLongToast(R.string.backup_and_restore__back_up__success)
-                    navController.popBackStack()
-                }.onFailure { error ->
-                    flogError { error.stackTraceToString() }
-                    val errorMessage = error.summarizeForUser(unknownBackupError)
-                    context.showLongToast(
-                        R.string.backup_and_restore__back_up__failure,
-                        "error_message" to errorMessage,
-                    )
-                    closeBackupWorkspace()
-                    isBackupInProgress = false
-                    lastBackupNotice =
-                        BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Failure)
-                    lastBackupErrorMessage = errorMessage
-                }
-            }
+                    receipt
+                }.fold(
+                    onSuccess = { receipt ->
+                        // The copy is checked, so a workspace that won't close is logged, not
+                        // reported as a failed backup.
+                        runCatching { workspace.close() }.onFailure { flogError { it.stackTraceToString() } }
+                        context.showLongToast(R.string.backup_and_restore__back_up__success)
+                        ManualBackupSaveOutcomes.Outcome.Saved(receipt, workspace.backupSelection)
+                    },
+                    onFailure = { error ->
+                        val errorMessage = error.backupFailureMessage(context, unknownBackupError)
+                        // The checked archive stays while a screen holds it, so Back up can save
+                        // it again as it is.
+                        val keep = error.leavesArchiveToSaveAgain() &&
+                            !workspace.isClosed() &&
+                            workspace.backupReceipt?.stillDescribes(workspace.archiveFile) == true &&
+                            ManualBackupSaveOutcomes.isHeld(workspace.uuid)
+                        if (keep) {
+                            context.showLongToast(
+                                R.string.backup_and_restore__back_up__not_verified_toast,
+                                "error_message" to errorMessage,
+                            )
+                        } else {
+                            context.showLongToast(
+                                R.string.backup_and_restore__back_up__failure,
+                                "error_message" to errorMessage,
+                            )
+                            runCatching { workspace.close() }.onFailure { flogError { it.stackTraceToString() } }
+                        }
+                        ManualBackupSaveOutcomes.Outcome.Failed(errorMessage, error.hasOwnBackupAdvice(), keep)
+                    },
+                )
+                ManualBackupSaveOutcomes.report(workspace.uuid, outcome)
+            } }
         },
     )
 
@@ -441,6 +554,12 @@ fun BackupScreen() = FlorisScreen {
             workspace.metadata = built.metadata
             workspace.archiveFile = built.archiveFile
             workspace.archiveWasEncrypted = built.encrypted
+            // Open the archive the way restore will while the passphrase is still here, so a
+            // copy that later reads back byte for byte the same is known to restore.
+            workspace.backupReceipt = withContext(Dispatchers.IO) {
+                BackupPublicationVerifier.inspect(built.archiveFile, passphrase, workspace.dir)
+            }
+            workspace.backupSelection = selection
             workspace
         } catch (error: Throwable) {
             // withContext has prompt cancellation: ownership may fail to
@@ -458,9 +577,12 @@ fun BackupScreen() = FlorisScreen {
         isBackupInProgress = true
         lastBackupNotice = null
         lastBackupErrorMessage = null
+        lastBackupReceipt = null
+        lastBackupSelection = null
         try {
             runCatching {
-                if (backupWorkspace == null || backupWorkspace!!.isClosed()) {
+                if (!hasReusableBackupWorkspace()) {
+                    closeBackupWorkspace()
                     setBackupWorkspace(prepareBackupWorkspace(passphrase))
                 }
                 when (backupDestination) {
@@ -494,8 +616,14 @@ fun BackupScreen() = FlorisScreen {
                     }
                 }
             }.onFailure { error ->
-                flogError { error.stackTraceToString() }
-                val errorMessage = error.summarizeForUser(unknownBackupError)
+                if (error is CancellationException) {
+                    // Leaving the screen while the archive is built or checked saves nothing,
+                    // and that isn't a failure worth a toast.
+                    closeBackupWorkspace()
+                    isBackupInProgress = false
+                    throw error
+                }
+                val errorMessage = error.backupFailureMessage(context, unknownBackupError)
                 context.showLongToast(
                     R.string.backup_and_restore__back_up__failure,
                     "error_message" to errorMessage,
@@ -504,6 +632,7 @@ fun BackupScreen() = FlorisScreen {
                 isBackupInProgress = false
                 lastBackupNotice = BackupFlowNotice.Failure
                 lastBackupErrorMessage = errorMessage
+                lastBackupFailureHasOwnAdvice = error.hasOwnBackupAdvice()
             }
         } finally {
             passphrase?.fill('\u0000')
@@ -511,7 +640,8 @@ fun BackupScreen() = FlorisScreen {
     }
 
     fun requestBackup() {
-        if (BackupRestorePolicy.requiresPortableEncryption(
+        if (!hasReusableBackupWorkspace() &&
+            BackupRestorePolicy.requiresPortableEncryption(
                 backupFilesSelector.provideClipboardItems(),
             )
         ) {
@@ -609,7 +739,21 @@ fun BackupScreen() = FlorisScreen {
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.backup_and_restore__back_up__failure_title),
                 secondaryText = stringRes(
-                    R.string.backup_and_restore__back_up__failure_recovery,
+                    if (lastBackupFailureHasOwnAdvice) {
+                        R.string.backup_and_restore__back_up__failure_with_advice
+                    } else {
+                        R.string.backup_and_restore__back_up__failure_recovery
+                    },
+                    "error_message" to (lastBackupErrorMessage ?: stringRes(
+                        R.string.backup_and_restore__back_up__unknown_error,
+                    )),
+                ),
+            )
+            BackupFlowNotice.SaveNotVerified -> FlorisErrorCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__back_up__not_verified_title),
+                secondaryText = stringRes(
+                    R.string.backup_and_restore__back_up__not_verified_summary,
                     "error_message" to (lastBackupErrorMessage ?: stringRes(
                         R.string.backup_and_restore__back_up__unknown_error,
                     )),
@@ -620,9 +764,10 @@ fun BackupScreen() = FlorisScreen {
                 text = stringRes(R.string.backup_and_restore__back_up__share_sheet_opened),
                 secondaryText = stringRes(R.string.backup_and_restore__back_up__share_sheet_opened_summary),
             )
-            BackupFlowNotice.Success,
-            BackupFlowNotice.None,
-            -> Unit
+            BackupFlowNotice.Success -> lastBackupReceipt?.let { receipt ->
+                BackupReceiptCard(receipt, lastBackupSelection)
+            }
+            BackupFlowNotice.None -> Unit
         }
         FlorisInfoCard(
             modifier = Modifier.padding(8.dp),
@@ -681,6 +826,84 @@ fun BackupScreen() = FlorisScreen {
         )
         ScheduledBackupPanel(context)
     }
+}
+
+/** Each archive section with its label from the section picker. */
+internal fun Backup.FilesSelection.labelledSections(): List<Pair<Boolean, Int>> = listOf(
+    jetprefDatastore to R.string.backup_and_restore__back_up__files_jetpref_datastore,
+    imeKeyboard to R.string.backup_and_restore__back_up__files_ime_keyboard,
+    keypressSounds to R.string.backup_and_restore__back_up__files_keypress_sounds,
+    imeTheme to R.string.backup_and_restore__back_up__files_ime_theme,
+    localStickerPacks to R.string.backup_and_restore__back_up__files_local_stickers,
+    snippets to R.string.backup_and_restore__back_up__files_snippets,
+    hardwareKeyboardLayouts to R.string.backup_and_restore__back_up__files_hardware_keyboard_layouts,
+    customEmojiTags to R.string.backup_and_restore__back_up__files_custom_emoji_tags,
+    emojiPinGroups to R.string.backup_and_restore__back_up__files_emoji_pin_groups,
+    clipboardTextItems to R.string.backup_and_restore__back_up__receipt_clipboard_text,
+    clipboardImageItems to R.string.backup_and_restore__back_up__receipt_clipboard_images,
+    clipboardVideoItems to R.string.backup_and_restore__back_up__receipt_clipboard_videos,
+)
+
+@Composable
+private fun BackupReceiptCard(receipt: BackupReceipt, selection: Backup.FilesSelection?) {
+    val context = LocalContext.current
+    val none = stringRes(R.string.backup_and_restore__back_up__receipt_none)
+    val carried = receipt.sections.labelledSections()
+    val chosen = (selection ?: receipt.sections).labelledSections()
+    val included = carried.filter { it.first }.map { stringRes(it.second) }
+    // A ticked section with nothing in it yet is named apart from one left unticked, so the
+    // receipt never reads as if a choice was ignored.
+    val selectedButEmpty = carried.zip(chosen)
+        .filter { (inArchive, picked) -> picked.first && !inArchive.first }
+        .map { (inArchive, _) -> stringRes(inArchive.second) }
+    // Unticked sections, then the stores no archive carries, so nothing reads as backed up
+    // that isn't.
+    val omitted = carried.zip(chosen)
+        .filter { (inArchive, picked) -> !picked.first && !inArchive.first }
+        .map { (inArchive, _) -> stringRes(inArchive.second) } +
+        BackupDataInventory.archiveOmissions()
+            .mapNotNull { it.omissionLabel }
+            .distinct()
+            .map { stringRes(it) }
+    val lines = listOfNotNull(
+        stringRes(R.string.backup_and_restore__back_up__receipt_summary),
+        stringRes(R.string.backup_and_restore__back_up__receipt_version, "version" to receipt.archiveVersion),
+        stringRes(
+            R.string.backup_and_restore__back_up__receipt_encryption,
+            "encryption" to stringRes(
+                if (receipt.encrypted) {
+                    R.string.backup_and_restore__back_up__receipt_encrypted
+                } else {
+                    R.string.backup_and_restore__back_up__receipt_not_encrypted
+                },
+            ),
+        ),
+        stringRes(
+            R.string.backup_and_restore__back_up__receipt_sections,
+            "sections" to included.joinToString(separator = ", ").ifEmpty { none },
+        ),
+        selectedButEmpty.takeIf { it.isNotEmpty() }?.let { empty ->
+            stringRes(
+                R.string.backup_and_restore__back_up__receipt_empty_sections,
+                "sections" to empty.joinToString(separator = ", "),
+            )
+        },
+        stringRes(
+            R.string.backup_and_restore__back_up__receipt_omissions,
+            "omissions" to omitted.joinToString(separator = ", ").ifEmpty { none },
+        ),
+        stringRes(
+            R.string.backup_and_restore__back_up__receipt_size,
+            "size" to Formatter.formatShortFileSize(context, receipt.byteSize),
+            "bytes" to NumberFormat.getIntegerInstance().format(receipt.byteSize),
+        ),
+        stringRes(R.string.backup_and_restore__back_up__receipt_checksum, "checksum" to receipt.sha256),
+    )
+    FlorisSuccessCard(
+        modifier = Modifier.padding(8.dp),
+        text = stringRes(R.string.backup_and_restore__back_up__receipt_title),
+        secondaryText = lines.joinToString(separator = "\n"),
+    )
 }
 
 @Composable

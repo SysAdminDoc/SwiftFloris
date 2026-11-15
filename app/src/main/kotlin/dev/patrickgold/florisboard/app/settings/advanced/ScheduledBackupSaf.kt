@@ -21,13 +21,24 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
+import dev.patrickgold.florisboard.lib.devtools.flogInfo
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.security.MessageDigest
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
+
+/** The folder operations publishing needs, apart from SAF so the steps can be tested. */
+internal interface BackupFolder<D> {
+    fun create(name: String): D
+    fun write(document: D, archive: File)
+    fun open(document: D): InputStream?
+    /** The renamed document, or null when the provider can't rename. */
+    fun rename(document: D, name: String): D?
+    fun delete(document: D)
+}
 
 internal data class ScheduledBackupDocument(
     val uri: Uri,
@@ -52,6 +63,7 @@ internal object ScheduledBackupSaf {
         treeUri: Uri,
         archive: File,
         finalName: String,
+        receipt: BackupReceipt,
     ): PublishedScheduledBackup {
         require(archive.isFile) { "Scheduled backup archive is missing." }
         require(archive.length() <= PortableBackupEnvelope.MaxEnvelopeBytes) {
@@ -60,53 +72,151 @@ internal object ScheduledBackupSaf {
         val resolver = context.contentResolver
         val treeDocumentId = DocumentsContract.getTreeDocumentId(treeUri)
         val parentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocumentId)
+        val folder = object : BackupFolder<Uri> {
+            override fun create(name: String): Uri =
+                DocumentsContract.createDocument(resolver, parentUri, ArchiveMimeType, name)
+                    ?: throw FileNotFoundException("Could not create a temporary SAF backup document.")
+
+            override fun write(document: Uri, archive: File) = writeArchive(resolver, document, archive)
+
+            override fun open(document: Uri): InputStream? = resolver.openInputStream(document)
+
+            override fun rename(document: Uri, name: String): Uri? =
+                DocumentsContract.renameDocument(resolver, document, name)
+
+            override fun delete(document: Uri) {
+                DocumentsContract.deleteDocument(resolver, document)
+            }
+        }
+        return PublishedScheduledBackup(publishTo(folder, archive, finalName, receipt), finalName)
+    }
+
+    /**
+     * Writes [archive] under a hidden temporary name, reads it back, renames it to [finalName]
+     * and reads it back again. A failed step deletes what it wrote, so only a checked archive
+     * ever carries a backup's name.
+     */
+    internal fun <D> publishTo(
+        folder: BackupFolder<D>,
+        archive: File,
+        finalName: String,
+        receipt: BackupReceipt,
+    ): D {
         val temporaryName = ".${finalName.removeSuffix(ScheduledBackupPolicy.ArchiveExtension)}" +
             "_${UUID.randomUUID()}$TemporaryNameSuffix"
-        val temporaryUri = DocumentsContract.createDocument(
-            resolver,
-            parentUri,
-            ArchiveMimeType,
-            temporaryName,
-        ) ?: throw FileNotFoundException("Could not create a temporary SAF backup document.")
+        val temporary = folder.create(temporaryName)
 
         var published = false
         try {
-            writeArchive(resolver, temporaryUri, archive)
-            check(archiveDigest(archive).contentEquals(documentDigest(resolver, temporaryUri))) {
-                "SAF backup verification did not match the local archive."
-            }
-            val finalUri = DocumentsContract.renameDocument(resolver, temporaryUri, finalName)
+            folder.write(temporary, archive)
+            BackupPublicationVerifier.verifyReadback(receipt) { folder.open(temporary) }
+            val renamed = folder.rename(temporary, finalName)
                 ?: throw IllegalStateException("The selected SAF provider cannot atomically rename backups.")
+            // A rename can hand back a different document, so the copy under the name restore
+            // will see is read back too. One that doesn't match is removed, not left to look
+            // like a good backup.
+            try {
+                BackupPublicationVerifier.verifyReadback(receipt) { folder.open(renamed) }
+            } catch (error: Throwable) {
+                runCatching { folder.delete(renamed) }
+                throw error
+            }
             published = true
-            return PublishedScheduledBackup(finalUri, finalName)
+            return renamed
         } finally {
             if (!published) {
-                runCatching { DocumentsContract.deleteDocument(resolver, temporaryUri) }
+                runCatching { folder.delete(temporary) }
             }
         }
     }
 
-    fun pruneVerified(
+    /**
+     * Deletes the archives past the newest [retentionCount] that open with [passphrase].
+     * [checkedKeys] are archives already known to open (this run's included), so they aren't
+     * decrypted again. Returns the keys known to open that are still in the folder, for the
+     * next run.
+     */
+    suspend fun pruneVerified(
         context: Context,
         treeUri: Uri,
         retentionCount: Int,
         passphrase: CharArray,
-    ) {
-        val candidates = listDocuments(context, treeUri)
+        checkedKeys: Set<String>,
+    ): Set<String> {
+        val newestFirst = listDocuments(context, treeUri)
             .mapNotNull { document ->
                 ScheduledBackupPolicy.timestampFromArchiveName(document.name)?.let { timestamp ->
                     timestamp to document
                 }
             }
-            .sortedBy { it.first }
-        var remaining = candidates.size - ScheduledBackupPolicy.normalizeRetention(retentionCount)
-        if (remaining <= 0) return
+            .sortedByDescending { it.first }
+            .map { it.second }
+        val keep = ScheduledBackupPolicy.normalizeRetention(retentionCount)
+        val plan = rememberingRetention(newestFirst, keep, checkedKeys, { checkedKey(it.name, it.size) }) { document ->
+            isRestorableArchive(context, document, passphrase)
+        }
+        plan.deletions.forEach { document ->
+            DocumentsContract.deleteDocument(context.contentResolver, document.uri)
+        }
+        return plan.checkedKeys
+    }
 
-        for ((_, document) in candidates) {
-            if (remaining <= 0) break
-            if (!verifyEncryptedDocument(context, document, passphrase)) continue
-            if (DocumentsContract.deleteDocument(context.contentResolver, document.uri)) {
-                remaining--
+    /**
+     * How a checked archive is remembered: its name and size, so a file replaced under the same
+     * name with different contents is opened again. Null when the folder doesn't report a size,
+     * since nothing then tells a replaced file apart, so it's opened on every run.
+     */
+    internal fun checkedKey(name: String, size: Long): String? = if (size >= 0L) "$name/$size" else null
+
+    internal class RetentionPlan<D>(val deletions: List<D>, val checkedKeys: Set<String>)
+
+    /**
+     * [retentionDeletions] that only calls [isRestorable] for archives whose key isn't in
+     * [checkedKeys], and remembers the ones it accepts. An archive without a key is always
+     * checked. Nothing is checked while the folder holds no more than [keep] archives, since
+     * nothing would be deleted. The returned keys are the checked ones still in the folder once
+     * the deletions are done.
+     */
+    internal inline fun <D> rememberingRetention(
+        newestFirst: List<D>,
+        keep: Int,
+        checkedKeys: Set<String>,
+        keyOf: (D) -> String?,
+        isRestorable: (D) -> Boolean,
+    ): RetentionPlan<D> {
+        val checked = checkedKeys.toMutableSet()
+        val deletions = if (newestFirst.size <= keep) {
+            emptyList()
+        } else {
+            retentionDeletions(newestFirst, keep) { document ->
+                val key = keyOf(document)
+                (key != null && key in checked) ||
+                    isRestorable(document).also { if (it && key != null) checked += key }
+            }
+        }
+        val remaining = newestFirst.mapNotNull(keyOf).toSet() - deletions.mapNotNull(keyOf).toSet()
+        return RetentionPlan(deletions, checked.intersect(remaining))
+    }
+
+    /**
+     * The archives to delete from [newestFirst]: every one [isRestorable] accepts after the
+     * newest [keep] it accepts. The ones it turns down are never deleted and don't count toward
+     * [keep], so a damaged or foreign file can't push a good backup out.
+     */
+    internal inline fun <D> retentionDeletions(
+        newestFirst: List<D>,
+        keep: Int,
+        isRestorable: (D) -> Boolean,
+    ): List<D> {
+        var kept = 0
+        return newestFirst.filter { document ->
+            when {
+                !isRestorable(document) -> false
+                kept < keep -> {
+                    kept++
+                    false
+                }
+                else -> true
             }
         }
     }
@@ -161,37 +271,8 @@ internal object ScheduledBackupSaf {
         }
     }
 
-    private fun documentDigest(
-        resolver: android.content.ContentResolver,
-        uri: Uri,
-    ): ByteArray {
-        val input = resolver.openInputStream(uri) ?: throw FileNotFoundException(uri.toString())
-        return input.use { digest(it, PortableBackupEnvelope.MaxEnvelopeBytes) }
-    }
-
-    private fun archiveDigest(archive: File): ByteArray =
-        FileInputStream(archive).use { digest(it, PortableBackupEnvelope.MaxEnvelopeBytes) }
-
-    private fun digest(input: InputStream, maxBytes: Long): ByteArray {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val buffer = ByteArray(CopyBufferBytes)
-        var total = 0L
-        try {
-            while (true) {
-                val read = input.read(buffer)
-                if (read < 0) break
-                if (read == 0) continue
-                total += read
-                check(total <= maxBytes) { "SAF backup document exceeds the supported size limit." }
-                digest.update(buffer, 0, read)
-            }
-            return digest.digest()
-        } finally {
-            buffer.fill(0)
-        }
-    }
-
-    private fun verifyEncryptedDocument(
+    /** Whether [document] is an encrypted archive [passphrase] opens and restore would accept. */
+    private suspend fun isRestorableArchive(
         context: Context,
         document: ScheduledBackupDocument,
         passphrase: CharArray,
@@ -200,13 +281,15 @@ internal object ScheduledBackupSaf {
         if (document.size > PortableBackupEnvelope.MaxEnvelopeBytes) return false
         val root = File(context.cacheDir, "scheduled-backup-verification/${UUID.randomUUID()}")
         val source = File(root, "archive.sfbak")
-        val plaintext = File(root, "archive.zip")
         return try {
             check(root.mkdirs()) { "Could not create the private backup verification directory." }
             copyDocumentToFile(context, document.uri, source)
-            PortableBackupEnvelope.decrypt(source, plaintext, passphrase)
-            true
-        } catch (_: Throwable) {
+            BackupPublicationVerifier.inspect(source, passphrase, root).encrypted
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Throwable) {
+            // Any failure means it isn't provably restorable, so it neither counts nor gets pruned.
+            flogInfo { "Retention skipped ${document.name}: ${error::class.java.simpleName}" }
             false
         } finally {
             root.deleteRecursively()
