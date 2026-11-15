@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Stop turning away a Tasker action that arrives while the keyboard is starting up. If the action was what started the app, it got there before your settings had loaded and was refused as if Tasker automation were off. It now waits a few seconds for them.
 - Keep Touch calibration, Scramble numeric passwords, CJK mixed-script spacing and Tasker automation the way you set them. Each one looked changed but went back to its default whenever the keyboard restarted, and so did the setting that shows only the Smartbar while a hardware keyboard is connected.
 - Switch to the right keyboard language when a text field or app says which language it's in. It only picks from the languages you've already added and never downloads anything. A field that doesn't say, or that fits more than one of your languages, goes back to yours. A language you picked yourself in that app, or one remembered for it, still comes first. You can turn it off with Match the app's language under Remember language per app.
 - Keep both imports' stickers when two run at once. Sharing stickers while another import was still saving could drop one import's stickers from the pack, while their image files stayed on the phone. Clearing the pack now waits for an import that's saving, and a restore can't mix with an import either. Backups and restores also leave out the files an unfinished import is still holding, which could otherwise end up stuck in the pack folder.

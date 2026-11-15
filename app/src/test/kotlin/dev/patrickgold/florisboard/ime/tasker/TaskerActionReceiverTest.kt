@@ -21,6 +21,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Looper
 import android.text.InputType
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -33,6 +34,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
@@ -58,7 +60,8 @@ class TaskerActionReceiverTest {
         random = FillSecureRandom(0x55)
         val store = TaskerAuthenticationStore(persistence, random)
         TaskerAuthentication.storeFactory = { store }
-        // Before any write, so the app's own load can't land over it.
+        // Before any write, so the app's own load can't land over it, and so the receiver takes
+        // its usual path of acting at once.
         waitForPreferenceStore()
         setExternalAutomationEnabled(true)
     }
@@ -83,6 +86,29 @@ class TaskerActionReceiverTest {
         )
 
         sink.calls shouldBe emptyList()
+    }
+
+    @Test
+    fun receiverWaitsForSavedSettingsWhenItStartsTheApp() {
+        val loaded = (context as FlorisApplication).preferenceStoreLoaded
+        loaded.value = false
+        try {
+            receiver.onReceive(
+                context,
+                pluginIntent(
+                    TaskerIntentContract.InsertText.ACTION,
+                    mapOf(TaskerIntentContract.InsertText.EXTRA_TEXT to "Hello"),
+                ),
+            )
+            shadowOf(Looper.getMainLooper()).idle()
+            sink.calls shouldBe emptyList()
+
+            loaded.value = true
+            shadowOf(Looper.getMainLooper()).idle()
+            sink.calls.shouldContainExactly("insert:Hello")
+        } finally {
+            loaded.value = true
+        }
     }
 
     @Test
