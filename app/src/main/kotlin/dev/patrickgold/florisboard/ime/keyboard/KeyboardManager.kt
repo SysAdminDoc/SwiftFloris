@@ -146,6 +146,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         updateActiveEvaluators()
     }
 
+    // Declared before init: the editor collectors init starts on [scope] run on another
+    // thread and can reset the chain before the constructor reaches later properties.
+    private val learnChain = PersonalLearnChain()
+
     private val activeEvaluatorGuard = Mutex(locked = false)
     private var activeEvaluatorVersion = AtomicInteger(0)
     val activeEvaluator: StateFlow<ComputingEvaluator>
@@ -637,6 +641,16 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     /**
+     * Breaks the personal bigram/trigram learn chain. Called when word
+     * adjacency can no longer be assumed: the active editor changed, or the
+     * user is deleting back into / rewriting the previously learned word.
+     * Editor changes call this from [scope]'s background collectors.
+     */
+    private fun resetLearnChain() {
+        learnChain.reset()
+    }
+
+    /**
      * Auto-learn a freshly-committed word into the personal dictionary so frequently
      * typed words bubble up in suggestions over time. Skipped in incognito mode and
      * when the user has disabled the personal dictionary. Off-thread inside
@@ -648,21 +662,6 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * Trusting only the incognito flag would bleed credentials into the user's
      * suggestions; the keyVariation check is the belt to incognito's suspenders.
      */
-    private var lastLearnedWord: String? = null
-    private var prevLearnedWord: String? = null
-    private var lastLearnedLocaleTag: String? = null
-
-    /**
-     * Breaks the personal bigram/trigram learn chain. Called when word
-     * adjacency can no longer be assumed: the active editor changed, or the
-     * user is deleting back into / rewriting the previously learned word.
-     */
-    private fun resetLearnChain() {
-        lastLearnedWord = null
-        prevLearnedWord = null
-        lastLearnedLocaleTag = null
-    }
-
     private fun learnIfAllowed(rawWord: String) {
         if (!SuggestionPrivacyPolicy.shouldLearnCommittedWord(
             rawWord = rawWord,
@@ -687,19 +686,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
         if (prefs.suggestion.nextWordPrediction.get()) {
             val tag = locale.languageTag()
-            val prev1 = lastLearnedWord
-            val prev2 = prevLearnedWord
-            if (prev1 != null && lastLearnedLocaleTag == tag) {
+            val snapshot = learnChain.snapshot()
+            val chain = snapshot.link
+            if (chain != null && chain.localeTag == tag) {
                 dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore.get(appContext)
-                    .learn(prev1, rawWord, locale)
+                    .learn(chain.last, rawWord, locale)
+                val prev2 = chain.prev
                 if (prev2 != null) {
                     dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore.get(appContext)
-                        .learn(prev2, prev1, rawWord, locale)
+                        .learn(prev2, chain.last, rawWord, locale)
                 }
             }
-            prevLearnedWord = if (lastLearnedLocaleTag == tag) lastLearnedWord else null
-            lastLearnedWord = rawWord
-            lastLearnedLocaleTag = tag
+            // A reset from an editor change that lands meanwhile wins, so the next word isn't
+            // paired with this one across the change.
+            learnChain.advance(snapshot, rawWord, tag)
         }
     }
 

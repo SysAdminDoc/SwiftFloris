@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Stop next-word learning from pairing words across text fields. Moving to another field resets what the keyboard remembers about the words you just typed, but that reset could land halfway through learning a word, so the first word in the new field was saved as following the last one in the old field, sometimes in another language.
 - Leave a cached file alone at startup when it can't be moved out of the way. The cleanup deleted it in place instead, which could take a file an import was still copying.
 - Stop two voice model installs or deletes from running over each other. The lock only covered one part of the app at a time, so a delete could remove a model folder another install was still copying into.
 - Guard glide typing's list of alternative words. The suggestion row reads and trims it in the background while typing adds to it, and nothing kept the two from running at the same time.
