@@ -50,8 +50,11 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -152,6 +155,16 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
         nlpManager.autoExpandCollapseSmartbarActions(null, inlineSuggestions)
     }
     val shouldShowInlineSuggestionsUi = AndroidVersion.ATLEAST_API30_R && inlineSuggestions.isNotEmpty()
+    val density = LocalDensity.current
+    val inlineChipMarginHPx = with(density) {
+        (InlineSuggestionsChipMargin.calculateLeftPadding(LayoutDirection.Ltr) +
+            InlineSuggestionsChipMargin.calculateRightPadding(LayoutDirection.Ltr)).roundToPx()
+    }
+    // Every host of the suggestions slot reports its own width, so the inline
+    // autofill presentation spec is capped at the room the chips really get.
+    val reportsInlineSlotWidth = Modifier.onSizeChanged { size ->
+        NlpInlineAutofill.suggestionsSlotChipMaxWidthPx = (size.width - inlineChipMarginHPx).coerceAtLeast(0)
+    }
 
     val smartbarLayout by prefs.smartbar.layout.collectAsState()
     val flipToggles by prefs.smartbar.flipToggles.collectAsState()
@@ -221,7 +234,8 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
         Box(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxHeight(),
+                .fillMaxHeight()
+                .then(reportsInlineSlotWidth),
         ) {
             val enterTransition = if (shouldAnimate) HorizontalEnterTransition else NoEnterTransition
             val exitTransition = if (shouldAnimate) HorizontalExitTransition else NoExitTransition
@@ -322,12 +336,16 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     ) {
         when (smartbarLayout) {
             SmartbarLayout.SUGGESTIONS_ONLY -> {
-                SuggestionsContent()
+                Box(modifier = Modifier.fillMaxSize().then(reportsInlineSlotWidth)) {
+                    SuggestionsContent()
+                }
             }
 
             SmartbarLayout.ACTIONS_ONLY -> {
                 if (shouldShowInlineSuggestionsUi) {
-                    InlineSuggestionsUi(inlineSuggestions)
+                    Box(modifier = Modifier.fillMaxSize().then(reportsInlineSlotWidth)) {
+                        InlineSuggestionsUi(inlineSuggestions)
+                    }
                 } else {
                     QuickActionsRow(FlorisImeUi.SmartbarSharedActionsRow.elementName)
                 }

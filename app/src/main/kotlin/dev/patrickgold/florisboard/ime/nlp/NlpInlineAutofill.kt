@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.nlp
 import android.content.Context
 import android.os.Build
 import android.util.Size
+import android.view.ViewGroup
 import android.view.inputmethod.InlineSuggestion
 import android.view.inputmethod.InlineSuggestionInfo
 import android.widget.inline.InlineContentView
@@ -71,6 +72,20 @@ object NlpInlineAutofill {
      */
     var suggestionsChipMaxWidthPx: Int = 0
 
+    /**
+     * Width of the Smartbar slot the chips are laid out in, minus the chip
+     * margins, published by the Smartbar when it is measured. A full-width
+     * keyboard still puts the actions toggle and sticky action beside the chips,
+     * so the keyboard width alone lets a chip run past the right edge (#23).
+     * 0 until the slot has been measured.
+     */
+    var suggestionsSlotChipMaxWidthPx: Int = 0
+
+    fun presentationMaxWidthPx(): Int = InlineSuggestionSizePolicy.availableChipWidthPx(
+        keyboardChipMaxWidthPx = suggestionsChipMaxWidthPx,
+        slotChipMaxWidthPx = suggestionsSlotChipMaxWidthPx,
+    )
+
     @RequiresApi(Build.VERSION_CODES.R)
     fun showInlineSuggestions(context: Context, rawSuggestions: List<InlineSuggestion>): Boolean {
         val sequenceId = generateSequenceId()
@@ -82,7 +97,6 @@ object NlpInlineAutofill {
 
         scope.launch {
             val size = InlineSuggestionSizePolicy.inflateSize(
-                keyboardWidthPx = suggestionsChipMaxWidthPx,
                 chipHeightPx = suggestionsChipHeightPx,
             ).toAndroidSize()
             val latch = CountDownLatch(rawSuggestions.size)
@@ -153,6 +167,7 @@ object InlineSuggestionSizePolicy {
     private const val FallbackHeightPx = 48
     private const val MaxWidthPx = 4096
     private const val MaxHeightPx = 512
+    const val WrapContentPx = ViewGroup.LayoutParams.WRAP_CONTENT
 
     val presentationMinDimensions = InlineSuggestionDimensions(MinDimensionPx, MinDimensionPx)
     val presentationMinSize: Size
@@ -169,13 +184,35 @@ object InlineSuggestionSizePolicy {
         return presentationMaxDimensions(keyboardWidthPx, chipHeightPx).toAndroidSize()
     }
 
-    fun inflateSize(keyboardWidthPx: Int, chipHeightPx: Int): InlineSuggestionDimensions {
-        return presentationMaxDimensions(keyboardWidthPx, chipHeightPx)
+    /**
+     * The chip width the presentation spec may grow to. The measured Smartbar
+     * slot wins when it is known because the chips never get more room than it;
+     * before the first layout pass the keyboard width is the best bound there is.
+     */
+    fun availableChipWidthPx(keyboardChipMaxWidthPx: Int, slotChipMaxWidthPx: Int): Int {
+        return when {
+            slotChipMaxWidthPx > 0 && keyboardChipMaxWidthPx > 0 -> minOf(slotChipMaxWidthPx, keyboardChipMaxWidthPx)
+            slotChipMaxWidthPx > 0 -> slotChipMaxWidthPx
+            else -> keyboardChipMaxWidthPx
+        }
+    }
+
+    /**
+     * Chips are inflated at their content width, bounded by the spec maximum.
+     * A fixed width makes every chip as wide as the keyboard, so even a short
+     * "Vault is locked" chip pushes its label past the screen edge (#23).
+     * [InlineSuggestion.inflate] accepts WRAP_CONTENT for either dimension.
+     */
+    fun inflateSize(chipHeightPx: Int): InlineSuggestionDimensions {
+        return InlineSuggestionDimensions(
+            WrapContentPx,
+            sanitizeDimension(chipHeightPx, fallback = FallbackHeightPx, max = MaxHeightPx),
+        )
     }
 
     internal fun isValidInlineDimensions(size: InlineSuggestionDimensions): Boolean {
-        return size.widthPx in MinDimensionPx..MaxWidthPx &&
-            size.heightPx in MinDimensionPx..MaxHeightPx
+        return (size.widthPx == WrapContentPx || size.widthPx in MinDimensionPx..MaxWidthPx) &&
+            (size.heightPx == WrapContentPx || size.heightPx in MinDimensionPx..MaxHeightPx)
     }
 
     private fun sanitizeDimension(value: Int, fallback: Int, max: Int): Int {
