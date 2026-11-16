@@ -25,6 +25,8 @@ internal object HardwareKeyboardInputPolicy {
         isMappedKeyAlphabetic: Boolean = false,
     ): HardwareKeyboardKeyDownAction {
         if (mappedKey != null) {
+            // A space ends the word, and only the spacebar handler learns it and applies autocorrect.
+            if (mappedKey.text == " ") return HardwareKeyboardKeyDownAction.HandleSpace
             return HardwareKeyboardKeyDownAction.CommitMappedText(
                 text = mappedKey.text,
                 shouldFlushAutoCommitCandidate = !isMappedKeyAlphabetic,

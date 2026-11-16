@@ -143,6 +143,14 @@ class HardwareKeyboardInputPolicyTest : FunSpec({
         ) shouldBe 0
     }
 
+    test("a space from an imported layout still ends the word through the spacebar handler") {
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_SPACE,
+            mappedKey = mapped(" "),
+            isMappedKeyAlphabetic = false,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleSpace
+    }
+
     test("mapped punctuation wins before built-in key handling") {
         HardwareKeyboardInputPolicy.keyDownAction(
             keyCode = KeyEvent.KEYCODE_SPACE,
