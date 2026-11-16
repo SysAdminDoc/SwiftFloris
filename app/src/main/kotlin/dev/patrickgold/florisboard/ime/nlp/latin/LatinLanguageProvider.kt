@@ -124,6 +124,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
             dictionary = dictionary,
             languageCode = languageCode,
             userOverlay = overlay,
+            region = subtype.primaryLocale.country,
         )?.let { correction ->
             return SpellingResult.typo(
                 suggestions = arrayOf(correction.text),
@@ -206,6 +207,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 languageCode = languageCode,
                 userOverlay = overlay,
                 contextFit = contextFit(languageCode, content, currentWord),
+                region = subtype.primaryLocale.country,
             ).map { candidate ->
                 WordSuggestionCandidate(
                     text = candidate.text,
@@ -259,6 +261,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 languageCode = langCode,
                 userOverlay = overlay,
                 contextFit = contextFit(langCode, content, rawWord),
+                region = locale.country,
             )
             PerLocale(
                 recognised = dict.contains(normalized) || overlay.containsKey(normalized),
@@ -621,8 +624,10 @@ internal class LatinDictionaryStore(
         val zipfTable = ZipfFrequencyTable.parse(languageCode, zipfTsv)
         val withZipf = merged.withZipfTable(zipfTable)
         return if (languageCode == DefaultLanguageCode) {
+            val misspellingsTsv = readAsset.read(EnglishMisspellingsPath).orEmpty()
             withZipf.withMisspellings(
-                parseMisspellings(readAsset.read(EnglishMisspellingsPath).orEmpty()),
+                parseMisspellings(misspellingsTsv),
+                commonwealth = parseCommonwealthMisspellings(misspellingsTsv),
             )
         } else {
             withZipf
@@ -742,15 +747,25 @@ internal class LatinDictionaryStore(
         private const val FldicExtension = ".fldic"
         private const val FldicWordsSection = "[words]"
 
-        /** Parses `misspelling<TAB>fix` lines, skipping blanks, `#` comments and malformed rows. */
-        internal fun parseMisspellings(raw: String): Map<String, String> {
+        /**
+         * Parses `misspelling<TAB>fix[<TAB>Commonwealth fix]` lines into misspelling to fix (the US one),
+         * skipping blanks, `#` comments and malformed rows.
+         */
+        internal fun parseMisspellings(raw: String): Map<String, String> = parseMisspellingRows(raw, column = 1)
+
+        /** The third column of [parseMisspellings]' rows: the fix British, Australian and similar English spell differently. */
+        internal fun parseCommonwealthMisspellings(raw: String): Map<String, String> =
+            parseMisspellingRows(raw, column = 2)
+
+        private fun parseMisspellingRows(raw: String, column: Int): Map<String, String> {
             val table = HashMap<String, String>()
             for (line in raw.lineSequence()) {
                 if (line.isBlank() || line.startsWith("#")) continue
-                val tab = line.indexOf('\t')
-                if (tab <= 0) continue
-                val misspelling = LatinDictionarySuggester.normalizeWord(line.substring(0, tab)) ?: continue
-                val fix = line.substring(tab + 1).trim()
+                val fields = line.split('\t')
+                if (fields.size < 2 || fields[0].isEmpty()) continue
+                val misspelling = LatinDictionarySuggester.normalizeWord(fields[0]) ?: continue
+                if (fields[1].trim().isEmpty()) continue
+                val fix = fields.getOrNull(column)?.trim().orEmpty()
                 if (fix.isEmpty()) continue
                 table[misspelling] = fix
             }
@@ -795,6 +810,8 @@ internal data class LatinDictionarySnapshot(
     val zipfTable: ZipfFrequencyTable = ZipfFrequencyTable.Empty,
     /** Known misspelling to its fix, from `ime/dict/en_misspellings.tsv`; English only. */
     val misspellings: Map<String, String> = emptyMap(),
+    /** The misspellings whose fix is spelled differently outside the US ("jewelery" to "jewellery"). */
+    val commonwealthMisspellings: Map<String, String> = emptyMap(),
 ) {
     val isLoaded: Boolean get() = frequencies.isNotEmpty()
 
@@ -819,10 +836,13 @@ internal data class LatinDictionarySnapshot(
         return copy(zipfTable = table)
     }
 
-    /** Return a copy carrying the misspelling table (used at load time). */
-    fun withMisspellings(table: Map<String, String>): LatinDictionarySnapshot {
+    /** Return a copy carrying the misspelling table and its Commonwealth fixes (used at load time). */
+    fun withMisspellings(
+        table: Map<String, String>,
+        commonwealth: Map<String, String> = emptyMap(),
+    ): LatinDictionarySnapshot {
         if (table.isEmpty()) return this
-        return copy(misspellings = table)
+        return copy(misspellings = table, commonwealthMisspellings = commonwealth)
     }
 
     /**
@@ -1036,6 +1056,13 @@ internal object LatinDictionarySuggester {
     private const val MaxRealWordCorrections = 2
 
     /**
+     * Countries whose English keyboard takes the US fix from the misspelling list: no country (plain "en"), the US
+     * and its territories, the Philippines, Liberia, and Canada, which spells -our but -ize. The rest, the bundled
+     * en-UK and en-AU presets among them, take the Commonwealth fix where the list has one.
+     */
+    internal val UsSpellingRegions = setOf("", "US", "CA", "PH", "LR", "PR", "GU", "VI", "AS", "MP", "UM")
+
+    /**
      * [contextFit] tells how well a word fits the words typed before it, 0.0 to 1.0, or null when that can't be
      * told. With it a dictionary word that fits badly, like "form" in "a letter form my mother", gets one-edit
      * words that fit better as candidates. They're never eligible for auto-commit.
@@ -1047,6 +1074,7 @@ internal object LatinDictionarySuggester {
         languageCode: String = LatinDictionaryStore.DefaultLanguageCode,
         userOverlay: Map<String, Int> = emptyMap(),
         contextFit: ((String) -> Double?)? = null,
+        region: String = "",
     ): List<LatinSuggestion> {
         if (maxCandidateCount <= 0 || !dictionary.isLoaded) return emptyList()
         val normalizedWord = normalizeWord(rawWord) ?: return emptyList()
@@ -1060,6 +1088,7 @@ internal object LatinDictionarySuggester {
             dictionary = dictionary,
             languageCode = languageCode,
             userOverlay = userOverlay,
+            region = region,
         )?.let { return listOf(it) }
         // ROADMAP §7 Next-3.3a — single-letter proper-noun completion. When
         // the user types a single capital letter (e.g. "F"), surface the
@@ -1391,19 +1420,25 @@ internal object LatinDictionarySuggester {
      * accepts, and the build scripts keep them out of the word lists, so the dictionary
      * check here only matters when an addon dictionary lists the word. A word the user
      * taught the keyboard stays as typed, and ALL CAPS input is left alone like contractions.
+     * [region] is the keyboard's country: outside [UsSpellingRegions] a fix that's spelled
+     * differently there ("jewelery" to "jewellery", "relize" to "realise") uses that spelling.
      */
     fun englishMisspellingCorrection(
         rawWord: String,
         dictionary: LatinDictionarySnapshot,
         languageCode: String,
         userOverlay: Map<String, Int> = emptyMap(),
+        region: String = "",
     ): LatinSuggestion? {
         if (dictionary.misspellings.isEmpty()) return null
         if (LatinDictionaryStore.normalizeLanguageCode(languageCode) != LatinDictionaryStore.DefaultLanguageCode) {
             return null
         }
         val normalizedWord = normalizeWord(rawWord) ?: return null
-        val fix = dictionary.misspellings[normalizedWord] ?: return null
+        val fix = dictionary.commonwealthMisspellings[normalizedWord]
+            ?.takeIf { region.uppercase() !in UsSpellingRegions }
+            ?: dictionary.misspellings[normalizedWord]
+            ?: return null
         if (dictionary.contains(normalizedWord) || userOverlay.containsKey(normalizedWord)) return null
         val typedWord = rawWord.trim().trim { char -> !char.isLetter() && char != '\'' }
         val letters = typedWord.filter { it.isLetter() }

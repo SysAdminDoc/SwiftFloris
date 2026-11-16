@@ -24,6 +24,7 @@ import dev.patrickgold.florisboard.ime.nlp.SwiftKeyCandidateRanker
 import dev.patrickgold.florisboard.ime.nlp.SwiftKeyDecoderContext
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
+import dev.patrickgold.florisboard.lib.FlorisLocale
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
@@ -113,6 +114,35 @@ class EnglishMisspellingCorrectionTest : FunSpec({
         LatinDictionarySuggester.englishMisspellingCorrection("teh", dictionary, "en") shouldBe null
     }
 
+    test("en-UK and en-AU keyboards get the British fix, en-US and en-CA keep the US one") {
+        // The region comes from the bundled presets' tags the way the provider reads it (primaryLocale.country).
+        val (uk, au, us, ca) = listOf("en-UK", "en-AU", "en-US", "en-CA").map { FlorisLocale.fromTag(it).country }
+
+        typeThenSpace("jewelery", shipped, region = uk) shouldBe "jewellery"
+        typeThenSpace("nieghbour", shipped, region = uk) shouldBe "neighbour"
+        typeThenSpace("nieghbor", shipped, region = au) shouldBe "neighbour"
+        typeThenSpace("Favorate", shipped, region = "ZA") shouldBe "Favourite"
+        typeThenSpace("relize", shipped, region = "GB") shouldBe "realise"
+        typeThenSpace("jewelery", shipped, region = us) shouldBe "jewelry"
+        typeThenSpace("nieghbor", shipped, region = us) shouldBe "neighbor"
+        typeThenSpace("jewelery", shipped, region = ca) shouldBe "jewelry"
+        typeThenSpace("jewelery", shipped) shouldBe "jewelry"
+        // A typo only British spelling makes keeps that spelling everywhere, and rows with one fix are the same.
+        typeThenSpace("nieghbour", shipped, region = us) shouldBe "neighbour"
+        typeThenSpace("teh", shipped, region = uk) shouldBe "the"
+    }
+
+    test("the misspelling list's third column is the fix outside the US") {
+        val raw = "# comment\njewelery\tjewelry\tjewellery\nteh\tthe\nbroken\t\tbroken\nhalf\tfix\t\n"
+
+        LatinDictionaryStore.parseMisspellings(raw) shouldBe
+            mapOf("jewelery" to "jewelry", "teh" to "the", "half" to "fix")
+        LatinDictionaryStore.parseCommonwealthMisspellings(raw) shouldBe mapOf("jewelery" to "jewellery")
+        shipped.commonwealthMisspellings.size shouldBe 13
+        shipped.commonwealthMisspellings.keys.filter { it !in shipped.misspellings } shouldBe emptyList()
+        shipped.commonwealthMisspellings.values.filter { !shipped.contains(it) } shouldBe emptyList()
+    }
+
     test("only the English dictionary loads the misspelling table") {
         val assets = mapOf(
             "ime/dict/data.json" to """{"the":255,"their":215}""",
@@ -138,6 +168,7 @@ private fun typeThenSpace(
     typed: String,
     dictionary: LatinDictionarySnapshot,
     overlay: Map<String, Int> = emptyMap(),
+    region: String = "",
 ): String {
     var ranked: List<SuggestionCandidate> = emptyList()
     for (end in 1..typed.length) {
@@ -149,6 +180,7 @@ private fun typeThenSpace(
             maxCandidateCount = 8,
             languageCode = "en",
             userOverlay = overlay,
+            region = region,
         ).map { suggestion ->
             WordSuggestionCandidate(
                 text = suggestion.text,

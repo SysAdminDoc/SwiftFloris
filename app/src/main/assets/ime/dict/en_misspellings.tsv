@@ -1,4 +1,6 @@
-# Common English misspellings and their fixes, one "misspelling<TAB>fix" per line, sorted.
+# Common English misspellings and their fixes, one "misspelling<TAB>fix" per line, sorted. A third
+# column, where there is one, is the fix for English outside the US, Canada and the Philippines
+# (jewelery to jewellery on en_GB and en_AU, jewelry on en_US).
 # Hand-made list. No misspelling here is accepted by the en_US, en_GB, en_AU, en_CA or en_ZA
 # Hunspell dictionaries or listed by SCOWL up to size 70. A few start a longer word ("usefull",
 # "usefully"), but apart from names like Tehran, no word ranked 150 or higher starts with one.
@@ -115,8 +117,9 @@ convienient	convenient
 convinient	convenient
 coud	could
 coudl	could
+critisise	criticise
 critisism	criticism
-critisize	criticize
+critisize	criticize	criticise
 cuase	cause
 cuold	could
 curiousity	curiosity
@@ -200,7 +203,7 @@ familliar	familiar
 familly	family
 famliy	family
 fasinating	fascinating
-favorate	favorite
+favorate	favorite	favourite
 favourate	favourite
 feild	field
 fianlly	finally
@@ -222,7 +225,7 @@ frequantly	frequently
 frist	first
 fucntion	function
 fuction	function
-fullfill	fulfill
+fullfill	fulfill	fulfil
 funciton	function
 garantee	guarantee
 garentee	guarantee
@@ -297,7 +300,7 @@ intresting	interesting
 irrelevent	irrelevant
 irresistable	irresistible
 iwth	with
-jewelery	jewelry
+jewelery	jewelry	jewellery
 jsut	just
 kernal	kernel
 knowlegde	knowledge
@@ -318,9 +321,10 @@ libary	library
 liek	like
 liesure	leisure
 lieutenent	lieutenant
-liscense	license
-lisence	license
-lisense	license
+liscence	licence
+liscense	license	licence
+lisence	license	licence
+lisense	license	licence
 literaly	literally
 litle	little
 littel	little
@@ -337,7 +341,7 @@ maintenence	maintenance
 managment	management
 mangement	management
 mantain	maintain
-manuever	maneuver
+manuever	maneuver	manoeuvre
 marraige	marriage
 mathmatics	mathematics
 maybee	maybe
@@ -370,10 +374,13 @@ neccessary	necessary
 necesary	necessary
 negociate	negotiate
 neice	niece
-neighborhod	neighborhood
+neighborhod	neighborhood	neighbourhood
+neighbourhod	neighbourhood
 nessecary	necessary
 nessesary	necessary
-nieghbor	neighbor
+nieghbor	neighbor	neighbour
+nieghbour	neighbour
+nieghbourhood	neighbourhood
 ninty	ninety
 nothign	nothing
 noticable	noticeable
@@ -512,13 +519,15 @@ recieve	receive
 recieved	received
 recieving	receiving
 recived	received
-recogize	recognize
+recogise	recognise
+recogize	recognize	recognise
 recomend	recommend
 recomendation	recommendation
 recomended	recommended
 recommed	recommend
 recommeded	recommended
-reconize	recognize
+reconise	recognise
+reconize	recognize	recognise
 recurrance	recurrence
 rediculous	ridiculous
 referal	referral
@@ -532,7 +541,7 @@ releive	relieve
 relevent	relevant
 religon	religion
 religous	religious
-relize	realize
+relize	realize	realise
 rember	remember
 remberance	remembrance
 remeber	remember
