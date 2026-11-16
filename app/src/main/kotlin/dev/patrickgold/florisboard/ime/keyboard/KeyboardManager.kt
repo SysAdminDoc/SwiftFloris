@@ -1660,7 +1660,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                             isMetaPressed = event.isMetaPressed,
                         )
                     ) {
-                        editorInstance.expectAppStepBack()
+                        editorInstance.expectAppStepBack(wholeCluster = keyCode == KeyEvent.KEYCODE_DPAD_LEFT)
                     }
                 }
                 // A space or newline the app types ends a word the keyboard never saw whole, so it

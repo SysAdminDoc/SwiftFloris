@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -68,6 +69,11 @@ abstract class AbstractEditorInstance(context: Context) {
         private const val NumKnownBackStepsBeforePassThrough: Int = 16
         /** Text read for those chars, enough for 16 of them unless they're long emoji sequences. */
         private const val NumCharsForBackStepsBeforePassThrough: Int = 64
+        /**
+         * The viramas that join two consonants into one Devanagari, Bengali, Gujarati, Odia, Telugu
+         * or Malayalam conjunct (Unicode's InCB=Linker).
+         */
+        private val ConjunctViramas: Set<Int> = setOf(0x094D, 0x09CD, 0x0ACD, 0x0B4D, 0x0C4D, 0x0D4D)
         /** An app reports its insert within a frame or two, so a cursor this late isn't that key's. */
         private const val PassThroughInsertTimeoutMillis: Long = 2_000L
         /**
@@ -137,10 +143,11 @@ abstract class AbstractEditorInstance(context: Context) {
     /**
      * Records that the app is about to step the cursor back one char itself for a plain Backspace
      * or Left arrow the keyboard passed through to it, so the keys typed after it stay tracked
-     * instead of reading as jumps.
+     * instead of reading as jumps. A Left arrow passes [wholeCluster]: it moves over a letter and
+     * its accents at once, where a Backspace deletes the accents one at a time.
      */
-    fun expectAppStepBack() {
-        passThroughKeys.expectStepBack(expectedContentQueue.peekNewestOrNull(), _activeContentFlow.value)
+    fun expectAppStepBack(wholeCluster: Boolean = false) {
+        passThroughKeys.expectStepBack(wholeCluster, expectedContentQueue.peekNewestOrNull(), _activeContentFlow.value)
     }
 
     /**
@@ -904,7 +911,8 @@ abstract class AbstractEditorInstance(context: Context) {
          * A key the app handles itself and the cursor it should leave, a guess for a step back.
          * [backSteps] holds how far a Backspace steps back over each char right before [cursor],
          * nearest last, as far as the keyboard knows them, so a step back over an emoji takes all
-         * of it. [quietUntil] is set while a report may already cover the key: past it the key no
+         * of it. A negative one is an accent the letter before it carries along on a Left arrow.
+         * [quietUntil] is set while a report may already cover the key: past it the key no
          * longer holds the editor behind, but a late report still matches it.
          */
         private class PendingKey(
@@ -951,7 +959,11 @@ abstract class AbstractEditorInstance(context: Context) {
             }
         }
 
-        fun expectStepBack(keyboardPending: EditorContent?, published: EditorContent) {
+        /**
+         * [wholeCluster] steps back over a letter and its accents at once, the way a Left arrow
+         * moves, where a Backspace deletes the accents one at a time.
+         */
+        fun expectStepBack(wholeCluster: Boolean, keyboardPending: EditorContent?, published: EditorContent) {
             synchronized(lock) {
                 val now = SystemClock.uptimeMillis()
                 dropExpired(now)
@@ -961,9 +973,14 @@ abstract class AbstractEditorInstance(context: Context) {
                     // Backspace deletes a selection and Left collapses it, both to its start.
                     PendingKey(range.start, isStepBack = true, base.backSteps, now)
                 } else if (range.start > 0) {
+                    val steps = base.backSteps
+                    var taken = if (steps.isEmpty()) 0 else 1
+                    if (wholeCluster) {
+                        while (taken < steps.size && steps[steps.size - taken] < 0) taken++
+                    }
                     // A char the keyboard doesn't know is most likely a single one.
-                    val step = base.backSteps.lastOrNull() ?: 1
-                    PendingKey(max(0, range.start - step), isStepBack = true, base.backSteps.dropLast(1), now)
+                    val step = if (taken == 0) 1 else steps.takeLast(taken).sumOf { abs(it) }
+                    PendingKey(max(0, range.start - step), isStepBack = true, steps.dropLast(taken), now)
                 } else {
                     // Nothing to step back over, so the app reports nothing either.
                     return
@@ -994,7 +1011,10 @@ abstract class AbstractEditorInstance(context: Context) {
          * How far a Backspace steps back over each of the last chars of [text], nearest last. An
          * emoji sequence (a flag, a skin tone, a keycap, a ZWJ family, a heart with its variation
          * selector) and a CR LF go in one step, the way a text field deletes them. The accents and
-         * vowel signs after a letter go one code point at a time, as its Backspace takes them.
+         * vowel signs after a letter go one code point at a time, as its Backspace takes them, and
+         * are negative, since a Left arrow moves over them with the letter. A consonant after a
+         * virama is positive: a TextView's Left arrow stops before it, though Compose and Chrome
+         * move over the whole conjunct.
          */
         private fun backStepLengths(text: String): List<Int> {
             var from = max(0, text.length - NumCharsForBackStepsBeforePassThrough)
@@ -1009,9 +1029,12 @@ abstract class AbstractEditorInstance(context: Context) {
                 if (Character.isLetter(window.codePointAt(start))) {
                     var at = end
                     while (at > start && lengths.size < NumKnownBackStepsBeforePassThrough) {
-                        val length = Character.charCount(window.codePointBefore(at))
-                        lengths.addFirst(length)
+                        val codePoint = window.codePointBefore(at)
+                        val length = Character.charCount(codePoint)
                         at -= length
+                        val startsStep = at == start ||
+                            Character.isLetter(codePoint) && window.codePointBefore(at) in ConjunctViramas
+                        lengths.addFirst(if (startsStep) length else -length)
                     }
                 } else {
                     lengths.addFirst(end - start)

@@ -702,6 +702,119 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun leftOverAccentInBurst() {
+        val accent = String(Character.toChars(0x301))
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ae$accent")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 3), isRestart = false)
+        scheduler.runCurrent()
+        // Left moves over the "e" and its accent at once, and the app reports it together with the
+        // "x" typed after it. One char back would leave "x" waiting for a cursor that never comes.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1)
+        editor.report(3, 2)
+        assertFalse(editor.isContentBehindEditor())
+        editor.expectAppInsert(1)
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftOverAccentReportedAlone() {
+        val accent = String(Character.toChars(0x301))
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ae$accent")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 3), isRestart = false)
+        scheduler.runCurrent()
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1)
+        editor.report(3, 1)
+        // Left is read back, and "x" is still on its way.
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun backspaceOverAccentInBurst() {
+        val accent = String(Character.toChars(0x301))
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ae$accent")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 3), isRestart = false)
+        scheduler.runCurrent()
+        // Backspace deletes the accent first and the "e" after it, one code point at a time.
+        editor.expectAppStepBack()
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        editor.report(3, 2)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftOverTwoAccentsInBurst() {
+        val accents = String(Character.toChars(0x323)) + String(Character.toChars(0x301))
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ae$accents")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // Left moves over the "e" and both of its accents.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1)
+        editor.report(4, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftOverConjunctStopsAtSecondConsonant() {
+        val conjunct = String(Character.toChars(0x915)) + String(Character.toChars(0x94D)) +
+            String(Character.toChars(0x924))
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a$conjunct")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // A TextView's Left stops before the consonant after the virama, then moves over the
+        // first consonant and its virama together.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1)
+        editor.report(4, 3)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")
