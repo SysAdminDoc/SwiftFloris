@@ -361,6 +361,12 @@ ksp {
 tasks.withType<Test> {
     maxHeapSize = "2g"
     forkEvery = 100L
+    // Screenshot tests that pass their own file path keep their baselines here, outside
+    // roborazzi.outputDir. Without this, a changed baseline alone left the task up to date
+    // and verify mode never compared against it.
+    inputs.dir("src/test/snapshots")
+        .withPropertyName("screenshotBaselines")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
     testLogging {
         events = setOf(TestLogEvent.FAILED, TestLogEvent.PASSED, TestLogEvent.SKIPPED)
     }

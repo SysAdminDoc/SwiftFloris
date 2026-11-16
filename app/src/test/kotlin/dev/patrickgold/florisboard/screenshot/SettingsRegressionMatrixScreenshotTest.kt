@@ -68,13 +68,23 @@ import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.settings.HomeScreen
 import dev.patrickgold.florisboard.app.settings.SettingsHomeDashboardTag
+import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreen
+import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
+import dev.patrickgold.florisboard.app.settings.localization.LocalizationScreen
 import dev.patrickgold.florisboard.app.settings.search.SettingsSearchScreen
+import dev.patrickgold.florisboard.lib.ext.ExtensionDefaults
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.compose.stringRes
+import org.florisboard.lib.kotlin.io.subFile
+import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -413,6 +423,135 @@ class RoborazziSettingsHomeLargeTextCaptureTest {
                 compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.01f),
             ),
         )
+    }
+}
+
+/**
+ * The language screens, right to left and at 200 percent text. The window is tall so each whole
+ * screen is in the capture. Robolectric can't list the packs bundled in assets, so the language
+ * pack screen gets one imported pack to show a row.
+ */
+@RunWith(AndroidJUnit4::class)
+@Config(qualifiers = "w360dp-h1600dp-hdpi", sdk = [35])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@DisplayName("Roborazzi capture: language settings right to left and at 200 percent text")
+class RoborazziLocalizationSettingsCaptureTest {
+    @get:Rule
+    val composeRule = createAndroidComposeRule<RoborazziHostActivity>()
+
+    @get:Rule
+    val roborazziRule = RoborazziRule(
+        options = RoborazziRule.Options(
+            outputDirectoryPath = "build/outputs/roborazzi",
+        ),
+    )
+
+    private val app get() = composeRule.activity.application as FlorisApplication
+
+    @Before
+    fun setUp() {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            app.preferenceStoreLoaded.value
+        }
+    }
+
+    @After
+    fun tearDown() {
+        val languagePacks = app.extensionManager.value.languagePacks
+        languagePacks.internalModuleDir.subFile(IMPORTED_PACK_FILE).delete()
+        runBlocking(Dispatchers.IO) { languagePacks.init() }
+    }
+
+    @Test
+    fun localizationRtl() {
+        capture("localization_rtl.png", layoutDirection = LayoutDirection.Rtl) {
+            LocalizationScreen()
+        }
+    }
+
+    @Test
+    fun localizationFontScale200() {
+        capture("localization_font_scale_200.png", fontScale = 2f) {
+            LocalizationScreen()
+        }
+    }
+
+    @Test
+    fun languagePacksRtl() {
+        importLanguagePack()
+        capture("language_packs_rtl.png", layoutDirection = LayoutDirection.Rtl) {
+            LanguagePackManagerScreen(LanguagePackManagerScreenAction.MANAGE)
+        }
+        composeRule.onNodeWithText("Imported · ", substring = true).assertExists()
+    }
+
+    @Test
+    fun languagePacksFontScale200() {
+        importLanguagePack()
+        capture("language_packs_font_scale_200.png", fontScale = 2f) {
+            LanguagePackManagerScreen(LanguagePackManagerScreenAction.MANAGE)
+        }
+        composeRule.onNodeWithText("Imported · ", substring = true).assertExists()
+    }
+
+    /** Puts a small generic pack where an import leaves it, then indexes it like the app does. */
+    private fun importLanguagePack() {
+        val languagePacks = app.extensionManager.value.languagePacks
+        val archive = languagePacks.internalModuleDir.also { it.mkdirs() }.subFile(IMPORTED_PACK_FILE)
+        ZipOutputStream(archive.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry(ExtensionDefaults.MANIFEST_FILE_NAME))
+            zip.write(IMPORTED_PACK_MANIFEST.toByteArray())
+            zip.closeEntry()
+        }
+        runBlocking(Dispatchers.IO) { languagePacks.init() }
+        assertTrue(
+            "the imported pack wasn't indexed, so the capture would show no pack rows",
+            languagePacks.value.any { it.meta.id == IMPORTED_PACK_ID },
+        )
+    }
+
+    private fun capture(
+        fileName: String,
+        layoutDirection: LayoutDirection = LayoutDirection.Ltr,
+        fontScale: Float = 1f,
+        content: @Composable () -> Unit,
+    ) {
+        composeRule.setContent {
+            SettingsRegressionFrame(
+                height = 1600.dp,
+                layoutDirection = layoutDirection,
+                fontScale = fontScale,
+                content = content,
+            )
+        }
+        composeRule.waitForIdle()
+        composeRule.onRoot().captureRoboImage(
+            filePath = "src/test/snapshots/settings_regression_matrix/$fileName",
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.01f),
+            ),
+        )
+    }
+
+    private companion object {
+        const val IMPORTED_PACK_ID = "org.example.importedpack"
+        val IMPORTED_PACK_FILE = ExtensionDefaults.createFlexName(IMPORTED_PACK_ID)
+        val IMPORTED_PACK_MANIFEST = """
+            {
+              "${'$'}": "ime.extension.languagepack",
+              "meta": {
+                "id": "$IMPORTED_PACK_ID",
+                "version": "1.0.0",
+                "title": "Imported pack",
+                "maintainers": ["SwiftFloris"],
+                "license": "apache-2.0"
+              },
+              "kind": "generic",
+              "items": [
+                { "id": "en_US", "label": "English (US) extras", "authors": ["SwiftFloris"] }
+              ]
+            }
+        """.trimIndent()
     }
 }
 
