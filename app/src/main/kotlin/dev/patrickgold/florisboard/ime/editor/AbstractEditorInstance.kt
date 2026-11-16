@@ -140,9 +140,11 @@ abstract class AbstractEditorInstance(context: Context) {
     /**
      * Records that the app is about to insert [length] chars for a key the keyboard passed through
      * to it (a hardware key with no mapped layout), so the cursor move it reports reads as typing.
+     * [codePoint] is the char typed, 0 if unknown: a combining accent goes with the letter before it
+     * on a later Left arrow.
      */
-    fun expectAppInsert(length: Int) {
-        passThroughKeys.expect(length, expectedContentQueue.peekNewestOrNull(), _activeContentFlow.value)
+    fun expectAppInsert(length: Int, codePoint: Int = 0) {
+        passThroughKeys.expect(length, codePoint, expectedContentQueue.peekNewestOrNull(), _activeContentFlow.value)
     }
 
     /**
@@ -931,7 +933,8 @@ abstract class AbstractEditorInstance(context: Context) {
          * of it. A negative one is an accent the letter before it carries along on a Left arrow.
          * [joinedCursor] and [joinedBackSteps] are the same for a field whose Left arrow moves over
          * a whole conjunct; they differ from [cursor] and [backSteps] only after a Left over one
-         * while the field's kind isn't known yet.
+         * while the field's kind isn't known yet. [typed] is the char a typed key leaves before
+         * [cursor], 0 if unknown.
          * [quietUntil] is set while a report may already cover the key: past it the key no
          * longer holds the editor behind, but a late report still matches it.
          */
@@ -942,6 +945,7 @@ abstract class AbstractEditorInstance(context: Context) {
             val atMillis: Long,
             var joinedCursor: Int = cursor,
             var joinedBackSteps: List<Int> = backSteps,
+            val typed: Int = 0,
         ) {
             var quietUntil: Long = Long.MAX_VALUE
 
@@ -959,12 +963,16 @@ abstract class AbstractEditorInstance(context: Context) {
             }
         }
 
-        /** Where the next key starts, and the back steps before it, in both kinds of field. */
+        /**
+         * Where the next key starts, and the back steps before it, in both kinds of field.
+         * [charBefore] is the char right before the start, 0 if unknown.
+         */
         private class Base(
             val range: EditorRange,
             val backSteps: List<Int>,
             val joinedRange: EditorRange = range,
             val joinedBackSteps: List<Int> = backSteps,
+            val charBefore: Int = 0,
         )
 
         /** Where a step back leaves the cursor, and the back steps still before it. */
@@ -997,22 +1005,41 @@ abstract class AbstractEditorInstance(context: Context) {
          * just committed), which is where the app's key lands if nothing of the app's own is
          * pending. [published] is the content last read for a report.
          */
-        fun expect(length: Int, keyboardPending: EditorContent?, published: EditorContent) {
+        fun expect(length: Int, codePoint: Int, keyboardPending: EditorContent?, published: EditorContent) {
             synchronized(lock) {
                 val now = SystemClock.uptimeMillis()
                 dropExpired(now)
                 val base = baseOf(now, keyboardPending, published) ?: return
+                val step = typedStep(length, codePoint, base.charBefore)
                 add(
                     PendingKey(
                         base.range.start + length,
                         isStepBack = false,
-                        (base.backSteps + length).takeLast(NumKnownBackStepsBeforePassThrough),
+                        (base.backSteps + step).takeLast(NumKnownBackStepsBeforePassThrough),
                         now,
                         joinedCursor = base.joinedRange.start + length,
-                        joinedBackSteps = (base.joinedBackSteps + length).takeLast(NumKnownBackStepsBeforePassThrough),
+                        joinedBackSteps = (base.joinedBackSteps + step).takeLast(NumKnownBackStepsBeforePassThrough),
+                        typed = codePoint,
                     )
                 )
             }
+        }
+
+        /**
+         * The back step for [length] chars typed as [codePoint] after [charBefore], the way
+         * [backStepLengths] reads them from the text: an accent or vowel sign goes with the char
+         * before it on a Left arrow, and a consonant after a virama is flagged as part of a conjunct.
+         */
+        private fun typedStep(length: Int, codePoint: Int, charBefore: Int): Int = when {
+            codePoint <= 0 || charBefore <= 0 -> length
+            isMark(codePoint) && (Character.isLetter(charBefore) || isMark(charBefore)) -> -length
+            Character.isLetter(codePoint) && charBefore in ConjunctViramas -> length or ConjunctConsonantStep
+            else -> length
+        }
+
+        private fun isMark(codePoint: Int): Boolean = when (Character.getType(codePoint).toByte()) {
+            Character.NON_SPACING_MARK, Character.COMBINING_SPACING_MARK, Character.ENCLOSING_MARK -> true
+            else -> false
         }
 
         /**
@@ -1075,14 +1102,17 @@ abstract class AbstractEditorInstance(context: Context) {
                     last.backSteps,
                     EditorRange.cursor(last.joinedCursor),
                     last.joinedBackSteps,
+                    charBefore = last.typed,
                 )
             }
             val keyboard = keyboardPending?.takeIf { it.selection.isValid }
             val range = keyboard?.selection ?: reported.takeIf { it.isValid } ?: return null
             val content = keyboard ?: published.takeIf { it.selection == range }
+            val text = content?.textBeforeSelection.orEmpty()
             return Base(
                 EditorRange(min(range.start, range.end), max(range.start, range.end)),
-                backStepLengths(content?.textBeforeSelection.orEmpty()),
+                backStepLengths(text),
+                charBefore = if (text.isEmpty()) 0 else text.codePointBefore(text.length),
             )
         }
 

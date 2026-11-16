@@ -1655,7 +1655,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                         )
                     }
                     if (length > 0) {
-                        editorInstance.expectAppInsert(length)
+                        val codePoint = if (keyCode == KeyEvent.KEYCODE_ENTER) '\n'.code else event.unicodeChar
+                        editorInstance.expectAppInsert(length, codePoint)
                     } else if (!hasImportedLayout && HardwareKeyboardInputPolicy.passThroughStepsBack(
                             keyCode = keyCode,
                             isShiftPressed = event.isShiftPressed,

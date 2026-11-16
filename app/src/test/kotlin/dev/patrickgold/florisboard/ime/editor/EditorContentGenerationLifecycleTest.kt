@@ -905,6 +905,57 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun leftOverAccentTypedInBurst() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // "e" and a combining acute, then Left, which moves over both, then "x".
+        editor.expectAppInsert(1, 'e'.code)
+        editor.expectAppInsert(1, 0x301)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 3)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftOverConjunctTypedInBurst() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // The conjunct typed key by key, then a Compose field's Left over all of it, then "x".
+        conjunct().codePoints().toArray().forEach { editor.expectAppInsert(1, it) }
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        editor.report(2, 3)
+        editor.report(3, 4)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(4, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")
