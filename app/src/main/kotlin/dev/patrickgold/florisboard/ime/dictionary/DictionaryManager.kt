@@ -217,6 +217,28 @@ class DictionaryManager private constructor(context: Context) {
     /** Whether the personal dictionary opened, is waiting to retry, or was reset; shown on its screen. */
     val florisUserDictionaryStorageState: StateFlow<UserDictionaryStorageState> = florisUserDictionaryLoader.state
 
+    /** New words seen once, learned on their second sighting (see [learnWord]). */
+    private val pendingLearnedWords = PendingLearnedWords(
+        File(applicationContext.filesDir, PendingLearnedWords.FILE_NAME),
+    )
+    private val pendingLearnedWordsSaveQueued = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    init {
+        // Read the list off the main thread before the first space press needs it.
+        ioScope.launch { pendingLearnedWords.preload() }
+    }
+
+    /** Saves the pending list off the main thread; sightings made before the save starts share it. */
+    private fun savePendingLearnedWordsAsync() {
+        if (!pendingLearnedWordsSaveQueued.compareAndSet(false, true)) return
+        ioScope.launch {
+            pendingLearnedWordsSaveQueued.set(false)
+            if (!pendingLearnedWords.save()) {
+                flogWarning(LogTopic.DICTIONARY) { "Couldn't save the words waiting to be learned" }
+            }
+        }
+    }
+
     companion object {
         private var defaultInstance: DictionaryManager? = null
 
@@ -326,6 +348,7 @@ class DictionaryManager private constructor(context: Context) {
         // Drop the in-memory overlay entry immediately so the next suggest
         // can't surface the forgotten word from the ranker.
         UserDictionaryOverlay.get().forget(normalized, locale)
+        if (pendingLearnedWords.remove(normalized, locale.languageTag())) savePendingLearnedWordsAsync()
         return runRoomQueryBlocking(
             operation = "forgetWord(word=${normalized.debugSummarizeTextForLog()})",
             fallback = false,
@@ -348,8 +371,13 @@ class DictionaryManager private constructor(context: Context) {
      * a new entry at [LEARN_INITIAL_FREQUENCY]. Off-thread; safe to call from input
      * event handlers. No-op when the user has disabled the personal dictionary or is
      * in incognito mode (caller is responsible for the incognito gate).
+     *
+     * With [requireRepeat], a word the learned words don't have yet is only noted the first
+     * time and learned the second, so a typo that slips through once isn't offered as a
+     * completion from then on. Callers pass it for a word that was typed and kept, not one
+     * picked from the strip.
      */
-    fun learnWord(rawWord: String, locale: FlorisLocale) {
+    fun learnWord(rawWord: String, locale: FlorisLocale, requireRepeat: Boolean = false) {
         if (!prefs.dictionary.enableFlorisUserDictionary.get()) return
         val cleaned = rawWord.trim()
             .trim { ch -> !ch.isLetter() && ch != '\'' && ch != '-' }
@@ -360,6 +388,15 @@ class DictionaryManager private constructor(context: Context) {
         if (cleaned.none { it.isLetter() }) return
         if (cleaned.any { ch -> !ch.isLetter() && ch != '\'' && ch != '-' }) return
         val normalized = cleaned.lowercase()
+
+        val admission = pendingLearnedWords.admit(
+            word = normalized,
+            languageTag = locale.languageTag(),
+            requireRepeat = requireRepeat,
+            alreadyLearned = UserDictionaryOverlay.get().contains(normalized, locale),
+        )
+        if (admission.listChanged) savePendingLearnedWordsAsync()
+        if (!admission.learnNow) return
 
         // Bump the in-memory overlay first so the next keystroke's
         // suggest() already ranks this word higher — the IO write below is
@@ -548,7 +585,8 @@ class DictionaryManager private constructor(context: Context) {
 
     /**
      * Deletes the personal dictionary whether or not it's turned on: the open store, its sidecars,
-     * copies kept aside after a reset or migration, the reset notice and the in-memory overlay.
+     * copies kept aside after a reset or migration, the reset notice, the in-memory overlay and
+     * the words waiting for a second sighting.
      * Going through [florisUserDictionaryDatabase] would skip a turned-off dictionary, whose words
      * come back the moment it's turned on again. Returns the files that couldn't be deleted.
      */
@@ -557,9 +595,12 @@ class DictionaryManager private constructor(context: Context) {
         closeFlorisUserDictionary()
         val remaining = EncryptedDatabaseFiles.deleteEveryCopy(
             applicationContext.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME),
-        )
+        ).toMutableList()
         UserDictionaryOverlay.get().clearAll()
         florisUserDictionaryLoader.acknowledgeReset()
+        if (!pendingLearnedWords.deleteFile()) {
+            remaining += File(applicationContext.filesDir, PendingLearnedWords.FILE_NAME)
+        }
         if (remaining.isNotEmpty()) {
             flogError(LogTopic.DICTIONARY) {
                 "Erase left ${remaining.size} user dictionary file(s): ${remaining.joinToString { it.name }}"

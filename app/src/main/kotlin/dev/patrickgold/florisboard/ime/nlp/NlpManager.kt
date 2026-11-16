@@ -125,6 +125,8 @@ class NlpManager(
     // Set together with internalSuggestions, under its guard.
     private var internalCandidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap()
     private var internalSuggestionsRankedFor: CandidateWordKey? = null
+    // Whether the last ranked word was in a dictionary; read by the space key's learning.
+    private val typedWordKnowledge = TypedWordKnowledge()
     // What auto-correct reads: the strip as shown, with the word it was ranked for.
     @Volatile private var publishedCandidates = PublishedCandidates()
     private val candidateAssembly = LatestOnlyAssembly<PublishedCandidates>(scope) { published ->
@@ -390,6 +392,7 @@ class NlpManager(
                 if (internalSuggestions.first < requestId) {
                     internalCandidateSignals = candidateSignals
                     internalSuggestionsRankedFor = content.candidateWordKey()
+                    typedWordKnowledge.record(currentWord, typedWordKnown)
                     internalSuggestions = requestId to InternalSuggestionOrder.merge(
                         wordSuggestions = wordSuggestions,
                         emojiSuggestions = emojiSuggestions,
@@ -449,6 +452,7 @@ class NlpManager(
                 if (internalSuggestions.first < requestId) {
                     internalCandidateSignals = emptyMap()
                     internalSuggestionsRankedFor = null
+                    typedWordKnowledge.clear()
                     internalSuggestions = requestId to suggestions
                 }
             }
@@ -463,11 +467,15 @@ class NlpManager(
                 if (internalSuggestions.first < requestId) {
                     internalCandidateSignals = emptyMap()
                     internalSuggestionsRankedFor = null
+                    typedWordKnowledge.clear()
                     internalSuggestions = requestId to emptyList()
                 }
             }
         }
     }
+
+    /** Whether the last suggestion pass found [word] in the learned words or a dictionary. */
+    fun wasTypedWordKnown(word: String): Boolean = typedWordKnowledge.wasKnown(word)
 
     fun rememberAcceptedGlideCommit(
         committedText: String,
@@ -619,26 +627,30 @@ class NlpManager(
         )
     }
 
-    fun rejectAcceptedAutoCommitOnBackspace(content: EditorContent): Boolean {
+    /**
+     * Takes back the correction the cursor sits right after, when backspace undoes it. Returns
+     * the word the user had typed before that correction, or `null` when nothing was taken back.
+     */
+    fun rejectAcceptedAutoCommitOnBackspace(content: EditorContent): String? {
         val cursorPosition = content.selection.takeIf { it.isValid }?.start
         val rejected = autoCommitSuppression.rejectAccepted(
             textBeforeSelection = content.textBeforeSelection,
             cursorPosition = cursorPosition,
         )
-        if (rejected) {
-            autoCommitSuppression.consumeLastRejectedPair()?.let { pair ->
-                correctionOutcomePriors.recordRejected(
-                    originalText = pair.original,
-                    correctedText = pair.corrected,
-                )
-            }
-            typingTraceRecorder.recordAutoCommitRejected(
-                content = content,
-                isPrivateSession = keyboardManager.activeState.isIncognitoMode,
-                isSensitiveEditor = isActiveEditorSensitive(),
+        if (!rejected) return null
+        val pair = autoCommitSuppression.consumeLastRejectedPair()
+        if (pair != null) {
+            correctionOutcomePriors.recordRejected(
+                originalText = pair.original,
+                correctedText = pair.corrected,
             )
         }
-        return rejected
+        typingTraceRecorder.recordAutoCommitRejected(
+            content = content,
+            isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+            isSensitiveEditor = isActiveEditorSensitive(),
+        )
+        return pair?.original
     }
 
     fun rejectAcceptedAutoCommitFromUndo(candidate: AutoCommitUndoSuggestionCandidate): Boolean {
@@ -1078,13 +1090,7 @@ class NlpManager(
         }
     }
 
-    private fun String.normalizedCandidateSignalKey(): String? {
-        val normalized = trim()
-            .trim { char -> !char.isLetter() && char != '\'' && char != '\u2019' }
-            .lowercase()
-        if (normalized.isBlank() || normalized.none { it.isLetter() }) return null
-        return normalized
-    }
+    private fun String.normalizedCandidateSignalKey(): String? = candidateSignalKeyOf(this)
 
     private companion object {
         const val BigramContextWeight = 0.75

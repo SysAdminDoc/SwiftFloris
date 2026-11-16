@@ -592,6 +592,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         val committed = editorInstance.commitCompletion(candidate)
         if (committed) {
             nlpManager.rejectAcceptedAutoCommitFromUndo(candidate)
+            // Undoing a correction says the typed word was meant, so learn it now. Only the
+            // word: the chain still ends on the correction this replaced.
+            resetLearnChain()
+            learnWordIfAllowed(candidate.original, requireRepeat = false)
             candidate.sourceProvider?.let { sourceProvider ->
                 scope.launch {
                     sourceProvider.notifySuggestionReverted(
@@ -662,29 +666,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * (a depressingly common bug — see HeliBoard #2124, AnySoftKeyboard #1399).
      * Trusting only the incognito flag would bleed credentials into the user's
      * suggestions; the keyVariation check is the belt to incognito's suspenders.
+     *
+     * [requireRepeat] holds a new word back until its second sighting (see
+     * [DictionaryManager.learnWord]); the next-word chain learns it either way.
      */
-    private fun learnIfAllowed(rawWord: String) {
-        if (!SuggestionPrivacyPolicy.shouldLearnCommittedWord(
-            rawWord = rawWord,
-            isIncognitoMode = activeState.isIncognitoMode,
-            keyVariation = activeState.keyVariation,
-        )) return
+    private fun learnIfAllowed(rawWord: String, requireRepeat: Boolean = false) {
+        if (!learnWordIfAllowed(rawWord, requireRepeat)) return
         val locale = subtypeManager.activeSubtype.primaryLocale
-        val wasKnown = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
-            .contains(rawWord, locale)
-        DictionaryManager.default().learnWord(rawWord, locale)
-        val wasLearned = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
-            .contains(rawWord, locale)
-        if (!wasKnown && wasLearned) {
-            nlpManager.suggestDirectly(
-                listOf(
-                    LearnedWordForgetSuggestionCandidate(
-                        word = rawWord,
-                        locale = locale,
-                    ),
-                ),
-            )
-        }
         if (prefs.suggestion.nextWordPrediction.get()) {
             val tag = locale.languageTag()
             val snapshot = learnChain.snapshot()
@@ -702,6 +690,36 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             // paired with this one across the change.
             learnChain.advance(snapshot, rawWord, tag)
         }
+    }
+
+    /**
+     * The word half of [learnIfAllowed], without the next-word chain. Returns `false` when the
+     * privacy gate refused the word. A word learned for the first time puts the chip that
+     * forgets it on the strip.
+     */
+    private fun learnWordIfAllowed(rawWord: String, requireRepeat: Boolean): Boolean {
+        if (!SuggestionPrivacyPolicy.shouldLearnCommittedWord(
+            rawWord = rawWord,
+            isIncognitoMode = activeState.isIncognitoMode,
+            keyVariation = activeState.keyVariation,
+        )) return false
+        val locale = subtypeManager.activeSubtype.primaryLocale
+        val wasKnown = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
+            .contains(rawWord, locale)
+        DictionaryManager.default().learnWord(rawWord, locale, requireRepeat)
+        val wasLearned = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
+            .contains(rawWord, locale)
+        if (!wasKnown && wasLearned) {
+            nlpManager.suggestDirectly(
+                listOf(
+                    LearnedWordForgetSuggestionCandidate(
+                        word = rawWord,
+                        locale = locale,
+                    ),
+                ),
+            )
+        }
+        return true
     }
 
     fun commitGesture(word: String, alternatives: List<String> = emptyList()) {
@@ -865,7 +883,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // Deleting backwards rewrites the words the learn chain assumed were
         // final; keep the chain from pairing the next commit with stale text.
         resetLearnChain()
-        nlpManager.rejectAcceptedAutoCommitOnBackspace(editorInstance.activeContent)
+        nlpManager.rejectAcceptedAutoCommitOnBackspace(editorInstance.activeContent)?.let { original ->
+            // Counts as the first sighting of the typed word, so the space that keeps it
+            // when it's typed again learns it.
+            learnWordIfAllowed(original, requireRepeat = true)
+        }
         editorInstance.phantomSpace.candidateForRevert?.let { candidateForRevert ->
             candidateForRevert.sourceProvider?.let { sourceProvider ->
                 scope.launch {
@@ -1011,11 +1033,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      */
     fun handleHardwareKeyboardSpace() {
         val typedWordBeforeCommit = editorInstance.activeContent.currentWordText
+        val typedWordKnown = nlpManager.wasTypedWordKnown(typedWordBeforeCommit)
         val candidate = nlpManager.getSpacebarCandidate()
         val suppressPlainSpace = candidate == null && nlpManager.shouldSuppressPlainSpaceForPrediction()
         val candidateCommitted = candidate?.let { commitAutoCommitCandidate(it) } ?: false
         SpacebarLearnPolicy.typedWordToLearn(typedWordBeforeCommit, candidateCommitted)
-            ?.let { learnIfAllowed(it) }
+            ?.let { learnIfAllowed(it, requireRepeat = !typedWordKnown) }
         if (suppressPlainSpace) {
             return
         }
@@ -1032,13 +1055,15 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private fun handleSpace(data: KeyData) {
         // Snapshot the word the user actually typed *before* any auto-correct candidate
         // overwrites it. A committed candidate is learned by the commit itself; otherwise
-        // the space learns the literal typed word.
+        // the space learns the literal typed word, right away when a dictionary knows it and on
+        // its second sighting when it's new.
         val typedWordBeforeCommit = editorInstance.activeContent.currentWordText
+        val typedWordKnown = nlpManager.wasTypedWordKnown(typedWordBeforeCommit)
         val candidate = nlpManager.getSpacebarCandidate()
         val suppressPlainSpace = candidate == null && nlpManager.shouldSuppressPlainSpaceForPrediction()
         val candidateCommitted = candidate?.let { commitAutoCommitCandidate(it) } ?: false
         SpacebarLearnPolicy.typedWordToLearn(typedWordBeforeCommit, candidateCommitted)
-            ?.let { learnIfAllowed(it) }
+            ?.let { learnIfAllowed(it, requireRepeat = !typedWordKnown) }
         if (prefs.keyboard.spaceBarSwitchesToCharacters.get()) {
             when (activeState.keyboardMode) {
                 KeyboardMode.NUMERIC_ADVANCED,
