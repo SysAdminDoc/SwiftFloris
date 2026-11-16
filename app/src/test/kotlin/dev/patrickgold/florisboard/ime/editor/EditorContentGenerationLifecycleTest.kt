@@ -1107,7 +1107,7 @@ class EditorContentGenerationLifecycleTest {
 
     // The real app opens its databases on a background thread at startup. Native SQLite would load
     // Robolectric's native runtime there on SDK 29 and can leave its fonts jar open, so the next
-    // class on SDK 35 or later fails in maybeCopyFonts and the app's crash handler ends the run.
+    // class on SDK 35 or later fails in maybeCopyFonts.
     @Test
     @Config(sdk = [29])
     @SQLiteMode(SQLiteMode.Mode.LEGACY)

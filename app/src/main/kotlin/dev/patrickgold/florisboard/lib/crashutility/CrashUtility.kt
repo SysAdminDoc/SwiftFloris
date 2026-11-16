@@ -25,6 +25,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import android.util.Log
@@ -78,6 +79,13 @@ abstract class CrashUtility private constructor() {
                 flogError(LogTopic.CRASH_UTILITY) {
                     "Can't install crash handler with a null Context object, doing nothing!"
                 }
+                return false
+            }
+            if (Build.FINGERPRINT == "robolectric") {
+                // Unit tests boot the app many times in one JVM, and work a test's app starts can
+                // fail after that test's sandbox is gone (its SQLite connections dropped, its files
+                // deleted). The handler would end the whole test run with exit value 10 and no
+                // trace, so tests keep the JVM's own handler, which prints the trace.
                 return false
             }
             val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
