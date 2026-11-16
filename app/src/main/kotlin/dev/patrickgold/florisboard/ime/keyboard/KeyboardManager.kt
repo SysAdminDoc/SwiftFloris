@@ -997,26 +997,37 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * Handles a [KeyCode.ENTER] event.
      */
     private fun handleEnter() {
-        val info = editorInstance.activeInfo
-        val isShiftPressed = inputEventDispatcher.isPressed(KeyCode.SHIFT)
         if (editorInstance.tryPerformEnterCommitRaw()) {
             return
         }
-        if (info.imeOptions.flagNoEnterAction || info.inputAttributes.flagTextMultiLine && isShiftPressed) {
-            editorInstance.performEnter()
-        } else {
-            when (val action = info.imeOptions.action) {
-                ImeOptions.Action.DONE,
-                ImeOptions.Action.GO,
-                ImeOptions.Action.NEXT,
-                ImeOptions.Action.PREVIOUS,
-                ImeOptions.Action.SEARCH,
-                ImeOptions.Action.SEND -> {
-                    editorInstance.performEnterAction(action)
-                }
-                else -> editorInstance.performEnter()
-            }
+        when (val action = enterEditorAction()) {
+            null -> editorInstance.performEnter()
+            else -> editorInstance.performEnterAction(action)
         }
+    }
+
+    /** The action Enter runs in the current field, or null when it types a newline. */
+    private fun enterEditorAction(): ImeOptions.Action? {
+        val info = editorInstance.activeInfo
+        return EnterKeyPolicy.editorAction(
+            action = info.imeOptions.action,
+            flagNoEnterAction = info.imeOptions.flagNoEnterAction,
+            isMultiLine = info.inputAttributes.flagTextMultiLine,
+            isShiftPressed = inputEventDispatcher.isPressed(KeyCode.SHIFT),
+        )
+    }
+
+    /**
+     * True when a hardware Enter would only type a newline in a multi-line field, which the app's
+     * own key handling does the same way. A single-line field reads a raw Enter as a "next field"
+     * or IME_NULL instead, so it stays with the keyboard, and so does an Enter that commits Chinese
+     * input as typed. The word the keyboard marks as composing doesn't count: the app's newline
+     * lands after it, the same as a space the app types.
+     */
+    private fun hardwareEnterTypesNewline(): Boolean {
+        return editorInstance.activeInfo.inputAttributes.flagTextMultiLine &&
+            !editorInstance.enterCommitsComposingRaw() &&
+            enterEditorAction() == null
     }
 
     /**
@@ -1581,10 +1592,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             keyCode = keyCode,
             mappedKey = mappedKey,
             isMappedKeyAlphabetic = mappedKey?.let { UCharacter.isUAlphabetic(it.codePoint) } ?: false,
-            // Only a space looks at it, and the keyboard's own text entry has no app behind it.
-            // A call with no event has nothing the app could be handed.
-            isEditorBehindApp = event != null && keyCode == KeyEvent.KEYCODE_SPACE && !textEntry.isActive &&
-                editorInstance.isContentBehindEditor(),
+            // Only a space and Enter look at it, and the keyboard's own text entry has no app behind
+            // it. A call with no event has nothing the app could be handed.
+            isEditorBehindApp = event != null &&
+                (keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER) &&
+                !textEntry.isActive && editorInstance.isContentBehindEditor(),
+            isEnterNewline = keyCode == KeyEvent.KEYCODE_ENTER && !textEntry.isActive && hardwareEnterTypesNewline(),
+            hasImportedLayout = event != null && hardwareKeyboardRuntimeMapper.layoutForDevice(event.deviceId) != null,
             hasCommandModifier = event != null && (event.isCtrlPressed || event.isAltPressed || event.isMetaPressed),
         )) {
             is HardwareKeyboardKeyDownAction.CommitMappedText -> {
@@ -1618,20 +1632,26 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
             HardwareKeyboardKeyDownAction.PassThrough -> {
                 // The app inserts a printable key itself: no layout is mapped for this keyboard, or
-                // it's a space after keys the app hasn't reported yet. Tell the editor where that
-                // leaves the cursor, or the move reads as a jump.
+                // it's a space or a newline Enter after keys the app hasn't reported yet. Tell the
+                // editor where that leaves the cursor, or the move reads as a jump.
                 if (event != null) {
-                    val length = HardwareKeyboardInputPolicy.passThroughInsertLength(
-                        unicodeChar = event.unicodeChar,
-                        isCtrlPressed = event.isCtrlPressed,
-                        isAltPressed = event.isAltPressed,
-                        isMetaPressed = event.isMetaPressed,
-                    )
+                    val length = if (keyCode == KeyEvent.KEYCODE_ENTER) {
+                        // A newline is a control char, which the general rule counts as nothing.
+                        1
+                    } else {
+                        HardwareKeyboardInputPolicy.passThroughInsertLength(
+                            unicodeChar = event.unicodeChar,
+                            isCtrlPressed = event.isCtrlPressed,
+                            isAltPressed = event.isAltPressed,
+                            isMetaPressed = event.isMetaPressed,
+                        )
+                    }
                     if (length > 0) editorInstance.expectAppInsert(length)
                 }
-                // A space the app types ends a word the keyboard never saw whole, so it isn't
-                // learned, and the next word that is must not be learned as following the one before.
-                if (keyCode == KeyEvent.KEYCODE_SPACE) resetLearnChain()
+                // A space or newline the app types ends a word the keyboard never saw whole, so it
+                // isn't learned, and the next word that is must not be learned as following the one
+                // before.
+                if (keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER) resetLearnChain()
                 false
             }
         }

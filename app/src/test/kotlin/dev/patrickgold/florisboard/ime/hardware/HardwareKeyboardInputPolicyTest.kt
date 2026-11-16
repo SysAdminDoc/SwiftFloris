@@ -212,6 +212,54 @@ class HardwareKeyboardInputPolicyTest : FunSpec({
         ) shouldBe HardwareKeyboardKeyDownAction.HandleSpace
     }
 
+    test("a newline Enter goes to the app when the keyboard's text is behind") {
+        // The keyboard's own newline would land after letters typed later in the burst.
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_ENTER,
+            mappedKey = null,
+            isEditorBehindApp = true,
+            isEnterNewline = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.PassThrough
+    }
+
+    test("Enter stays with the keyboard unless it's a newline typed while behind") {
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_ENTER,
+            mappedKey = null,
+            isEditorBehindApp = false,
+            isEnterNewline = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleEnter
+        // Search, send and the rest: the app would read a raw Enter as IME_NULL.
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_ENTER,
+            mappedKey = null,
+            isEditorBehindApp = true,
+            isEnterNewline = false,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleEnter
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_ENTER,
+            mappedKey = null,
+            isEditorBehindApp = true,
+            isEnterNewline = true,
+            hasCommandModifier = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleEnter
+        // The keyboard types this device's letters over the input connection, and so its Enter.
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_ENTER,
+            mappedKey = null,
+            isEditorBehindApp = true,
+            isEnterNewline = true,
+            hasImportedLayout = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleEnter
+        // A space never reads the Enter flag.
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_SPACE,
+            mappedKey = null,
+            isEditorBehindApp = false,
+            isEnterNewline = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleSpace
+    }
+
     test("mapped punctuation wins before built-in key handling") {
         HardwareKeyboardInputPolicy.keyDownAction(
             keyCode = KeyEvent.KEYCODE_SPACE,

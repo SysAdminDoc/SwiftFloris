@@ -766,8 +766,14 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         }
     }
 
+    /** True when Enter commits the text still composing as typed (Chinese input) instead of a newline. */
+    fun enterCommitsComposingRaw(): Boolean {
+        return subtypeManager.activeSubtype.primaryLocale.language.startsWith("zh") &&
+            activeContent.composing.length > 0
+    }
+
     fun tryPerformEnterCommitRaw(): Boolean {
-        return if (subtypeManager.activeSubtype.primaryLocale.language.startsWith("zh") && activeContent.composing.length > 0) {
+        return if (enterCommitsComposingRaw()) {
             finalizeComposingText(activeContent.composingText)
         } else {
             false

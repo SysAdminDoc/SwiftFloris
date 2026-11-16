@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Keep a line break from a physical keyboard in its place during a fast burst of keys. With no keyboard layout imported, the letters a macro, text expander or barcode scanner typed right after Enter could land in front of the line break. "hedgehog", Enter, "river" came out as "hedgehogriv" with "er" on the next line.
 - Add screenshot checks for the Languages and Language packs settings screens, laid out right to left and with text at 200 percent, so a layout that breaks there shows up before a release. The screenshot check also runs again now when only a saved screenshot changed. Before, Gradle skipped it and nothing was compared.
 - Say which language packs came with the app and which you imported. Each row on the Language packs screen now starts with "Built-in" or "Imported", so you don't have to guess from whether there's a Delete button.
 - Keep a fast burst of keys from a physical keyboard intact. With no keyboard layout imported, the app types the letters itself and tells the keyboard afterwards, so a macro, text expander or barcode scanner could press space before the keyboard knew the whole word. Space then "fixed" the cut-off word: "river violet hedgehog river " came out as "river violet hedgehogs river og". Now a space that arrives that early is typed by the app too, right after the letters, and the word is left as typed. At normal typing speed, space still corrects.

@@ -26,18 +26,33 @@ internal object HardwareKeyboardInputPolicy {
      * correct and learn is cut short ("hedgeh" for "hedgehog"), and a fix committed over it would
      * replace the wrong letters. [hasCommandModifier] (Ctrl, Alt or Meta held) keeps a space with
      * the keyboard either way, so a shortcut doesn't change with how fast the keys came.
+     *
+     * Enter goes to the app the same way, but only when [isEnterNewline] says it would type a
+     * newline in a multi-line field. The keyboard sends its newline over the input connection, and
+     * the app handles key events waiting in its queue first, so letters typed after Enter landed
+     * before the newline ("hedgehogriv" then "er" on the next line). An Enter that runs the
+     * field's action stays with the keyboard, since an app reads a raw Enter as IME_NULL there.
+     * So does every Enter when [hasImportedLayout] says the keyboard types this device's letters
+     * itself: those go over the input connection too, and a raw Enter could pass the last of them.
      */
     fun keyDownAction(
         keyCode: Int,
         mappedKey: HardwareMappedKey?,
         isMappedKeyAlphabetic: Boolean = false,
         isEditorBehindApp: Boolean = false,
+        isEnterNewline: Boolean = false,
+        hasImportedLayout: Boolean = false,
         hasCommandModifier: Boolean = false,
     ): HardwareKeyboardKeyDownAction {
         // Only the space key itself: the app types its own char for the key, so a key a layout
         // maps to a space would come out as that char instead.
         if (isEditorBehindApp && !hasCommandModifier && keyCode == KeyEvent.KEYCODE_SPACE &&
             (mappedKey == null || mappedKey.text == " ")
+        ) {
+            return HardwareKeyboardKeyDownAction.PassThrough
+        }
+        if (isEditorBehindApp && isEnterNewline && !hasImportedLayout && !hasCommandModifier &&
+            keyCode == KeyEvent.KEYCODE_ENTER && mappedKey == null
         ) {
             return HardwareKeyboardKeyDownAction.PassThrough
         }
