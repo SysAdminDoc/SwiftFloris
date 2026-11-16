@@ -1182,6 +1182,9 @@ abstract class AbstractEditorInstance(context: Context) {
                             }
                         )
                     }
+                    // The rest of a cluster too long to take char by char goes in one step, so a
+                    // Left arrow still moves over all of it.
+                    if (at > start) lengths.addFirst(at - start)
                 } else {
                     // A Backspace deletes an accent after a digit, a space or a symbol on its own
                     // too, and a Left arrow moves over it with the char it's on.
@@ -1193,7 +1196,7 @@ abstract class AbstractEditorInstance(context: Context) {
                         lengths.addFirst(before - at)
                         at = before
                     }
-                    if (lengths.size < NumKnownBackStepsBeforePassThrough) lengths.addFirst(at - start)
+                    lengths.addFirst(at - start)
                 }
                 end = start
             }

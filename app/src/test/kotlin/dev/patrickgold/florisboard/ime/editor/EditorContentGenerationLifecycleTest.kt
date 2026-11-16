@@ -1264,6 +1264,50 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun leftOverLongRunOfAccentsAfterDigit() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = "1" + String(Character.toChars(0x301)).repeat(20),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 21), isRestart = false)
+        scheduler.runCurrent()
+        // Left moves over the digit and all twenty accents at once.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(21, 0)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(0, 1)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftOverLongRunOfAccentsOnLetter() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = "e" + String(Character.toChars(0x301)).repeat(20),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 21), isRestart = false)
+        scheduler.runCurrent()
+        // Left moves over the letter and all twenty accents at once.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(21, 0)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(0, 1)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")
