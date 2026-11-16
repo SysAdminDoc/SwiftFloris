@@ -1131,6 +1131,30 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun backspaceOverAccentTypedAfterDigitInBurst() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // A field's Backspace deletes an accent alone, after a digit as after a letter.
+        editor.expectAppInsert(1, '1'.code)
+        editor.expectAppInsert(1, 0x301)
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        editor.report(2, 3)
+        editor.report(3, 2)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")

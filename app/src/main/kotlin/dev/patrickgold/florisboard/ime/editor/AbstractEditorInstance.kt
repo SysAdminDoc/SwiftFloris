@@ -86,6 +86,8 @@ abstract class AbstractEditorInstance(context: Context) {
          * arrow stops before it, a Compose or Chrome field's moves over the whole conjunct.
          */
         private const val ConjunctConsonantStep: Int = 1 shl 16
+        /** The combining enclosing keycap, deleted with the digit and selector it closes. */
+        private const val KeycapMark: Int = 0x20E3
         /** An app reports its insert within a frame or two, so a cursor this late isn't that key's. */
         private const val PassThroughInsertTimeoutMillis: Long = 2_000L
         /**
@@ -1121,11 +1123,11 @@ abstract class AbstractEditorInstance(context: Context) {
          * How far a Backspace steps back over each of the last chars of [text], nearest last. An
          * emoji sequence (a flag, a skin tone, a keycap, a ZWJ family, a heart with its variation
          * selector) and a CR LF go in one step, the way a text field deletes them. The accents and
-         * vowel signs after a letter go one code point at a time, as its Backspace takes them, and
-         * are negative, since a Left arrow moves over them with the letter. A consonant after a
-         * virama is positive with [ConjunctConsonantStep] set, whichever cluster ICU puts it in: a
-         * TextView's Left arrow stops before it, though Compose and Chrome move over the whole
-         * conjunct.
+         * vowel signs after a letter (or a digit, a space) go one code point at a time, as its
+         * Backspace takes them, and are negative, since a Left arrow moves over them with the
+         * letter. A consonant after a virama is positive with [ConjunctConsonantStep] set,
+         * whichever cluster ICU puts it in: a TextView's Left arrow stops before it, though
+         * Compose and Chrome move over the whole conjunct.
          */
         private fun backStepLengths(text: String): List<Int> {
             var from = max(0, text.length - NumCharsForBackStepsBeforePassThrough)
@@ -1154,7 +1156,17 @@ abstract class AbstractEditorInstance(context: Context) {
                         )
                     }
                 } else {
-                    lengths.addFirst(end - start)
+                    // A Backspace deletes an accent after a digit, a space or a symbol on its own
+                    // too, and a Left arrow moves over it with the char it's on.
+                    var at = end
+                    while (lengths.size < NumKnownBackStepsBeforePassThrough) {
+                        val codePoint = window.codePointBefore(at)
+                        val before = at - Character.charCount(codePoint)
+                        if (before <= start || !isLoneMark(codePoint)) break
+                        lengths.addFirst(before - at)
+                        at = before
+                    }
+                    if (lengths.size < NumKnownBackStepsBeforePassThrough) lengths.addFirst(at - start)
                 }
                 end = start
             }
@@ -1172,6 +1184,22 @@ abstract class AbstractEditorInstance(context: Context) {
             if (inCluster) return true
             val offset = codePoint - (before - 0x4D)
             return offset in 0x15..0x3A || offset in 0x58..0x5F || offset in 0x70..0x71
+        }
+
+        /**
+         * True for an accent or vowel sign a Backspace deletes on its own wherever it sits, so not
+         * a variation selector or the keycap mark, which go with the char before them.
+         */
+        private fun isLoneMark(codePoint: Int): Boolean {
+            if (codePoint == KeycapMark || isVariationSelector(codePoint)) return false
+            val type = Character.getType(codePoint)
+            return type == Character.NON_SPACING_MARK.toInt() ||
+                type == Character.ENCLOSING_MARK.toInt() ||
+                type == Character.COMBINING_SPACING_MARK.toInt()
+        }
+
+        private fun isVariationSelector(codePoint: Int): Boolean {
+            return codePoint in 0xFE00..0xFE0F || codePoint in 0xE0100..0xE01EF
         }
 
         private fun add(key: PendingKey) {
