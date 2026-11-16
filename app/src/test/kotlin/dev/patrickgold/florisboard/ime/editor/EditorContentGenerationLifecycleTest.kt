@@ -47,6 +47,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.SQLiteMode
 import org.robolectric.shadows.ShadowSystemClock
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -1104,8 +1105,12 @@ class EditorContentGenerationLifecycleTest {
         assertEquals(3, adjacencyBreaks.size)
     }
 
+    // The real app opens its databases on a background thread at startup. Native SQLite would load
+    // Robolectric's native runtime there on SDK 29 and can leave its fonts jar open, so the next
+    // class on SDK 35 or later fails in maybeCopyFonts and the app's crash handler ends the run.
     @Test
     @Config(sdk = [29])
+    @SQLiteMode(SQLiteMode.Mode.LEGACY)
     fun leftOverConjunctTypedInBurstOnOlderAndroid() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")
@@ -1132,6 +1137,7 @@ class EditorContentGenerationLifecycleTest {
 
     @Test
     @Config(sdk = [29])
+    @SQLiteMode(SQLiteMode.Mode.LEGACY) // See leftOverConjunctTypedInBurstOnOlderAndroid.
     fun leftOverConjunctWithLaterConsonantOnOlderAndroid() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")
