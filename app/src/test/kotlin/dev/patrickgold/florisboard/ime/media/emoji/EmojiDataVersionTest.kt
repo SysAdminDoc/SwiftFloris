@@ -10,8 +10,14 @@
 
 package dev.patrickgold.florisboard.ime.media.emoji
 
+import dev.patrickgold.florisboard.lib.FlorisLocale
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -88,7 +94,140 @@ class EmojiDataVersionTest : FunSpec({
         "trombone" to 0x1FA8A,
         "treasure chest" to 0x1FA8E,
     )
-    val bundledAssets = listOf("root", "de", "en", "es", "fr", "it", "pt")
+    // Unicode 18.0 (emoji-test.txt, 2026-04-30) adds these nine base characters.
+    val emoji18BaseCodePoints = mapOf(
+        "cracking face" to 0x1FAEB,
+        "leftwards thumb sign" to 0x1FAF9,
+        "rightwards thumb sign" to 0x1FAFA,
+        "monarch butterfly" to 0x1FACC,
+        "pickle" to 0x1FADD,
+        "lighthouse" to 0x1F6D9,
+        "meteor" to 0x1FA8B,
+        "eraser" to 0x1FA8C,
+        "net with handle" to 0x1FA8D,
+    )
+    val bundledAssets = mainAssetFiles("ime/media/emoji").map { it.removeSuffix(".txt") }
+
+    test("emoji names ship for every language CLDR annotates that a bundled keyboard types") {
+        // CLDR 49 has no annotations for Esperanto, Ho, Rusyn or Udmurt and one emoji for Central Kurdish,
+        // and IPA isn't a language.
+        val withoutCldrNames = setOf("IPA", "ckb", "eo", "hoc", "rue", "udm")
+        val presetTags = Regex(""""languageTag"\s*:\s*"([^"]+)"""")
+            .findAll(mainAssetText("ime/keyboard/org.florisboard.localization/extension.json"))
+            .map { it.groupValues[1] }
+            .toSortedSet()
+        val files = bundledAssets.map { "$it.txt" }
+
+        presetTags.size shouldBeGreaterThan 50
+        for (tag in presetTags) {
+            val locale = FlorisLocale.fromTag(tag)
+            val file = EmojiData.resolveEmojiAssetFile(files, locale.language, locale.country, locale.variant)
+            withClue(tag) {
+                if (tag.substringBefore('-') in withoutCldrNames) file.shouldBeNull() else file.shouldNotBeNull()
+            }
+        }
+    }
+
+    test("keyboard language codes that differ from CLDR's find their emoji names") {
+        val files = bundledAssets.map { "$it.txt" }
+
+        EmojiData.resolveEmojiAssetFile(files, "iw", "IL", "") shouldBe "he.txt"
+        EmojiData.resolveEmojiAssetFile(files, "he", "IL", "") shouldBe "he.txt"
+        EmojiData.resolveEmojiAssetFile(files, "in", "", "") shouldBe "id.txt"
+        EmojiData.resolveEmojiAssetFile(files, "nb", "NO", "") shouldBe "no.txt"
+        EmojiData.resolveEmojiAssetFile(files, "nn", "NO", "") shouldBe "nn.txt"
+        EmojiData.resolveEmojiAssetFile(files, "pt", "BR", "") shouldBe "pt.txt"
+        EmojiData.resolveEmojiAssetFile(files, "zh", "CN", "zhengma") shouldBe "zh.txt"
+        EmojiData.resolveEmojiAssetFile(files, "sw", "KE", "").shouldBeNull()
+        EmojiData.resolveEmojiAssetFile(listOf("pt_BR.txt", "pt.txt"), "pt", "BR", "") shouldBe "pt_BR.txt"
+    }
+
+    test("the keycap number sign is an emoji, not a comment") {
+        val keycap = "#" + Char(0xFE0F) + Char(0x20E3)
+        val data = EmojiData.parseEmojiDataLines(
+            sequenceOf(
+                "# CLDR-VERSION: 49",
+                "#no space after the mark is still a comment",
+                "[symbols]",
+                "$keycap;keycap: #;keycap",
+                "*" + Char(0xFE0F) + Char(0x20E3) + ";keycap: *;keycap",
+            ),
+        )
+
+        data.version.cldr shouldBe "49"
+        data.byCategory[EmojiCategory.SYMBOLS]!!.map { it.base().value } shouldBe
+            listOf(keycap, "*" + Char(0xFE0F) + Char(0x20E3))
+        data.byCategory[EmojiCategory.SYMBOLS]!!.first().base().name shouldBe "keycap: #"
+    }
+
+    test("every line of every bundled emoji file loads, and every language file has the whole palette") {
+        val root = mainAssetText("ime/media/emoji/root.txt")
+        val palette = parsedValues(root)
+
+        palette.size shouldBe dataLineCount(root)
+        for (locale in bundledAssets) {
+            val asset = mainAssetText("ime/media/emoji/$locale.txt")
+            withClue("$locale.txt") {
+                asset shouldNotContain "&amp;"
+                asset shouldNotContain "&lt;"
+                asset shouldNotContain "&quot;"
+                Regex("&(?:[a-z]+|#[0-9]+|#x[0-9a-fA-F]+);").find(asset)?.value.shouldBeNull()
+                // CLDR's "same as the parent locale" marker, and spaces the search's word split doesn't see.
+                asset shouldNotContain Char(0x2191).toString().repeat(3)
+                asset shouldNotContain Char(0x00A0).toString()
+                asset shouldNotContain Char(0x200B).toString()
+                parsedValues(asset) shouldBe palette
+                val named = EmojiData.parseEmojiDataLines(asset.lineSequence()).byCategory.values.sumOf { sets ->
+                    sets.count { it.base().name.isNotBlank() }
+                }
+                if (locale != "root") named shouldBeGreaterThan 250
+            }
+        }
+    }
+
+    test("English names come through with CLDR's escapes resolved") {
+        val english = EmojiData.parseEmojiDataLines(mainAssetText("ime/media/emoji/en.txt").lineSequence())
+        val byValue = english.byCategory.values.flatten().associateBy { it.base().value }
+
+        byValue.values.filter { it.base().name.isBlank() }.map { it.base().value } shouldBe emptyList()
+        byValue.getValue(String(Character.toChars(0x1F1E6)) + String(Character.toChars(0x1F1EC))).base().name shouldBe
+            "flag: Antigua & Barbuda"
+        byValue.getValue(String(Character.toChars(0x1F523))).base().keywords shouldContain "&"
+        byValue.getValue("#" + Char(0xFE0F) + Char(0x20E3)).base().name shouldBe "keycap: #"
+    }
+
+    test("Nynorsk names every emoji Norwegian does, since CLDR leaves most of them to its parent") {
+        fun namedBases(locale: String) = EmojiData.parseEmojiDataLines(
+            mainAssetText("ime/media/emoji/$locale.txt").lineSequence(),
+        ).byCategory.values.flatten().filter { it.base().name.isNotBlank() }.map { it.base().value }.toSet()
+
+        val norwegian = namedBases("no")
+        norwegian.size shouldBeGreaterThan 1800
+        (norwegian - namedBases("nn")) shouldBe emptySet()
+    }
+
+    test("skin tone variants keep their base's keywords for suggestions and the tag sheet") {
+        val english = EmojiData.parseEmojiDataLines(mainAssetText("ime/media/emoji/en.txt").lineSequence())
+        val thumbsUp = String(Character.toChars(0x1F44D))
+        val light = thumbsUp + String(Character.toChars(0x1F3FB))
+        val set = english.byCategory.values.flatten().first { it.base().value == thumbsUp }
+
+        set.emojis.size shouldBe 6
+        for (variant in set.emojis.drop(1)) {
+            withClue(variant.value) {
+                variant.name shouldBe "thumbs up"
+                variant.keywords shouldContainAll set.base().keywords.filter { it.isNotEmpty() }
+            }
+        }
+        set.emojis[1].keywords shouldContain "light skin tone"
+        EmojiSuggestionRanker.rank(
+            query = "good",
+            sources = listOf(english.bySkinTone.getValue(EmojiSkinTone.LIGHT_SKIN_TONE)),
+            customTagsFor = { emptyList() },
+            maxCount = 50,
+        ).map { it.value } shouldContain light
+        EmojiSearch.builtInLabels(listOf(english.byCategory), light, maxLabels = 20) shouldContain "good"
+    }
 
     test("every bundled emoji asset declares the CLDR and Emoji version it was built from") {
         for (locale in bundledAssets) {
@@ -114,7 +253,46 @@ class EmojiDataVersionTest : FunSpec({
             }
         }
     }
+
+    test("bundled assets contain every Emoji 18.0 base character") {
+        for (locale in bundledAssets) {
+            val asset = mainAssetText("ime/media/emoji/$locale.txt")
+
+            for ((name, codePoint) in emoji18BaseCodePoints) {
+                val character = String(intArrayOf(codePoint), 0, 1)
+                withClue("$locale.txt is missing $name (U+${codePoint.toString(16).uppercase()})") {
+                    asset shouldContain character
+                }
+            }
+        }
+    }
 })
+
+/** Every emoji the file lists, in order, as the app parses it. */
+private fun parsedValues(asset: String): List<String> {
+    return EmojiData.parseEmojiDataLines(asset.lineSequence()).byCategory.values.flatten().flatMap { set ->
+        set.emojis.map { it.value }
+    }
+}
+
+/** Lines that aren't the header, a category or blank: each should become one emoji. */
+private fun dataLineCount(asset: String): Int {
+    return asset.lines().count { line ->
+        line.isNotBlank() && !line.startsWith("[") && !(line.startsWith("# ") || line == "#")
+    }
+}
+
+private fun mainAssetFiles(relativeDir: String): List<String> {
+    val candidates = listOf(
+        Path.of("src", "main", "assets").resolve(relativeDir),
+        Path.of("app", "src", "main", "assets").resolve(relativeDir),
+    )
+    val dir = candidates.firstOrNull { Files.isDirectory(it) }
+        ?: error("Cannot find main asset directory $relativeDir from ${Path.of("").toAbsolutePath()}")
+    return Files.list(dir).use { paths -> paths.map { it.fileName.toString() }.toList() }
+        .filter { it.endsWith(".txt") }
+        .sorted()
+}
 
 private fun mainAssetText(relativePath: String): String {
     val candidates = listOf(

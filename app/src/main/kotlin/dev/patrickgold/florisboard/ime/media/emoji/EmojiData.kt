@@ -47,7 +47,17 @@ data class EmojiData(
         private const val TAG = "EmojiData"
         private const val BUNDLED_ASSET_PREFIX = "ime/media/emoji/"
         /** The metadata the checked-in emoji assets are expected to declare. */
-        val BundledVersion = EmojiDataVersion(cldr = "48", emoji = "17.0")
+        val BundledVersion = EmojiDataVersion(cldr = "49", emoji = "18.0")
+
+        /**
+         * Language codes a keyboard or Android uses where the bundled file goes by CLDR's code: Android's
+         * Locale still reports Hebrew as "iw" and Indonesian as "in", and Norwegian Bokmal presets say "nb".
+         */
+        private val AssetLanguageAliases = mapOf("iw" to "he", "in" to "id", "nb" to "no")
+
+        // The keycap emoji #️⃣ is "#" followed by one of these, so its data line isn't a comment.
+        private val VariationSelector16 = Char(0xFE0F)
+        private val CombiningEnclosingKeycap = Char(0x20E3)
 
         private val cache = Cache.Builder<String, EmojiData>().build()
         private val reportedVersionMismatches = ConcurrentHashMap.newKeySet<String>()
@@ -125,7 +135,7 @@ data class EmojiData(
             }
 
             for (line in lines) {
-                if (line.startsWith("#")) {
+                if (line.startsWith("#") && line.getOrNull(1).let { it != VariationSelector16 && it != CombiningEnclosingKeycap }) {
                     when {
                         line.startsWith(CLDR_VERSION_PREFIX) ->
                             cldrVersion = line.removePrefix(CLDR_VERSION_PREFIX).trim()
@@ -167,10 +177,17 @@ data class EmojiData(
                             continue
                         }
                         val base = emojiEditorList?.first()
+                        val ownKeywords = data[2].split("|").map { it.trim() }
                         val emoji = Emoji(
                             value = value,
                             name = base?.name ?: data[1].trim(),
-                            keywords = data[2].split("|").map { it.trim() },
+                            // A skin tone line lists only what it adds ("light skin tone"), so 👍🏻 still
+                            // matches "good" in suggestions and its tag sheet.
+                            keywords = if (base == null) {
+                                ownKeywords
+                            } else {
+                                (base.keywords + ownKeywords).filter { it.isNotEmpty() }.distinct()
+                            },
                         )
                         if (emojiEditorList != null) {
                             emojiEditorList!!.add(emoji)
@@ -218,29 +235,32 @@ data class EmojiData(
          * - {language}_{country}.txt
          * - {language}.txt
          *
+         * The language goes by CLDR's code, so "iw", "in" and "nb" look for the "he", "id" and "no" files.
+         *
          * @param context The context used to access application assets.
          * @param locale The locale to resolve for.
          *
-         * @return The path to the emoji asset file, or the root path ("ime/media/emoji/root.txt") if no match is found.
+         * @return The path to the emoji asset file, or null if no file matches.
          */
         private fun resolveEmojiAssetPath(context: Context, locale: FlorisLocale): String? {
             val emojiAssets = context.assets.list("ime/media/emoji/")!!.toList()
-            val makePath = { file: String -> "ime/media/emoji/$file" }
-            val language = locale.language.lowercase()
-            val country = locale.country.takeIf { it.isNotBlank() }
-            val variant = locale.variant.takeIf { it.isNotBlank() }
-            if (variant != null && country != null) {
-                "${language}_${country}_${variant}.txt".takeIf { emojiAssets.contains(it) }?.let {
-                    return makePath(it)
-                }
+            return resolveEmojiAssetFile(emojiAssets, locale.language, locale.country, locale.variant)
+                ?.let { file -> "ime/media/emoji/$file" }
+        }
+
+        internal fun resolveEmojiAssetFile(
+            emojiAssets: List<String>,
+            language: String,
+            country: String,
+            variant: String,
+        ): String? {
+            val lang = language.lowercase().let { AssetLanguageAliases[it] ?: it }
+            val candidates = buildList {
+                if (country.isNotBlank() && variant.isNotBlank()) add("${lang}_${country}_${variant}.txt")
+                if (country.isNotBlank()) add("${lang}_${country}.txt")
+                add("${lang}.txt")
             }
-            if (country != null) {
-                "${language}_${country}.txt".takeIf { emojiAssets.contains(it) }?.let { return makePath(it) }
-            }
-            "${language}.txt".takeIf { emojiAssets.contains(it) }?.let {
-                return makePath(it)
-            }
-            return null
+            return candidates.firstOrNull { it in emojiAssets }
         }
     }
 }
