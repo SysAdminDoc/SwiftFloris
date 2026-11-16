@@ -92,6 +92,14 @@ class ExtensionManager(context: Context) {
         const val IME_THEME_PATH = "ime/theme"
         const val IME_LANGUAGEPACK_PATH = "ime/languagepack"
 
+        /**
+         * True for an extension the user imported into internal storage, false for one that ships
+         * in the APK's assets. Only an imported one can be deleted, see [canDelete].
+         */
+        fun isImported(ext: Extension): Boolean {
+            return ext.sourceRef?.isInternal == true
+        }
+
         private const val FILE_OBSERVER_MASK =
             FileObserver.CLOSE_WRITE or FileObserver.DELETE or FileObserver.MOVED_FROM or FileObserver.MOVED_TO
     }
@@ -188,7 +196,7 @@ class ExtensionManager(context: Context) {
     }
 
     fun canDelete(ext: Extension): Boolean {
-        return ext.sourceRef?.isInternal == true
+        return isImported(ext)
     }
 
     fun delete(ext: Extension) {

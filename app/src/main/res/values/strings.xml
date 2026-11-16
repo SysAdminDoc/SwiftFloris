@@ -390,6 +390,9 @@
     <string name="settings__localization__language_pack_empty_message">You do not need one to type in another language. Most languages, including their layouts and dictionaries, are already built in, so add a keyboard language and you are done. Language packs cover the few scripts that need extra input data, such as Chinese shape-based input.</string>
     <string name="settings__localization__language_pack_kind_han">Han shape-based</string>
     <string name="settings__localization__language_pack_kind_generic">Generic</string>
+    <string name="settings__localization__language_pack_origin_built_in" comment="A language pack that ships with the app and can't be deleted">Built-in</string>
+    <string name="settings__localization__language_pack_origin_imported" comment="A language pack the user imported from a file">Imported</string>
+    <string name="settings__localization__language_pack_entry_summary" comment="A language pack's row summary: where it came from, then what it does for the current keyboard languages">{origin} · {summary}</string>
     <string name="settings__localization__language_pack_extension_active_summary">{active}/{total} matching current keyboard languages; {kind} pack loads only for active matching subtypes.</string>
     <string name="settings__localization__language_pack_extension_standby_summary">0/{total} matching current keyboard languages; {kind} pack stays unloaded until you add or switch to a matching subtype.</string>
     <string name="settings__localization__language_pack_extension_unavailable_summary">{active}/{total} matching current keyboard languages, but the {kind} table data is unavailable. Candidates fail closed until you reinstall or replace this pack.</string>

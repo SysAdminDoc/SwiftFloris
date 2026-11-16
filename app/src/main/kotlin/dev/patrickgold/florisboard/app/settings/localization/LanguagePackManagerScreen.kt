@@ -278,7 +278,11 @@ private fun languagePackEntrySummary(entry: LanguagePackCatalogEntry): String {
         LanguagePackKind.HAN_SHAPE_BASED -> stringRes(R.string.settings__localization__language_pack_kind_han)
         LanguagePackKind.GENERIC -> stringRes(R.string.settings__localization__language_pack_kind_generic)
     }
-    return when (entry.state) {
+    val origin = when (entry.origin) {
+        LanguagePackOrigin.BuiltIn -> stringRes(R.string.settings__localization__language_pack_origin_built_in)
+        LanguagePackOrigin.Imported -> stringRes(R.string.settings__localization__language_pack_origin_imported)
+    }
+    val summary = when (entry.state) {
         LanguagePackRuntimeState.ActiveForSubtype -> stringRes(
             R.string.settings__localization__language_pack_extension_active_summary,
             "active" to entry.activeComponentCount.toString(),
@@ -302,6 +306,11 @@ private fun languagePackEntrySummary(entry: LanguagePackCatalogEntry): String {
             "kind" to kind,
         )
     }
+    return stringRes(
+        R.string.settings__localization__language_pack_entry_summary,
+        "origin" to origin,
+        "summary" to summary,
+    )
 }
 
 @Composable

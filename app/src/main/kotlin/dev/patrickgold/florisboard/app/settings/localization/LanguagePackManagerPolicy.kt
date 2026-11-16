@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.app.settings.localization
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackComponent
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackKind
+import dev.patrickgold.florisboard.lib.ext.ExtensionManager
 
 internal enum class LanguagePackManagerNotice {
     None,
@@ -34,6 +35,15 @@ internal enum class LanguagePackRuntimeState {
     DataUnavailable,
 }
 
+/** Where a language pack came from, which also decides whether it can be deleted. */
+internal enum class LanguagePackOrigin {
+    /** Ships in the APK's assets. */
+    BuiltIn,
+
+    /** The user imported it into internal storage. */
+    Imported,
+}
+
 internal data class LanguagePackCatalogComponent(
     val id: String,
     val label: String,
@@ -45,6 +55,7 @@ internal data class LanguagePackCatalogEntry(
     val extensionId: String,
     val title: String,
     val kind: LanguagePackKind,
+    val origin: LanguagePackOrigin,
     val state: LanguagePackRuntimeState,
     val components: List<LanguagePackCatalogComponent>,
 ) {
@@ -105,6 +116,12 @@ internal object LanguagePackManagerPolicy {
                 extensionId = extension.meta.id,
                 title = extension.meta.title,
                 kind = extension.kind,
+                // The same test as ExtensionManager.canDelete, so the rows that say "Imported" are the ones with Delete.
+                origin = if (ExtensionManager.isImported(extension)) {
+                    LanguagePackOrigin.Imported
+                } else {
+                    LanguagePackOrigin.BuiltIn
+                },
                 state = state,
                 components = components,
             )
