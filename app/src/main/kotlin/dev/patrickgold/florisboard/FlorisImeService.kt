@@ -81,6 +81,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.theme.WallpaperChangeReceiver
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
 import dev.patrickgold.florisboard.ime.voice.VoiceInputSetupReason
+import dev.patrickgold.florisboard.ime.window.GestureRefreshRate
 import dev.patrickgold.florisboard.ime.window.ImeInsets
 import dev.patrickgold.florisboard.ime.window.ImeRootView
 import dev.patrickgold.florisboard.ime.window.ImeVisibilityConfigurationPolicy
@@ -402,6 +403,9 @@ class FlorisImeService : LifecycleInputMethodService() {
         }
         windowController.editor.state.map { it.isEnabled }.distinctUntilChanged().collectIn(lifecycleScope) {
             window.window?.let { configureWindowHeight(it, isFullscreenMode) }
+        }
+        windowController.editor.state.map { it.isAnyGesture }.distinctUntilChanged().collectIn(lifecycleScope) {
+            window.window?.let { win -> holdRefreshRate(win, it) }
         }
         // While the size editor is open, Compose lays the keyboard out while it draws, after Android asked
         // onComputeInsets for this frame's insets (see onConfigureWindow). Each time the reported insets change,
@@ -928,6 +932,23 @@ class FlorisImeService : LifecycleInputMethodService() {
         }
         if (win.attributes.width != ViewGroup.LayoutParams.MATCH_PARENT || win.attributes.height != height) {
             win.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, height)
+        }
+    }
+
+    /**
+     * Holds the display at its fastest refresh rate while a size editor drag runs, and lets it go
+     * when the drag ends. See [GestureRefreshRate].
+     */
+    private fun holdRefreshRate(win: Window, isGesture: Boolean) {
+        val display = win.decorView.display
+        val mode = if (isGesture && display != null) {
+            GestureRefreshRate.fastestAtSameSize(display.mode, display.supportedModes)
+        } else {
+            null
+        }
+        val attrs = win.attributes
+        if (GestureRefreshRate.applyTo(attrs, mode)) {
+            win.attributes = attrs
         }
     }
 
