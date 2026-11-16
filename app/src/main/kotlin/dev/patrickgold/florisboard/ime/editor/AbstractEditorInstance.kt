@@ -151,6 +151,18 @@ abstract class AbstractEditorInstance(context: Context) {
     }
 
     /**
+     * Returns once the app has run every edit the keyboard sent it so far. The keyboard's edits
+     * reach the app over the input connection, but a hardware key the keyboard handled goes back
+     * over the key event channel, and the app can run the next key of a burst (a letter it types
+     * itself) before those edits: "wiht", space, "river" came out "withriv er". A read is answered
+     * on the app's main thread after the edits queued ahead of it, so returning from the key only
+     * after the read keeps the next key behind them.
+     */
+    fun awaitAppEdits() {
+        currentInputConnection()?.getTextBeforeCursor(1, 0)
+    }
+
+    /**
      * True while [activeContent] lags the editor's text: a key the app typed or deleted with itself
      * (see [expectAppInsert] and [expectAppStepBack]) isn't reported yet, or a cursor move the
      * keyboard didn't predict (that report, a jump) was read but isn't published yet. A key burst

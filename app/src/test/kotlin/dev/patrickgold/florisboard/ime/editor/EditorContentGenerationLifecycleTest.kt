@@ -725,6 +725,25 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun awaitAppEditsReadsAfterTheKeyboardsCommit() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "with")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        val before = connection.editAndReadCalls.size
+        // A hardware space the keyboard handles: the app answers the read only after it has run
+        // the commit queued ahead of it, so the next key of a burst can't land in front of it.
+        editor.commitText(" ")
+        editor.awaitAppEdits()
+
+        assertEquals(listOf("commitText", "getTextBeforeCursor(1)"), connection.editAndReadCalls.drop(before))
+        editor.inputConnection = null
+        editor.awaitAppEdits()
+    }
+
+    @Test
     fun leftOverAccentReportedAlone() {
         val accent = String(Character.toChars(0x301))
         val editor = TestEditorInstance(context)
@@ -1080,6 +1099,8 @@ private class LifecycleRecordingInputConnection(
         get() = calls.filter { call ->
             call == "finishComposingText" || call.startsWith("setComposingRegion")
         }
+    val editAndReadCalls: List<String>
+        get() = calls.filter { call -> call == "commitText" || call.startsWith("getTextBeforeCursor") }
 
     val connection: InputConnection = Proxy.newProxyInstance(
         InputConnection::class.java.classLoader,
@@ -1089,7 +1110,14 @@ private class LifecycleRecordingInputConnection(
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
         return when (method.name) {
-            "getTextBeforeCursor" -> textBeforeSelection
+            "getTextBeforeCursor" -> {
+                calls += "getTextBeforeCursor(${args?.get(0)})"
+                textBeforeSelection
+            }
+            "commitText" -> {
+                calls += "commitText"
+                true
+            }
             "getTextAfterCursor" -> textAfterSelection
             "getSelectedText" -> selectedText
             "setComposingRegion" -> {

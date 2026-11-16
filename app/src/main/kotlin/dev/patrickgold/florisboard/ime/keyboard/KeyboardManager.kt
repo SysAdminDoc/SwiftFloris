@@ -1616,6 +1616,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     textEntry.type(" ")
                 } else {
                     handleHardwareKeyboardSpace()
+                    // The app may be holding this burst's next keys. It runs the space and any
+                    // correction first.
+                    if (event != null) editorInstance.awaitAppEdits()
                 }
                 true
             }
@@ -1624,6 +1627,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     finishTextEntry(submitted = true)
                 } else {
                     handleEnter()
+                    if (event != null) editorInstance.awaitAppEdits()
                 }
                 true
             }
