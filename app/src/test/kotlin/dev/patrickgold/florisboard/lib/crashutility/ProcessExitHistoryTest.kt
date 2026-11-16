@@ -44,10 +44,11 @@ class ProcessExitHistoryTest {
     private val activityManager = context.getSystemService(ActivityManager::class.java)
 
     /**
-     * The description Android 17's limiter writes for a kill: `[KILL <pid>] MemoryLimiter:AnonSwap`,
-     * as recorded on an API 37 emulator with a limiter config in place.
+     * The description Android 17's limiter writes for a kill, as `dumpsys activity exit-info`
+     * showed it for a real limiter kill of the keyboard: reason 13 (OTHER KILLS BY SYSTEM),
+     * subreason 12 (KILL PID), `description=MemoryLimiter:AnonSwap`.
      */
-    private val limiterDescription = "[KILL 4242] MemoryLimiter:AnonSwap"
+    private val limiterDescription = "MemoryLimiter:AnonSwap"
 
     private val crashDir = File(context.noBackupFilesDir, "unhandled_stacktraces")
 
