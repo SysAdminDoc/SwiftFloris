@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.editor
 
 import android.content.Context
+import android.icu.lang.UCharacter
 import android.icu.text.BreakIterator
 import android.inputmethodservice.InputMethodService
 import android.os.SystemClock
@@ -86,6 +87,12 @@ abstract class AbstractEditorInstance(context: Context) {
          * arrow stops before it, a Compose or Chrome field's moves over the whole conjunct.
          */
         private const val ConjunctConsonantStep: Int = 1 shl 16
+        /**
+         * Flags the back step of a variation selector on a char with no accent between them (an
+         * ideograph's): a TextView's or Chrome's Backspace deletes both, a Compose field's deletes
+         * the selector alone.
+         */
+        private const val VariationSelectorStep: Int = 1 shl 17
         /** The combining enclosing keycap, deleted with the digit and selector it closes. */
         private const val KeycapMark: Int = 0x20E3
         /** An app reports its insert within a frame or two, so a cursor this late isn't that key's. */
@@ -940,9 +947,9 @@ abstract class AbstractEditorInstance(context: Context) {
          * [textBefore] holds the last chars right before [cursor], as far as the keyboard knows
          * them: the text read from the field plus what the keys since typed, so a step back over
          * an emoji or a letter with its accents goes the way the field's own would.
-         * [joinedCursor] and [joinedTextBefore] are the same for a field whose Left arrow moves
-         * over a whole conjunct; they differ from [cursor] and [textBefore] only after a Left over
-         * one while the field's kind isn't known yet.
+         * [joinedCursor] and [joinedTextBefore] are the same for a field of the joined kind (see
+         * [isJoinedKind]); they differ from [cursor] and [textBefore] only after a Left over a
+         * conjunct or a Backspace over a variation selector while the field's kind isn't known yet.
          * [quietUntil] is set while a report may already cover the key: past it the key no
          * longer holds the editor behind, but a late report still matches it.
          */
@@ -958,9 +965,9 @@ abstract class AbstractEditorInstance(context: Context) {
 
             fun isExpired(now: Long): Boolean = now - atMillis > PassThroughInsertTimeoutMillis
 
-            /** Keeps the guess for the field's kind, [joins] for one that moves over a whole conjunct. */
-            fun settle(joins: Boolean) {
-                if (joins) {
+            /** Keeps the guess for the field's kind, [joined] for the joined kind. */
+            fun settle(joined: Boolean) {
+                if (joined) {
                     cursor = joinedCursor
                     textBefore = joinedTextBefore
                 } else {
@@ -988,18 +995,21 @@ abstract class AbstractEditorInstance(context: Context) {
         private var overflowUntil = 0L
         private var graphemes: BreakIterator? = null
         /**
-         * Whether this field's Left arrow moves over a whole conjunct (Compose, Chrome) or stops
-         * before the consonant after the virama (a TextView), once a report has told them apart.
-         * EditorInfo doesn't say reliably.
+         * Whether this field is of the joined kind, once a report has told the kinds apart.
+         * EditorInfo doesn't say reliably. A Compose field's Left arrow moves over a whole conjunct
+         * and its Backspace deletes a variation selector alone. A TextView's Left stops before the
+         * consonant after the virama and its Backspace deletes a selector with the char it's on.
+         * Chrome is a mix (Left as Compose, Backspace as a TextView), so a burst there that does
+         * both reads one of them as a jump, which lets the next one learn the kind again.
          */
-        private var leftJoinsConjuncts: Boolean? = null
+        private var isJoinedKind: Boolean? = null
 
         fun start(selection: EditorRange) {
             synchronized(lock) {
                 reported = selection
                 pending.clear()
                 overflowUntil = 0L
-                leftJoinsConjuncts = null
+                isJoinedKind = null
             }
         }
 
@@ -1055,13 +1065,13 @@ abstract class AbstractEditorInstance(context: Context) {
                 val now = SystemClock.uptimeMillis()
                 dropExpired(now)
                 val base = baseOf(now, keyboardPending, published) ?: return
-                val joins = leftJoinsConjuncts
+                val joined = isJoinedKind
                 // Nothing to step back over, so the app reports nothing either.
-                val near = stepBack(base.range, base.text, wholeCluster, overConjunct = joins == true) ?: return
-                val far = if (joins != null) {
+                val near = stepBack(base.range, base.text, wholeCluster, joinedKind = joined == true) ?: return
+                val far = if (joined != null) {
                     near
                 } else {
-                    stepBack(base.joinedRange, base.joinedText, wholeCluster, overConjunct = true)
+                    stepBack(base.joinedRange, base.joinedText, wholeCluster, joinedKind = true)
                         ?: Landing(base.joinedRange.start, base.joinedText)
                 }
                 add(PendingKey(near.cursor, isStepBack = true, near.text, now, far.cursor, far.text))
@@ -1070,17 +1080,19 @@ abstract class AbstractEditorInstance(context: Context) {
 
         /**
          * Where a step back from [range] over the end of [text] lands, or null at the start of the
-         * text. [overConjunct] moves a Left arrow over a whole conjunct, as Compose and Chrome
-         * fields do.
+         * text, in a field of the joined kind or not (see [isJoinedKind]).
          */
-        private fun stepBack(range: EditorRange, text: String, wholeCluster: Boolean, overConjunct: Boolean): Landing? {
+        private fun stepBack(range: EditorRange, text: String, wholeCluster: Boolean, joinedKind: Boolean): Landing? {
             // Backspace deletes a selection and Left collapses it, both to its start.
             if (range.isSelectionMode) return Landing(range.start, text)
             if (range.start <= 0) return null
             val steps = backStepLengths(text)
             var taken = if (steps.isEmpty()) 0 else 1
             if (wholeCluster) {
-                while (taken < steps.size && carriesAlong(steps[steps.size - taken], overConjunct)) taken++
+                while (taken < steps.size && carriesAlong(steps[steps.size - taken], joinedKind)) taken++
+            } else if (!joinedKind && taken < steps.size && (abs(steps.last()) and VariationSelectorStep) != 0) {
+                // A TextView's Backspace takes the char a variation selector is on along with it.
+                taken++
             }
             // A char the keyboard doesn't know is most likely a single one.
             val step = if (taken == 0) 1 else steps.takeLast(taken).sumOf { stepLength(it) }
@@ -1088,8 +1100,8 @@ abstract class AbstractEditorInstance(context: Context) {
         }
 
         /** True when a Left arrow over [step] also moves over the char before it. */
-        private fun carriesAlong(step: Int, overConjunct: Boolean): Boolean {
-            return step < 0 || (overConjunct && (step and ConjunctConsonantStep) != 0)
+        private fun carriesAlong(step: Int, joinedKind: Boolean): Boolean {
+            return step < 0 || (joinedKind && (step and ConjunctConsonantStep) != 0)
         }
 
         private fun stepLength(step: Int): Int = abs(step) and (ConjunctConsonantStep - 1)
@@ -1127,7 +1139,8 @@ abstract class AbstractEditorInstance(context: Context) {
          * Backspace takes them, and are negative, since a Left arrow moves over them with the
          * letter. A consonant after a virama is positive with [ConjunctConsonantStep] set,
          * whichever cluster ICU puts it in: a TextView's Left arrow stops before it, though
-         * Compose and Chrome move over the whole conjunct.
+         * Compose and Chrome move over the whole conjunct. A variation selector on a char with no
+         * accent has [VariationSelectorStep] set.
          */
         private fun backStepLengths(text: String): List<Int> {
             var from = max(0, text.length - NumCharsForBackStepsBeforePassThrough)
@@ -1151,6 +1164,7 @@ abstract class AbstractEditorInstance(context: Context) {
                             when {
                                 afterVirama -> length or ConjunctConsonantStep
                                 at == start -> length
+                                isPlainCharSelector(window, at, codePoint) -> -(length or VariationSelectorStep)
                                 else -> -length
                             }
                         )
@@ -1202,6 +1216,17 @@ abstract class AbstractEditorInstance(context: Context) {
             return codePoint in 0xFE00..0xFE0F || codePoint in 0xE0100..0xE01EF
         }
 
+        /**
+         * True when [codePoint] at [at] in [text] is a variation selector right after a char with
+         * combining class 0 that isn't one itself, the pair a TextView's Backspace (and Chrome's)
+         * deletes at once. After an accent it deletes the selector alone.
+         */
+        private fun isPlainCharSelector(text: String, at: Int, codePoint: Int): Boolean {
+            if (at <= 0 || !isVariationSelector(codePoint)) return false
+            val before = text.codePointBefore(at)
+            return !isVariationSelector(before) && UCharacter.getCombiningClass(before) == 0
+        }
+
         private fun add(key: PendingKey) {
             pending.addLast(key)
             // The dropped key's report won't match, so it reads as a jump and drops the rest. The
@@ -1235,12 +1260,13 @@ abstract class AbstractEditorInstance(context: Context) {
                     else -> min(near, far)
                 }
                 // Only one kind of field explains the report, so the key it matched is one they
-                // leave in different places (after a Left over a conjunct): that kind is this field's.
-                // When both do at different keys (a coalesced report), the next report may tell.
+                // leave in different places (a Left over a conjunct, a Backspace over a variation
+                // selector): that kind is this field's. When both do at different keys (a
+                // coalesced report), the next report may tell.
                 if (near != far && (near < 0 || far < 0)) {
-                    val joins = far >= 0
-                    leftJoinsConjuncts = joins
-                    pending.forEach { it.settle(joins) }
+                    val joined = far >= 0
+                    isJoinedKind = joined
+                    pending.forEach { it.settle(joined) }
                 }
                 // The app may report several keys at once, so drop everything up to the match.
                 var steppedBack = false
@@ -1295,8 +1321,8 @@ abstract class AbstractEditorInstance(context: Context) {
             synchronized(lock) {
                 pending.clear()
                 // The field's kind may have been read off a report another key caused (one that
-                // expired first), so a report nothing explains lets the next Left learn it again.
-                leftJoinsConjuncts = null
+                // expired first), so a report nothing explains lets the next key learn it again.
+                isJoinedKind = null
             }
         }
     }

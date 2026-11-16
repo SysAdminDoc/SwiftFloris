@@ -1154,6 +1154,91 @@ class EditorContentGenerationLifecycleTest {
         assertEquals(1, adjacencyBreaks.size)
     }
 
+    private fun ideographWith(selector: Int): String =
+        String(Character.toChars(0x845B)) + String(Character.toChars(selector))
+
+    @Test
+    fun backspaceOverIdeographAndSelectorInTextView() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a" + ideographWith(0xE0100))
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // A TextView's Backspace, like Chrome's, deletes the selector with the ideograph.
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(4, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun backspaceOverIdeographAndSelectorInCompose() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a" + ideographWith(0xFE00))
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 3), isRestart = false)
+        scheduler.runCurrent()
+        // A Compose field's Backspace deletes the selector alone.
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(3, 2)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun backspaceOverSelectorAfterAccent() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = "ae" + String(Character.toChars(0x301)) + String(Character.toChars(0xFE00)),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // After an accent, every field's Backspace deletes the selector alone.
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(4, 3)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftOverIdeographAndSelector() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a" + ideographWith(0xE0100))
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // Every field's Left moves over the ideograph and its selector together.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(4, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
     @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
