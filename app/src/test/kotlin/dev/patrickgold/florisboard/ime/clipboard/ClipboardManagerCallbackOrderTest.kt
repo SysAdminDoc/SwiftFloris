@@ -53,6 +53,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -835,7 +836,8 @@ class ClipboardManagerCallbackOrderTest {
         // the file exists, so the saved copy goes first.
         val saved = File(context.dataDir, "jetpref_datastore/florisboard-app-prefs.jetpref")
         check(saved.delete() || !saved.exists()) { "Couldn't delete the saved preferences" }
-        runBlocking { write().getOrThrow() }
+        // A save that never answers fails this test instead of hanging the whole run.
+        runBlocking { withTimeout(10_000) { write().getOrThrow() } }
     }
 
     /** What another app's clear looks like: one item with neither text nor a URI. */

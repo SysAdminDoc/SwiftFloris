@@ -50,3 +50,16 @@ The profanity exclusion list applied during dictionary generation is the
 LDNOOBW List of Dirty, Naughty, Obscene, and Otherwise Bad Words (English),
 licensed under CC-BY 4.0. Original curation by Shutterstock.
 Source: https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words
+
+================================================================================
+Bundled JetPref datastore model attribution
+================================================================================
+
+`lib/jetpref-datastore-model/` is the datastore-model module of JetPref 0.3.0
+(tag v0.3.0), Copyright 2021-2025 Patrick Goldinger, licensed under the Apache
+License, Version 2.0. Project home: https://github.com/patrickgold/jetpref
+
+It is modified: the event worker answers each save with trySend, so a save
+whose caller was cancelled can't stop later saves, and the expect and actual
+declarations are merged into one file per source. Each changed file says so in
+its header.

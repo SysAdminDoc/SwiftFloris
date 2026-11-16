@@ -27,6 +27,18 @@ plugins {
     alias(libs.plugins.mikepenz.aboutlibraries) apply false
 }
 
+// jetpref-datastore-ui depends on the published datastore model. The fixed copy in
+// lib/jetpref-datastore-model has to replace it there too, or both end up on the classpath.
+subprojects {
+    configurations.configureEach {
+        resolutionStrategy.dependencySubstitution {
+            substitute(module("dev.patrickgold.jetpref:jetpref-datastore-model"))
+                .using(project(":lib:jetpref-datastore-model"))
+                .because("its event worker stops for good after a cancelled write in 0.3.0")
+        }
+    }
+}
+
 tasks.register<Exec>("typingQualityScorecard") {
     group = "verification"
     description = "Runs the typing-quality replay scorecard and emits JSON/Markdown reports."

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix settings that stopped saving after one was changed right as the screen or keyboard changing it closed. That cancelled save took down the part of the app that writes settings to storage, so every later change either never finished or was gone after the keyboard restarted.
 - Learn which words you type together again. The keyboard mistook its own typing for a tap somewhere else in the text, so after nearly every word it forgot the one before, and next-word suggestions almost never picked up your own word pairs. That goes for a hardware keyboard without an imported layout too. Tapping elsewhere in the text, selecting text or switching fields still starts fresh.
 - Fix the keyboard sometimes opening with only the suggestion bar and no keys. When Android had closed the keyboard and it started fresh, it could look for its built-in layouts a moment before they were ready, and it kept showing that empty result until it restarted again.
 - Stop space from changing a word into a suggestion meant for another one. Hit space right after the last letter and the suggestions on screen could still be the ones for a few letters earlier, so "river" turned into "riverbed". Typed fast enough, the next word could even get the previous word's suggestion. Space now only uses suggestions made for the word you're on and leaves it as typed otherwise.

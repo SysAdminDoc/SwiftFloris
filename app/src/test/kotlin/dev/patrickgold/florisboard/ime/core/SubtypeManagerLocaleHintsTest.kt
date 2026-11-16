@@ -222,7 +222,8 @@ class SubtypeManagerLocaleHintsTest {
         // The app loads the store in the background and swaps it in when done, which would drop a
         // value set before then.
         waitFor { (context as FlorisApplication).preferenceStoreLoaded.value }
-        write().onFailure { error ->
+        // A save that never answers fails this test instead of hanging the whole run.
+        withTimeout(10_000) { write() }.onFailure { error ->
             // JetPref saves by renaming a temp file over the old one, which a Windows JVM refuses
             // once the file exists (other saves in the app can land at any time, so deleting it
             // first isn't enough). The value is set in memory before that save, and memory is all
