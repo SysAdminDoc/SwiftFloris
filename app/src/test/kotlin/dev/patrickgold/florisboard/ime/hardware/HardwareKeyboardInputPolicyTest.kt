@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.hardware
 
+import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -77,6 +78,47 @@ class HardwareKeyboardInputPolicyTest : FunSpec({
             text = "a",
             shouldFlushAutoCommitCandidate = false,
         )
+    }
+
+    test("printable keys the app inserts itself report how many chars it adds") {
+        HardwareKeyboardInputPolicy.passThroughInsertLength(
+            unicodeChar = 'w'.code,
+            isCtrlPressed = false,
+            isMetaPressed = false,
+        ) shouldBe 1
+        HardwareKeyboardInputPolicy.passThroughInsertLength(
+            unicodeChar = 0x1F600,
+            isCtrlPressed = false,
+            isMetaPressed = false,
+        ) shouldBe 2
+    }
+
+    test("shortcuts, dead keys and control keys insert nothing") {
+        HardwareKeyboardInputPolicy.passThroughInsertLength(
+            unicodeChar = 'c'.code,
+            isCtrlPressed = true,
+            isMetaPressed = false,
+        ) shouldBe 0
+        HardwareKeyboardInputPolicy.passThroughInsertLength(
+            unicodeChar = 'a'.code,
+            isCtrlPressed = false,
+            isMetaPressed = true,
+        ) shouldBe 0
+        HardwareKeyboardInputPolicy.passThroughInsertLength(
+            unicodeChar = KeyCharacterMap.COMBINING_ACCENT or 0x0301,
+            isCtrlPressed = false,
+            isMetaPressed = false,
+        ) shouldBe 0
+        HardwareKeyboardInputPolicy.passThroughInsertLength(
+            unicodeChar = '\t'.code,
+            isCtrlPressed = false,
+            isMetaPressed = false,
+        ) shouldBe 0
+        HardwareKeyboardInputPolicy.passThroughInsertLength(
+            unicodeChar = 0,
+            isCtrlPressed = false,
+            isMetaPressed = false,
+        ) shouldBe 0
     }
 
     test("mapped punctuation wins before built-in key handling") {

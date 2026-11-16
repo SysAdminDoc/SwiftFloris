@@ -188,10 +188,208 @@ class EditorContentGenerationLifecycleTest {
         assertEquals(1, adjacencyBreaks.size)
         collectJob.cancel()
     }
+
+    @Test
+    fun keyboardOwnEditsAfterCommitKeepAdjacency() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hello")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 5), isRestart = false)
+        scheduler.runCurrent()
+        editor.updateLastCommitPosition()
+        // The space after a committed word, then the next word's first letter: the editor reports
+        // the cursor where the keyboard's own edits put it, so this is still typing in a row.
+        editor.commitText(" ")
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(5),
+            newSelection = EditorRange.cursor(6),
+            composing = EditorRange.Unspecified,
+        )
+        editor.commitText("w")
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(6),
+            newSelection = EditorRange.cursor(7),
+            composing = EditorRange.Unspecified,
+        )
+        scheduler.runCurrent()
+
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun cursorJumpWithoutTrackedCommitPublishesAdjacencyBreakSignal() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hello world")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 11), isRestart = false)
+        scheduler.runCurrent()
+        // A word ended by a typed space leaves no tracked commit, and the user then taps into
+        // the middle of the text: the next word isn't typed after the last one.
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(11),
+            newSelection = EditorRange.cursor(3),
+            composing = EditorRange.Unspecified,
+        )
+        scheduler.runCurrent()
+
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun repeatedSelectionReportDoesNotBreakAdjacency() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hello")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 5), isRestart = false)
+        scheduler.runCurrent()
+        // Some editors report the same cursor again when only the composing region changes.
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(5),
+            newSelection = EditorRange.cursor(5),
+            composing = EditorRange(0, 5),
+        )
+        scheduler.runCurrent()
+
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun appInsertedPassThroughKeysKeepAdjacency() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // A hardware keyboard with no mapped layout: the app inserts "wi" itself. Both keys go
+        // down before the app reports either cursor, and the keyboard's composing region for the
+        // first letter is reported in between.
+        editor.expectAppInsert(1)
+        editor.expectAppInsert(1)
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(7),
+            newSelection = EditorRange.cursor(8),
+            composing = EditorRange.Unspecified,
+        )
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(8),
+            newSelection = EditorRange.cursor(8),
+            composing = EditorRange(7, 8),
+        )
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(8),
+            newSelection = EditorRange.cursor(9),
+            composing = EditorRange(7, 8),
+        )
+        scheduler.runCurrent()
+
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun appInsertRightAfterKeyboardSpaceKeepsAdjacency() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // The keyboard commits the space, and the next letter (inserted by the app) goes down
+        // before the editor reports the space, so the letter lands after the space, at 8.
+        editor.commitText(" ")
+        editor.expectAppInsert(1)
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(6),
+            newSelection = EditorRange.cursor(7),
+            composing = EditorRange.Unspecified,
+        )
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(7),
+            newSelection = EditorRange.cursor(8),
+            composing = EditorRange.Unspecified,
+        )
+        scheduler.runCurrent()
+
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun cursorJumpAfterAppInsertedKeyPublishesAdjacencyBreakSignal() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        editor.expectAppInsert(1)
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(7),
+            newSelection = EditorRange.cursor(8),
+            composing = EditorRange.Unspecified,
+        )
+        // A key the app never inserted leaves a pending cursor at 9; a tap at 2 is still a jump,
+        // and so is a later tap that happens to land on the stale 9.
+        editor.expectAppInsert(1)
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(8),
+            newSelection = EditorRange.cursor(2),
+            composing = EditorRange.Unspecified,
+        )
+        // The break signal buffers one emission, so let the collector see each break on its own.
+        scheduler.runCurrent()
+        assertEquals(1, adjacencyBreaks.size)
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(2),
+            newSelection = EditorRange.cursor(9),
+            composing = EditorRange.Unspecified,
+        )
+        scheduler.runCurrent()
+
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun massSelectionUpdatePublishesAdjacencyBreakSignal() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hello")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 5), isRestart = false)
+        scheduler.runCurrent()
+        editor.massSelectionUpdate(EditorRange(0, 5))
+        scheduler.runCurrent()
+
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    private fun collectAdjacencyBreaks(editor: AbstractEditorInstance): List<Unit> {
+        val adjacencyBreaks = mutableListOf<Unit>()
+        CoroutineScope(dispatcher).launch {
+            editor.commitAdjacencyBrokenFlow.collect {
+                adjacencyBreaks += Unit
+            }
+        }
+        scheduler.runCurrent()
+        return adjacencyBreaks
+    }
 }
 
 private class TestEditorInstance(context: Context) : AbstractEditorInstance(context) {
     var inputConnection: InputConnection? = null
+
+    fun massSelectionUpdate(newSelection: EditorRange) {
+        handleMassSelectionUpdate(newSelection, EditorRange.Unspecified)
+    }
 
     override fun currentInputConnection(): InputConnection? = inputConnection
 

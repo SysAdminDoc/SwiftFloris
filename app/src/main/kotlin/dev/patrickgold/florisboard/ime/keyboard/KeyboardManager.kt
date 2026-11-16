@@ -253,11 +253,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 updateActiveEvaluators()
             }
             editorInstance.activeContentFlow.collectIn(scope) { content ->
-                if (editorInstance.lastCommitPosition.pos < 0) {
-                    resetLearnChain()
-                }
                 resetSuggestions(content)
             }
+            // The editor flags every cursor move that isn't typing (a tap, a selection, an app edit).
             editorInstance.commitAdjacencyBrokenFlow.collectIn(scope) {
                 resetLearnChain()
             }
@@ -1517,7 +1515,19 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 inputEventDispatcher.sendDown(TextKeyData.SHIFT)
                 true
             }
-            HardwareKeyboardKeyDownAction.PassThrough -> false
+            HardwareKeyboardKeyDownAction.PassThrough -> {
+                // No layout is mapped for this keyboard, so the app inserts a printable key itself.
+                // Tell the editor where that leaves the cursor, or the move reads as a jump.
+                if (event != null) {
+                    val length = HardwareKeyboardInputPolicy.passThroughInsertLength(
+                        unicodeChar = event.unicodeChar,
+                        isCtrlPressed = event.isCtrlPressed,
+                        isMetaPressed = event.isMetaPressed,
+                    )
+                    if (length > 0) editorInstance.expectAppInsert(length)
+                }
+                false
+            }
         }
     }
 

@@ -58,6 +58,7 @@ abstract class AbstractEditorInstance(context: Context) {
         private const val NumCharsBeforeCursor: Int = 256
         private const val NumCharsAfterCursor: Int = 128
         private const val NumCharsSafeMarginBeforeCursor: Int = 128
+        private const val MaxPendingPassThroughInserts: Int = 32
         //private const val NumCharsSafeMarginAfterCursor: Int = 0
 
         private const val CursorUpdateAll: Int =
@@ -97,6 +98,7 @@ abstract class AbstractEditorInstance(context: Context) {
             _activeContentFlow.value = v
         }
     private val expectedContentQueue = ExpectedContentQueue()
+    private val passThroughInserts = PassThroughInsertTracker()
     private val _lastCommitPosition = LastCommitPosition()
     val lastCommitPosition
         get() = LastCommitPosition(_lastCommitPosition)
@@ -107,6 +109,14 @@ abstract class AbstractEditorInstance(context: Context) {
         return expectedContentQueue.peekNewestOrNull()
     }
 
+    /**
+     * Records that the app is about to insert [length] chars for a key the keyboard passed through
+     * to it (a hardware key with no mapped layout), so the cursor move it reports reads as typing.
+     */
+    fun expectAppInsert(length: Int) {
+        passThroughInserts.expect(length, keyboardPending = expectedContentQueue.peekNewestOrNull()?.selection)
+    }
+
     protected open fun currentInputConnection() = FlorisImeService.currentInputConnection()
 
     open fun handleStartInput(editorInfo: FlorisEditorInfo) {
@@ -114,6 +124,7 @@ abstract class AbstractEditorInstance(context: Context) {
         activeInfo = editorInfo
         activeCursorCapsMode = editorInfo.initialCapsMode
         activeContent = EditorContent.Unspecified
+        passThroughInserts.start(editorInfo.initialSelection)
         currentInputConnection()?.requestCursorUpdates(CursorUpdateAll)
     }
 
@@ -145,6 +156,7 @@ abstract class AbstractEditorInstance(context: Context) {
                 selection = EditorRange(0, 0)
             }
         }
+        passThroughInserts.start(selection)
 
         launchContentGeneration(
             inputConnection = ic,
@@ -167,7 +179,10 @@ abstract class AbstractEditorInstance(context: Context) {
         if (composing.isValid) {
             currentInputConnection()?.setComposingRegion(EditorRange.Unspecified)
         }
-        notifyCommitAdjacencyBrokenIfNeeded(_lastCommitPosition.handleUpdateSelection(newSelection))
+        _lastCommitPosition.handleUpdateSelection(newSelection)
+        passThroughInserts.start(newSelection)
+        // Mass selection is the user selecting text, so whatever comes next isn't typed in a row.
+        notifyCommitAdjacencyBrokenIfNeeded(true)
     }
 
     open fun handleSelectionUpdate(oldSelection: EditorRange, newSelection: EditorRange, composing: EditorRange) {
@@ -177,11 +192,22 @@ abstract class AbstractEditorInstance(context: Context) {
         if (ic == null || newSelection.isNotValid || editorInfo.isRawInputEditor) {
             activeCursorCapsMode = InputAttributes.CapsMode.NONE
             activeContent = EditorContent.Unspecified
+            passThroughInserts.start(EditorRange.Unspecified)
             reevaluateInputShiftState()
             return
         }
 
-        notifyCommitAdjacencyBrokenIfNeeded(_lastCommitPosition.handleUpdateSelection(newSelection))
+        // A cursor the keyboard's own edit predicted is typing, not a jump, and so is the cursor after
+        // a key the app inserted itself. Anything else that moves the cursor (a tap, an app rewriting
+        // the text) means the next word isn't typed after the last.
+        val isAppInsert = passThroughInserts.handleUpdateSelection(newSelection)
+        val isOwnEdit = isAppInsert || expectedContentQueue.containsSelection(newSelection)
+        val leftTrackedCommit = _lastCommitPosition.handleUpdateSelection(newSelection)
+        val isJump = !isOwnEdit && (leftTrackedCommit || newSelection != oldSelection)
+        if (isJump) {
+            passThroughInserts.dropPending()
+        }
+        notifyCommitAdjacencyBrokenIfNeeded(isJump)
         val expected = expectedContentQueue.popUntilOrNull {
             it.selection == newSelection && it.composing == composing &&
                 it.textBeforeSelection.length >= NumCharsSafeMarginBeforeCursor.coerceAtMost(it.selection.start)
@@ -230,6 +256,7 @@ abstract class AbstractEditorInstance(context: Context) {
         activeCursorCapsMode = InputAttributes.CapsMode.NONE
         activeContent = EditorContent.Unspecified
         expectedContentQueue.clear()
+        passThroughInserts.start(EditorRange.Unspecified)
         _lastCommitPosition.reset()
     }
 
@@ -796,6 +823,12 @@ abstract class AbstractEditorInstance(context: Context) {
             }
         }
 
+        fun containsSelection(selection: EditorRange): Boolean {
+            return synchronized(lock) {
+                list.any { it.selection == selection }
+            }
+        }
+
         fun peekNewestOrNull(): EditorContent? {
             return synchronized(lock) {
                 list.lastOrNull()
@@ -805,6 +838,59 @@ abstract class AbstractEditorInstance(context: Context) {
         fun clear() {
             synchronized(lock) {
                 list.clear()
+            }
+        }
+    }
+
+    /**
+     * Cursors the app will report after inserting keys the keyboard passed through to it. The app,
+     * not the keyboard, edits the text there, so those moves never show up in [ExpectedContentQueue].
+     */
+    private class PassThroughInsertTracker {
+        private val lock = Any()
+        private var reported = EditorRange.Unspecified
+        private val pending = ArrayDeque<Int>()
+
+        fun start(selection: EditorRange) {
+            synchronized(lock) {
+                reported = selection
+                pending.clear()
+            }
+        }
+
+        /**
+         * [keyboardPending] is the cursor of the keyboard's newest edit the editor hasn't reported
+         * yet (a space it just committed), which is where the app's insert lands if nothing of the
+         * app's own is pending.
+         */
+        fun expect(length: Int, keyboardPending: EditorRange?) {
+            synchronized(lock) {
+                // Chain off the last pending insert so a fast burst predicts every cursor.
+                val base = pending.lastOrNull()
+                    ?: (keyboardPending?.takeIf { it.isValid } ?: reported.takeIf { it.isValid })
+                        ?.let { min(it.start, it.end) }
+                    ?: return
+                pending.addLast(base + length)
+                while (pending.size > MaxPendingPassThroughInserts) {
+                    pending.removeFirst()
+                }
+            }
+        }
+
+        /** True when the app put the cursor where a pending insert said it would. */
+        fun handleUpdateSelection(selection: EditorRange): Boolean {
+            return synchronized(lock) {
+                reported = selection
+                val index = if (selection.isCursorMode) pending.indexOf(selection.start) else -1
+                // The app may report several inserts at once, so drop everything up to the match.
+                repeat(index + 1) { pending.removeFirst() }
+                index >= 0
+            }
+        }
+
+        fun dropPending() {
+            synchronized(lock) {
+                pending.clear()
             }
         }
     }

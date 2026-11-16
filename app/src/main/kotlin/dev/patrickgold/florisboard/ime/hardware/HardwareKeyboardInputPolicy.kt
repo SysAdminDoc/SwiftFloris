@@ -40,6 +40,18 @@ internal object HardwareKeyboardInputPolicy {
         }
     }
 
+    /**
+     * How many chars the app inserts on its own for a key that passes through, so the editor can
+     * tell that cursor move from a jump. 0 for shortcuts, dead keys and control keys.
+     */
+    fun passThroughInsertLength(unicodeChar: Int, isCtrlPressed: Boolean, isMetaPressed: Boolean): Int {
+        if (isCtrlPressed || isMetaPressed) return 0
+        // Dead keys carry the combining-accent high bit, so they read as negative here.
+        if (unicodeChar <= 0 || !Character.isValidCodePoint(unicodeChar)) return 0
+        if (Character.isISOControl(unicodeChar)) return 0
+        return Character.charCount(unicodeChar)
+    }
+
     fun keyUpAction(keyCode: Int): HardwareKeyboardKeyUpAction {
         return when (keyCode) {
             KeyEvent.KEYCODE_SHIFT_LEFT,
