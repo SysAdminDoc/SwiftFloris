@@ -142,6 +142,7 @@ class FlorisPreferenceModelImpl : FlorisPreferenceModel() {
             `internal`.isImeSetUp to "internal.isImeSetUp",
             `internal`.aiFeaturesExplainerSeen to "internal.aiFeaturesExplainerSeen",
             `internal`.firstRunImportHintSeen to "internal.firstRunImportHintSeen",
+            `internal`.setupLanguageSubtypeId to "internal.setupLanguageSubtypeId",
             `internal`.versionOnInstall to "internal.versionOnInstall",
             `internal`.versionLastUse to "internal.versionLastUse",
             `internal`.versionLastChangelog to "internal.versionLastChangelog",

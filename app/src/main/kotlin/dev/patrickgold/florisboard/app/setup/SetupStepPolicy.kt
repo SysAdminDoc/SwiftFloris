@@ -18,11 +18,12 @@ package dev.patrickgold.florisboard.app.setup
 
 internal enum class SetupStep(val id: Int) {
     AiFeatures(1),
-    ImportDictionary(2),
-    EnableIme(3),
-    SelectIme(4),
-    SelectNotification(5),
-    FinishUp(6),
+    ChooseLanguage(2),
+    ImportDictionary(3),
+    EnableIme(4),
+    SelectIme(5),
+    SelectNotification(6),
+    FinishUp(7),
 }
 
 internal object SetupStepPolicy {
@@ -31,11 +32,13 @@ internal object SetupStepPolicy {
         isFlorisBoardSelected: Boolean,
         notificationPermissionState: NotificationPermissionState,
         aiFeaturesExplainerSeen: Boolean,
+        hasKeyboardLanguage: Boolean,
         firstRunImportHintSeen: Boolean,
         supportsNotificationPermission: Boolean,
     ): SetupStep {
         return when {
             !aiFeaturesExplainerSeen -> SetupStep.AiFeatures
+            !hasKeyboardLanguage -> SetupStep.ChooseLanguage
             !firstRunImportHintSeen -> SetupStep.ImportDictionary
             !isFlorisBoardEnabled -> SetupStep.EnableIme
             !isFlorisBoardSelected -> SetupStep.SelectIme

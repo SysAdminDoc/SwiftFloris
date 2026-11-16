@@ -87,6 +87,11 @@ open class InternalPrefs : PreferenceModel() {
         key = "internal__first_run_import_hint_seen",
         default = false,
     )
+    /** The keyboard setup's language step added, until setup is finished, so picking again swaps it. */
+    val setupLanguageSubtypeId = long(
+        key = "internal__setup_language_subtype_id",
+        default = Subtype.DEFAULT.id,
+    )
     val versionOnInstall = string(
         key = "internal__version_on_install",
         default = VersionName.DEFAULT_RAW,

@@ -26,6 +26,7 @@ class SetupStepPolicyTest : FunSpec({
             isFlorisBoardSelected = false,
             notificationPermissionState = NotificationPermissionState.NOT_SET,
             aiFeaturesExplainerSeen = false,
+            hasKeyboardLanguage = true,
             firstRunImportHintSeen = false,
             supportsNotificationPermission = true,
         ) shouldBe SetupStep.AiFeatures
@@ -35,6 +36,7 @@ class SetupStepPolicyTest : FunSpec({
             isFlorisBoardSelected = false,
             notificationPermissionState = NotificationPermissionState.NOT_SET,
             aiFeaturesExplainerSeen = true,
+            hasKeyboardLanguage = true,
             firstRunImportHintSeen = false,
             supportsNotificationPermission = true,
         ) shouldBe SetupStep.ImportDictionary
@@ -46,6 +48,7 @@ class SetupStepPolicyTest : FunSpec({
             isFlorisBoardSelected = false,
             notificationPermissionState = NotificationPermissionState.NOT_SET,
             aiFeaturesExplainerSeen = true,
+            hasKeyboardLanguage = true,
             firstRunImportHintSeen = true,
             supportsNotificationPermission = true,
         ) shouldBe SetupStep.EnableIme
@@ -55,6 +58,7 @@ class SetupStepPolicyTest : FunSpec({
             isFlorisBoardSelected = false,
             notificationPermissionState = NotificationPermissionState.NOT_SET,
             aiFeaturesExplainerSeen = true,
+            hasKeyboardLanguage = true,
             firstRunImportHintSeen = true,
             supportsNotificationPermission = true,
         ) shouldBe SetupStep.SelectIme
@@ -64,6 +68,7 @@ class SetupStepPolicyTest : FunSpec({
             isFlorisBoardSelected = true,
             notificationPermissionState = NotificationPermissionState.NOT_SET,
             aiFeaturesExplainerSeen = true,
+            hasKeyboardLanguage = true,
             firstRunImportHintSeen = true,
             supportsNotificationPermission = true,
         ) shouldBe SetupStep.SelectNotification
@@ -73,9 +78,73 @@ class SetupStepPolicyTest : FunSpec({
             isFlorisBoardSelected = true,
             notificationPermissionState = NotificationPermissionState.DENIED,
             aiFeaturesExplainerSeen = true,
+            hasKeyboardLanguage = true,
             firstRunImportHintSeen = true,
             supportsNotificationPermission = true,
         ) shouldBe SetupStep.FinishUp
+    }
+
+    test("a profile without a keyboard language picks one right after the AI explainer") {
+        SetupStepPolicy.nextStep(
+            isFlorisBoardEnabled = false,
+            isFlorisBoardSelected = false,
+            notificationPermissionState = NotificationPermissionState.NOT_SET,
+            aiFeaturesExplainerSeen = false,
+            hasKeyboardLanguage = false,
+            firstRunImportHintSeen = false,
+            supportsNotificationPermission = true,
+        ) shouldBe SetupStep.AiFeatures
+
+        SetupStepPolicy.nextStep(
+            isFlorisBoardEnabled = false,
+            isFlorisBoardSelected = false,
+            notificationPermissionState = NotificationPermissionState.NOT_SET,
+            aiFeaturesExplainerSeen = true,
+            hasKeyboardLanguage = false,
+            firstRunImportHintSeen = false,
+            supportsNotificationPermission = true,
+        ) shouldBe SetupStep.ChooseLanguage
+
+        // Even with the keyboard already enabled and selected, it still needs a language first.
+        SetupStepPolicy.nextStep(
+            isFlorisBoardEnabled = true,
+            isFlorisBoardSelected = true,
+            notificationPermissionState = NotificationPermissionState.GRANTED,
+            aiFeaturesExplainerSeen = true,
+            hasKeyboardLanguage = false,
+            firstRunImportHintSeen = true,
+            supportsNotificationPermission = true,
+        ) shouldBe SetupStep.ChooseLanguage
+
+        SetupStepPolicy.nextStep(
+            isFlorisBoardEnabled = false,
+            isFlorisBoardSelected = false,
+            notificationPermissionState = NotificationPermissionState.NOT_SET,
+            aiFeaturesExplainerSeen = true,
+            hasKeyboardLanguage = true,
+            firstRunImportHintSeen = false,
+            supportsNotificationPermission = true,
+        ) shouldBe SetupStep.ImportDictionary
+    }
+
+    test("each finished step moves setup to a higher step id, so the layout marks the earlier ones done") {
+        val walk = (0..6).map { finished ->
+            SetupStepPolicy.nextStep(
+                aiFeaturesExplainerSeen = finished > 0,
+                hasKeyboardLanguage = finished > 1,
+                firstRunImportHintSeen = finished > 2,
+                isFlorisBoardEnabled = finished > 3,
+                isFlorisBoardSelected = finished > 4,
+                notificationPermissionState = if (finished > 5) {
+                    NotificationPermissionState.GRANTED
+                } else {
+                    NotificationPermissionState.NOT_SET
+                },
+                supportsNotificationPermission = true,
+            )
+        }
+        walk shouldBe SetupStep.entries
+        walk.map { it.id } shouldBe walk.map { it.id }.sorted().distinct()
     }
 
     test("notification step is skipped on platform versions without runtime notification permission") {
@@ -84,6 +153,7 @@ class SetupStepPolicyTest : FunSpec({
             isFlorisBoardSelected = true,
             notificationPermissionState = NotificationPermissionState.NOT_SET,
             aiFeaturesExplainerSeen = true,
+            hasKeyboardLanguage = true,
             firstRunImportHintSeen = true,
             supportsNotificationPermission = false,
         ) shouldBe SetupStep.FinishUp

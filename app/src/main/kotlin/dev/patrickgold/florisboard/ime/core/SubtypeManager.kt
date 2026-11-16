@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
@@ -141,12 +142,11 @@ class SubtypeManager(
     // SupervisorJob so one failed persist or switch cannot cancel the parent and
     // leave subtype switching dead for the rest of the process lifetime.
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob()),
+    /** Starts saves in the order they were asked for, one at a time. See [launchSave]. */
+    private val saveDispatcher: CoroutineDispatcher = Dispatchers.Default.limitedParallelism(1),
 ) {
     private val prefs by FlorisPreferenceStore
     private val keyboardManager by context.keyboardManager()
-
-    /** Starts saves in the order they were asked for. See [launchSave]. */
-    private val saveDispatcher = Dispatchers.Default.limitedParallelism(1)
 
     /** Held for the whole of one save, so the next can't start while the one before is still writing. */
     private val saveLock = Mutex()
@@ -191,6 +191,12 @@ class SubtypeManager(
     /** Saves of the user's own id that haven't landed yet. */
     private var userSubtypeSavesInFlight = 0
 
+    /** The list last sent to be saved by [saveSubtypeList], as saved, until every such save lands. */
+    private var savingSubtypeListRaw: String? = null
+
+    /** Saves by [saveSubtypeList] that haven't landed yet. */
+    private var subtypeListSavesInFlight = 0
+
     /**
      * Held while deciding and switching the active subtype, since focus changes come on the main
      * thread and list changes and manual switches on [scope].
@@ -198,26 +204,43 @@ class SubtypeManager(
     private val switchLock = Any()
 
     init {
-        prefs.localization.subtypes.asFlow().collectLatestIn(scope) { listRaw ->
-            flogDebug { listRaw }
-            val list = if (listRaw.isNotBlank()) {
-                runCatching {
-                    SubtypeJsonConfig.decodeFromString<List<Subtype>>(listRaw)
-                }.getOrElse { cause ->
-                    flogError { "SubtypeManager: failed to decode persisted subtypes: ${cause.message}" }
-                    emptyList()
-                }
-            } else {
-                emptyList()
-            }
-            subtypes = list
-            evaluateActiveSubtype(list)
+        prefs.localization.subtypes.asFlow().collectLatestIn(scope) { listRaw -> applyStoredSubtypeList(listRaw) }
+    }
+
+    private fun applyStoredSubtypeList(listRaw: String) {
+        flogDebug { listRaw }
+        val list = decodeSubtypeList(listRaw)
+        // A list older than the stored one, or than one waiting to be saved, would put a keyboard that's
+        // gone back for a moment, and fall back to another language when the one being saved isn't in it.
+        // The newer list comes through here next, since the store sets the value get() reads before it
+        // sends it on (or, for one passed over as the last save lands, [saveSubtypeList] takes it after).
+        // Checked and taken under the lock, so a save can't land in between.
+        val isCurrent = synchronized(switchLock) {
+            val superseded = listRaw != prefs.localization.subtypes.get() ||
+                savingSubtypeListRaw.let { it != null && it != listRaw }
+            if (!superseded) subtypes = list
+            !superseded
+        }
+        if (isCurrent) evaluateActiveSubtype(list)
+    }
+
+    private fun decodeSubtypeList(listRaw: String): List<Subtype> {
+        if (listRaw.isBlank()) return emptyList()
+        return runCatching {
+            SubtypeJsonConfig.decodeFromString<List<Subtype>>(listRaw)
+        }.getOrElse { cause ->
+            flogError { "SubtypeManager: failed to decode persisted subtypes: ${cause.message}" }
+            emptyList()
         }
     }
 
-    private fun persistNewSubtypeList(list: List<Subtype>) = scope.launch {
-        val listRaw = SubtypeJsonConfig.encodeToString(list)
-        prefs.localization.subtypes.set(listRaw)
+    /**
+     * The list a change starts from. While one of [saveSubtypeList]'s saves waits, that's the one in memory, which
+     * is newer than the stored one. Otherwise it's the stored one, which the collector may not have taken yet: right
+     * after this manager is made it hasn't, and a change made from the empty list would save over every language.
+     */
+    private fun latestSubtypeList(): List<Subtype> = synchronized(switchLock) {
+        if (subtypeListSavesInFlight > 0) subtypes else decodeSubtypeList(prefs.localization.subtypes.get())
     }
 
     /**
@@ -229,6 +252,9 @@ class SubtypeManager(
      */
     private fun evaluateActiveSubtype(list: List<Subtype>) = scope.launch {
         synchronized(switchLock) {
+            // Another list came in meanwhile, say a language picked right after this one, and it gets its own
+            // turn. Going by this one could fall back from a language it doesn't have yet.
+            if (list != subtypes) return@launch
             // A hinted language isn't the saved one, and stays through list changes while it's still set up.
             val hinted = if (activeFromHint) list.find { it.id == activeSubtype.id } else null
             val activeSubtypeId = userSubtypeId()
@@ -379,15 +405,77 @@ class SubtypeManager(
      * @return True if the subtype was added, false otherwise. A return value of false indicates
      *  that the subtype already exists.
      */
-    fun addSubtype(subtype: Subtype): Boolean {
+    fun addSubtype(subtype: Subtype): Boolean = synchronized(switchLock) {
         val subtypeToAdd = subtype.copy(id = System.currentTimeMillis())
-        val subtypeList = subtypes
+        val subtypeList = latestSubtypeList()
         if (subtypeList.find { it.equalsExcludingId(subtype) } != null) {
             return false
         }
         val newSubtypeList = subtypeList + subtypeToAdd
-        persistNewSubtypeList(newSubtypeList)
+        saveSubtypeList(newSubtypeList)
         return true
+    }
+
+    /**
+     * Makes [subtype] the user's own language, as first-run setup does when they pick one. It's added to the
+     * list first unless an equal one is already there, which is switched to instead of being added twice.
+     *
+     * [replacing] is the id an earlier pick from the same place returned: that subtype is taken out, so
+     * picking again swaps the language rather than adding a second one. A subtype that was set up some other
+     * way is never taken out, since only an id this returned should be passed.
+     *
+     * @return The id to pass as [replacing] next time: the added subtype's, the replaced one's when it's the
+     *  one picked again, or null when the pick switched to a subtype that was set up before.
+     */
+    fun addAndActivateSubtype(subtype: Subtype, replacing: Long? = null): Long? = synchronized(switchLock) {
+        val listBefore = latestSubtypeList()
+        val existing = listBefore.find { it.equalsExcludingId(subtype) }
+        if (existing != null && existing.id == replacing) {
+            activateSubtype(existing, source = SubtypeSwitchSource.System, persist = true)
+            return replacing
+        }
+        val subtypeList = listBefore.filter { it.id != replacing }
+        if (existing != null) {
+            activateSubtype(existing, source = SubtypeSwitchSource.System, persist = true)
+            if (subtypeList.size != listBefore.size) saveSubtypeList(subtypeList)
+            return null
+        }
+        // Two picks inside one millisecond would otherwise share an id.
+        val id = maxOf(System.currentTimeMillis(), (listBefore.maxOfOrNull { it.id } ?: 0L) + 1)
+        val subtypeToAdd = subtype.copy(id = id)
+        // Saved as the user's own before the list changes, so the list change keeps it instead of the language
+        // that was showing.
+        activateSubtype(subtypeToAdd, source = SubtypeSwitchSource.System, persist = true)
+        saveSubtypeList(subtypeList + subtypeToAdd)
+        return id
+    }
+
+    /**
+     * Shows [list] at once and saves it after the saves asked for before it, so a quick second change starts
+     * from this one rather than from the list as it was before this one landed.
+     */
+    private fun saveSubtypeList(list: List<Subtype>): Unit = synchronized(switchLock) {
+        subtypes = list
+        val listRaw = SubtypeJsonConfig.encodeToString(list)
+        savingSubtypeListRaw = listRaw
+        subtypeListSavesInFlight++
+        // Counted like [saveUserSubtypeId]'s saves, so an earlier one landing can't clear a later one's list.
+        launchSave { prefs.localization.subtypes.set(listRaw) }.invokeOnCompletion {
+            val lastToLand = synchronized(switchLock) {
+                val last = --subtypeListSavesInFlight == 0
+                if (last) savingSubtypeListRaw = null
+                last
+            }
+            // Another part of the app can store a list right after this save does, and the collector can see
+            // it before the marker above is cleared and pass it over. Nothing sends it again, so it's taken
+            // now if it's still the stored one.
+            if (lastToLand) {
+                scope.launch {
+                    val stored = prefs.localization.subtypes.get()
+                    if (stored != SubtypeJsonConfig.encodeToString(subtypes)) applyStoredSubtypeList(stored)
+                }
+            }
+        }
     }
 
     /**
@@ -429,8 +517,8 @@ class SubtypeManager(
      *
      * @param subtypeToModify The subtype with the new details but same id.
      */
-    fun modifySubtypeWithSameId(subtypeToModify: Subtype) {
-        val subtypeList = subtypes
+    fun modifySubtypeWithSameId(subtypeToModify: Subtype): Unit = synchronized(switchLock) {
+        val subtypeList = latestSubtypeList()
         val index = subtypeList.indexOfFirst { subtypeToModify.id == it.id }
         if (index >= 0 && index < subtypeList.size) {
             val newSubtypeList = subtypeList.mapIndexed { n, subtype ->
@@ -440,7 +528,7 @@ class SubtypeManager(
                     subtype
                 }
             }
-            persistNewSubtypeList(newSubtypeList)
+            saveSubtypeList(newSubtypeList)
         }
     }
 
@@ -449,18 +537,21 @@ class SubtypeManager(
      * punctuation, and all non-character layout mappings.
      */
     fun switchActiveSubtypeCharactersLayout(layoutId: String): Boolean = synchronized(switchLock) {
-        val subtypeList = subtypes
+        val subtypeList = latestSubtypeList()
         val cachedActiveSubtype = activeSubtype
         val index = subtypeList.indexOfFirst { cachedActiveSubtype.id == it.id }
         if (index !in subtypeList.indices) {
             return false
         }
 
-        val updatedLayoutMap = cachedActiveSubtype.layoutMap.copy(
+        // Built from the newest list's entry, not the active one, which lags a change still being saved (a modify's
+        // new currency set) and would put the old values back.
+        val current = subtypeList[index]
+        val updatedLayoutMap = current.layoutMap.copy(
             layoutType = LayoutType.CHARACTERS,
             componentName = extCoreLayout(layoutId),
         ) ?: return false
-        val updatedSubtype = cachedActiveSubtype.copy(layoutMap = updatedLayoutMap)
+        val updatedSubtype = current.copy(layoutMap = updatedLayoutMap)
         val newSubtypeList = subtypeList.mapIndexed { n, subtype ->
             if (n == index) {
                 updatedSubtype
@@ -469,9 +560,8 @@ class SubtypeManager(
             }
         }
 
-        subtypes = newSubtypeList
+        saveSubtypeList(newSubtypeList)
         activeSubtype = updatedSubtype
-        persistNewSubtypeList(newSubtypeList)
         return true
     }
 
@@ -481,8 +571,8 @@ class SubtypeManager(
      *
      * @param subtypeToRemove The subtype which should be removed.
      */
-    fun removeSubtype(subtypeToRemove: Subtype) {
-        val subtypeList = subtypes
+    fun removeSubtype(subtypeToRemove: Subtype): Unit = synchronized(switchLock) {
+        val subtypeList = latestSubtypeList()
         val indexToRemove = subtypeList.indexOf(subtypeToRemove)
         if (indexToRemove in subtypeList.indices) {
             val newSubtypeList = subtypeList.mapIndexedNotNull { n, subtype ->
@@ -492,7 +582,7 @@ class SubtypeManager(
                     null
                 }
             }
-            persistNewSubtypeList(newSubtypeList)
+            saveSubtypeList(newSubtypeList)
             evaluateActiveSubtype(newSubtypeList)
         }
     }

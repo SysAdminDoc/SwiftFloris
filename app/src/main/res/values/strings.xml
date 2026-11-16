@@ -1682,6 +1682,16 @@
     <string name="setup__ai_features__acknowledge_btn">I understand</string>
     <string name="setup__ai_features__open_details_btn">Read AI feature details</string>
 
+    <string name="setup__choose_language__title" comment="Title of the first-run step that picks the keyboard language">Choose your keyboard language</string>
+    <string name="setup__choose_language__description" comment="Explains the first-run keyboard language step when the phone's language has a keyboard">Pick the language you\'ll type in. You can add more later in Languages &amp; Layouts.</string>
+    <string name="setup__choose_language__no_match" comment="Shown when no bundled keyboard fits the phone's language. {language} is that language's name">There\'s no keyboard for {language} yet. Pick English or search for another language. You can add more later in Languages &amp; Layouts.</string>
+    <string name="setup__choose_language__uncommon_only" comment="Shown when the only bundled keyboard for the phone's language is for a way of typing few people use, such as Zhengma for Chinese. {language} is that language's name and {method} the way of typing">So far {language} only has a {method} keyboard, a way of typing few people use. Pick English, or find {method} under Choose another language. You can add more later in Languages &amp; Layouts.</string>
+    <string name="setup__choose_language__uncommon_only_with_others" comment="Like the message for a language with only a little-used way of typing, when the phone's other languages have keyboards shown below it. {language} is the phone's first language and {method} the way of typing">So far {language} only has a {method} keyboard, a way of typing few people use. Pick one of the keyboards below, or find {method} under Choose another language. You can add more later in Languages &amp; Layouts.</string>
+    <string name="setup__choose_language__other_btn" comment="Button that opens the searchable list of all keyboard languages during setup">Choose another language</string>
+    <string name="setup__choose_language__picker_title" comment="Title of the searchable keyboard language list during setup">Choose a language</string>
+    <string name="setup__choose_language__search_label" comment="Label of the search field in the setup keyboard language list">Search languages</string>
+    <string name="setup__choose_language__search_empty" comment="Shown in the setup keyboard language list when the search matches nothing">No language matches that search.</string>
+
     <string name="setup__import_hint__title" comment="Title of first-run dictionary import hint">Import your dictionary</string>
     <string name="setup__import_hint__description_p1" comment="Explains the first-run personal dictionary import option">If you exported words from SwiftKey, Gboard, FlorisBoard, or SwiftFloris, you can import them before typing.</string>
     <string name="setup__import_hint__description_p2" comment="Lists supported dictionary export formats for the first-run import hint">Supported files include SwiftKey JSON, Gboard XML or ZIP, FlorisBoard CSV, .flbackup, and .fldic exports. SwiftFloris reads the selected file on this device.</string>
