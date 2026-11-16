@@ -34,5 +34,9 @@
             android:name="dev.patrickgold.florisboard.benchmark.BenchmarkBackupRestoreActivity"
             android:exported="true"
             android:theme="@style/FlorisAppTheme"/>
+        <activity
+            android:name="dev.patrickgold.florisboard.benchmark.BenchmarkMemoryActivity"
+            android:exported="true"
+            android:theme="@style/FlorisAppTheme"/>
     </application>
 </manifest>

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add a memory benchmark for the keyboard's heaviest work: first render, loading the dictionary, glide typing, emoji search, a full clipboard history and a full sticker cache. `tools/benchmark-ime-memory.ps1` runs each one in a fresh process and records memory before, after, and after the app gives memory back.
 - Learn the words you type on a physical keyboard. Its space bar only taught the keyboard a word when autocorrect had changed it, so suggestions never picked up the words you typed yourself. A word autocorrect fixes is also learned once instead of twice, which had taught suggestions odd pairs like "florida florida".
 - Keep the words you typed last in next-word learning when Android closes the keyboard. Learned word pairs were saved every 20 words, so a keyboard closed in the background, which Android 17 does to apps over their memory budget, forgot up to 19 of them. They're now saved each time the keyboard hides, including a word you finish right as it hides, and a save that fails is tried again next time.
 - Give memory back sooner when the keyboard is off screen. Cached sticker images, per-app colors, smart compose and translation results are now let go as soon as the keyboard hides, and cached word lookups and glide data follow once the app is in the background. Before, only sticker images were freed, and only in the background. Everything fills back in the next time it's needed. Sticker images also stay under 24 MB in all now. Big stickers were kept at up to 1,023 pixels a side, so a full set could take over 250 MB.
