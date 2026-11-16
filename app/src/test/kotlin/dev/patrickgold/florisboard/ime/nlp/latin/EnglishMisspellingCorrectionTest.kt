@@ -114,7 +114,7 @@ class EnglishMisspellingCorrectionTest : FunSpec({
         LatinDictionarySuggester.englishMisspellingCorrection("teh", dictionary, "en") shouldBe null
     }
 
-    test("en-UK and en-AU keyboards get the British fix, en-US and en-CA keep the US one") {
+    test("en-UK and en-AU keyboards get the British fix, en-US the US one, and en-CA Canadian spelling") {
         // The region comes from the bundled presets' tags the way the provider reads it (primaryLocale.country).
         val (uk, au, us, ca) = listOf("en-UK", "en-AU", "en-US", "en-CA").map { FlorisLocale.fromTag(it).country }
 
@@ -123,22 +123,47 @@ class EnglishMisspellingCorrectionTest : FunSpec({
         typeThenSpace("nieghbor", shipped, region = au) shouldBe "neighbour"
         typeThenSpace("Favorate", shipped, region = "ZA") shouldBe "Favourite"
         typeThenSpace("relize", shipped, region = "GB") shouldBe "realise"
+        typeThenSpace("fullfill", shipped, region = uk) shouldBe "fulfil"
         typeThenSpace("jewelery", shipped, region = us) shouldBe "jewelry"
         typeThenSpace("nieghbor", shipped, region = us) shouldBe "neighbor"
-        typeThenSpace("jewelery", shipped, region = ca) shouldBe "jewelry"
+        typeThenSpace("jewelery", shipped, region = "MH") shouldBe "jewelry"
         typeThenSpace("jewelery", shipped) shouldBe "jewelry"
-        // A typo only British spelling makes keeps that spelling everywhere, and rows with one fix are the same.
+        // Canada writes -our, -re and -ence like Britain but keeps the US -ize words and fulfill.
+        typeThenSpace("jewelery", shipped, region = ca) shouldBe "jewellery"
+        typeThenSpace("nieghbor", shipped, region = ca) shouldBe "neighbour"
+        typeThenSpace("favorate", shipped, region = ca) shouldBe "favourite"
+        typeThenSpace("manuever", shipped, region = ca) shouldBe "manoeuvre"
+        typeThenSpace("liscence", shipped, region = ca) shouldBe "licence"
+        typeThenSpace("relize", shipped, region = ca) shouldBe "realize"
+        typeThenSpace("recogise", shipped, region = ca) shouldBe "recognize"
+        typeThenSpace("fullfill", shipped, region = ca) shouldBe "fulfill"
+        // A typo of either spelling gets the keyboard's own, unless only British spelling makes it.
+        typeThenSpace("recogise", shipped, region = us) shouldBe "recognize"
+        typeThenSpace("critisise", shipped, region = us) shouldBe "criticize"
+        typeThenSpace("liscence", shipped, region = us) shouldBe "license"
+        typeThenSpace("recogise", shipped, region = uk) shouldBe "recognise"
         typeThenSpace("nieghbour", shipped, region = us) shouldBe "neighbour"
         typeThenSpace("teh", shipped, region = uk) shouldBe "the"
     }
 
-    test("the misspelling list's third column is the fix outside the US") {
+    test("Canada keeps the US spelling only for -ize words and a doubled final l") {
+        LatinDictionarySuggester.canadianKeepsUsSpelling("realize", "realise") shouldBe true
+        LatinDictionarySuggester.canadianKeepsUsSpelling("organizing", "organising") shouldBe true
+        LatinDictionarySuggester.canadianKeepsUsSpelling("organization", "organisation") shouldBe true
+        LatinDictionarySuggester.canadianKeepsUsSpelling("fulfill", "fulfil") shouldBe true
+        LatinDictionarySuggester.canadianKeepsUsSpelling("jewelry", "jewellery") shouldBe false
+        LatinDictionarySuggester.canadianKeepsUsSpelling("license", "licence") shouldBe false
+        LatinDictionarySuggester.canadianKeepsUsSpelling("maneuver", "manoeuvre") shouldBe false
+        LatinDictionarySuggester.canadianKeepsUsSpelling("pizza", "pissa") shouldBe false
+    }
+
+    test("the misspelling list's third column is the Commonwealth fix") {
         val raw = "# comment\njewelery\tjewelry\tjewellery\nteh\tthe\nbroken\t\tbroken\nhalf\tfix\t\n"
 
         LatinDictionaryStore.parseMisspellings(raw) shouldBe
             mapOf("jewelery" to "jewelry", "teh" to "the", "half" to "fix")
         LatinDictionaryStore.parseCommonwealthMisspellings(raw) shouldBe mapOf("jewelery" to "jewellery")
-        shipped.commonwealthMisspellings.size shouldBe 13
+        shipped.commonwealthMisspellings.size shouldBe 17
         shipped.commonwealthMisspellings.keys.filter { it !in shipped.misspellings } shouldBe emptyList()
         shipped.commonwealthMisspellings.values.filter { !shipped.contains(it) } shouldBe emptyList()
     }

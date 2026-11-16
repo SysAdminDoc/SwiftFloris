@@ -12,7 +12,9 @@ suggestions.
 - The Latin provider loads the full merged English map for recognition, but builds the memory-heavy correction index only
   from high-confidence words at frequency `96+` so active typing remains stable on Android's IME heap.
 - `en_misspellings.tsv` lists about 780 common English misspellings and their fixes, one `misspelling<TAB>fix` per
-  line. The English provider fixes them on space, and the dictionary scripts keep them out of `data.json`,
+  line. Where British spelling differs, a third column holds it (`jewelery<TAB>jewelry<TAB>jewellery`). Keyboards for
+  Britain, Australia and the rest of the Commonwealth use that one. Canada does too, except for -ize words and
+  fulfill, which it spells the US way. The English provider fixes them on space, and the dictionary scripts keep them out of `data.json`,
   `en_supplemental.json` and `../../dictionaries/en.txt` (see `../../dictionaries/README.md`).
 - `{language}.fldic` files are FlorisBoard NLP v0~draft1 dictionaries. SwiftFloris reads only their `[words]` section
   and normalizes the absolute word scores into the existing 0..255 frequency range.

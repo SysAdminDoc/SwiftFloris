@@ -1057,10 +1057,25 @@ internal object LatinDictionarySuggester {
 
     /**
      * Countries whose English keyboard takes the US fix from the misspelling list: no country (plain "en"), the US
-     * and its territories, the Philippines, Liberia, and Canada, which spells -our but -ize. The rest, the bundled
-     * en-UK and en-AU presets among them, take the Commonwealth fix where the list has one.
+     * and its territories, the countries in free association with it, the Philippines and Liberia. Canada takes
+     * the Commonwealth fix except where [canadianKeepsUsSpelling]. The rest, the bundled en-UK and en-AU presets
+     * among them, take the Commonwealth fix where the list has one.
      */
-    internal val UsSpellingRegions = setOf("", "US", "CA", "PH", "LR", "PR", "GU", "VI", "AS", "MP", "UM")
+    internal val UsSpellingRegions =
+        setOf("", "US", "PH", "LR", "PR", "GU", "VI", "AS", "MP", "UM", "MH", "FM", "PW")
+
+    private const val CanadaRegion = "CA"
+
+    private val IzeSpelling = Regex("iz(?=e|ing|ation)")
+
+    /**
+     * Canadian spelling writes neighbour, jewellery and licence like British English but keeps the US -ize words
+     * (realize) and fulfill, so those Commonwealth fixes ([commonwealthFix] against [usFix]) give way in Canada.
+     */
+    internal fun canadianKeepsUsSpelling(usFix: String, commonwealthFix: String): Boolean {
+        return commonwealthFix == usFix.replace(IzeSpelling, "is") ||
+            (usFix.endsWith("ll") && commonwealthFix == usFix.dropLast(1))
+    }
 
     /**
      * [contextFit] tells how well a word fits the words typed before it, 0.0 to 1.0, or null when that can't be
@@ -1421,7 +1436,8 @@ internal object LatinDictionarySuggester {
      * check here only matters when an addon dictionary lists the word. A word the user
      * taught the keyboard stays as typed, and ALL CAPS input is left alone like contractions.
      * [region] is the keyboard's country: outside [UsSpellingRegions] a fix that's spelled
-     * differently there ("jewelery" to "jewellery", "relize" to "realise") uses that spelling.
+     * differently there ("jewelery" to "jewellery", "relize" to "realise") uses that spelling,
+     * and in Canada only where [canadianKeepsUsSpelling] doesn't say otherwise.
      */
     fun englishMisspellingCorrection(
         rawWord: String,
@@ -1435,10 +1451,12 @@ internal object LatinDictionarySuggester {
             return null
         }
         val normalizedWord = normalizeWord(rawWord) ?: return null
+        val usFix = dictionary.misspellings[normalizedWord] ?: return null
+        val country = region.uppercase()
         val fix = dictionary.commonwealthMisspellings[normalizedWord]
-            ?.takeIf { region.uppercase() !in UsSpellingRegions }
-            ?: dictionary.misspellings[normalizedWord]
-            ?: return null
+            ?.takeIf { country !in UsSpellingRegions }
+            ?.takeUnless { country == CanadaRegion && canadianKeepsUsSpelling(usFix, it) }
+            ?: usFix
         if (dictionary.contains(normalizedWord) || userOverlay.containsKey(normalizedWord)) return null
         val typedWord = rawWord.trim().trim { char -> !char.isLetter() && char != '\'' }
         val letters = typedWord.filter { it.isLetter() }

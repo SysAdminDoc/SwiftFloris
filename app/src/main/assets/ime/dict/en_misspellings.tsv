@@ -1,6 +1,7 @@
 # Common English misspellings and their fixes, one "misspelling<TAB>fix" per line, sorted. A third
-# column, where there is one, is the fix for English outside the US, Canada and the Philippines
-# (jewelery to jewellery on en_GB and en_AU, jewelry on en_US).
+# column, where there is one, is the fix for English outside the US and the Philippines (jewelery
+# to jewellery on en_GB and en_AU, jewelry on en_US). Canada takes the third column too, except
+# where Canadian spelling keeps the US form: -ize words (realize) and fulfill.
 # Hand-made list. No misspelling here is accepted by the en_US, en_GB, en_AU, en_CA or en_ZA
 # Hunspell dictionaries or listed by SCOWL up to size 70. A few start a longer word ("usefull",
 # "usefully"), but apart from names like Tehran, no word ranked 150 or higher starts with one.
@@ -117,7 +118,7 @@ convienient	convenient
 convinient	convenient
 coud	could
 coudl	could
-critisise	criticise
+critisise	criticize	criticise
 critisism	criticism
 critisize	criticize	criticise
 cuase	cause
@@ -321,7 +322,7 @@ libary	library
 liek	like
 liesure	leisure
 lieutenent	lieutenant
-liscence	licence
+liscence	license	licence
 liscense	license	licence
 lisence	license	licence
 lisense	license	licence
@@ -519,14 +520,14 @@ recieve	receive
 recieved	received
 recieving	receiving
 recived	received
-recogise	recognise
+recogise	recognize	recognise
 recogize	recognize	recognise
 recomend	recommend
 recomendation	recommendation
 recomended	recommended
 recommed	recommend
 recommeded	recommended
-reconise	recognise
+reconise	recognize	recognise
 reconize	recognize	recognise
 recurrance	recurrence
 rediculous	ridiculous
