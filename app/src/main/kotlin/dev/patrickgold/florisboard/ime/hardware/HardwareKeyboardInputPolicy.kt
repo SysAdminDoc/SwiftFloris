@@ -42,10 +42,17 @@ internal object HardwareKeyboardInputPolicy {
 
     /**
      * How many chars the app inserts on its own for a key that passes through, so the editor can
-     * tell that cursor move from a jump. 0 for shortcuts, dead keys and control keys.
+     * tell that cursor move from a jump. 0 for shortcuts, dead keys and control keys. Ctrl with
+     * Alt is AltGr on a PC-style keyboard, which types a char (the euro sign) rather than a
+     * shortcut, the same way [HardwareKeyboardRuntimeMapper] reads it.
      */
-    fun passThroughInsertLength(unicodeChar: Int, isCtrlPressed: Boolean, isMetaPressed: Boolean): Int {
-        if (isCtrlPressed || isMetaPressed) return 0
+    fun passThroughInsertLength(
+        unicodeChar: Int,
+        isCtrlPressed: Boolean,
+        isAltPressed: Boolean,
+        isMetaPressed: Boolean,
+    ): Int {
+        if (isMetaPressed || (isCtrlPressed && !isAltPressed)) return 0
         // Dead keys carry the combining-accent high bit, so they read as negative here.
         if (unicodeChar <= 0 || !Character.isValidCodePoint(unicodeChar)) return 0
         if (Character.isISOControl(unicodeChar)) return 0

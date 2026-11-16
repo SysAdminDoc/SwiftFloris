@@ -1522,6 +1522,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     val length = HardwareKeyboardInputPolicy.passThroughInsertLength(
                         unicodeChar = event.unicodeChar,
                         isCtrlPressed = event.isCtrlPressed,
+                        isAltPressed = event.isAltPressed,
                         isMetaPressed = event.isMetaPressed,
                     )
                     if (length > 0) editorInstance.expectAppInsert(length)

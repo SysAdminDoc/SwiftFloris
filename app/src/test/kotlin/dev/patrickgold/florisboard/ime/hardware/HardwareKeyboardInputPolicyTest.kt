@@ -84,11 +84,13 @@ class HardwareKeyboardInputPolicyTest : FunSpec({
         HardwareKeyboardInputPolicy.passThroughInsertLength(
             unicodeChar = 'w'.code,
             isCtrlPressed = false,
+            isAltPressed = false,
             isMetaPressed = false,
         ) shouldBe 1
         HardwareKeyboardInputPolicy.passThroughInsertLength(
             unicodeChar = 0x1F600,
             isCtrlPressed = false,
+            isAltPressed = false,
             isMetaPressed = false,
         ) shouldBe 2
     }
@@ -97,27 +99,47 @@ class HardwareKeyboardInputPolicyTest : FunSpec({
         HardwareKeyboardInputPolicy.passThroughInsertLength(
             unicodeChar = 'c'.code,
             isCtrlPressed = true,
+            isAltPressed = false,
             isMetaPressed = false,
         ) shouldBe 0
         HardwareKeyboardInputPolicy.passThroughInsertLength(
             unicodeChar = 'a'.code,
             isCtrlPressed = false,
+            isAltPressed = false,
             isMetaPressed = true,
         ) shouldBe 0
         HardwareKeyboardInputPolicy.passThroughInsertLength(
             unicodeChar = KeyCharacterMap.COMBINING_ACCENT or 0x0301,
             isCtrlPressed = false,
+            isAltPressed = false,
             isMetaPressed = false,
         ) shouldBe 0
         HardwareKeyboardInputPolicy.passThroughInsertLength(
             unicodeChar = '\t'.code,
             isCtrlPressed = false,
+            isAltPressed = false,
             isMetaPressed = false,
         ) shouldBe 0
         HardwareKeyboardInputPolicy.passThroughInsertLength(
             unicodeChar = 0,
             isCtrlPressed = false,
+            isAltPressed = false,
             isMetaPressed = false,
+        ) shouldBe 0
+    }
+
+    test("AltGr sent as Ctrl with Alt types a char, but Meta on top of it is a shortcut") {
+        HardwareKeyboardInputPolicy.passThroughInsertLength(
+            unicodeChar = 0x20AC,
+            isCtrlPressed = true,
+            isAltPressed = true,
+            isMetaPressed = false,
+        ) shouldBe 1
+        HardwareKeyboardInputPolicy.passThroughInsertLength(
+            unicodeChar = 0x20AC,
+            isCtrlPressed = true,
+            isAltPressed = true,
+            isMetaPressed = true,
         ) shouldBe 0
     }
 
