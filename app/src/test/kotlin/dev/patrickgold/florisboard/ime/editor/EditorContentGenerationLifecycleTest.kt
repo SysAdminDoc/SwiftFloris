@@ -1240,6 +1240,30 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun backspacesOverSelectorAtFieldStartInCompose() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = ideographWith(0xE0100))
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 3), isRestart = false)
+        scheduler.runCurrent()
+        // A Compose field's Backspaces delete the selector, then the ideograph. A TextView's
+        // first one deletes both, which leaves its guess nothing for the second.
+        editor.expectAppStepBack()
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(3, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 0)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(0, 1)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")

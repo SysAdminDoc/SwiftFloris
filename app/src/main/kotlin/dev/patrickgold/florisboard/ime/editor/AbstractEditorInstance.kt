@@ -1066,15 +1066,28 @@ abstract class AbstractEditorInstance(context: Context) {
                 dropExpired(now)
                 val base = baseOf(now, keyboardPending, published) ?: return
                 val joined = isJoinedKind
-                // Nothing to step back over, so the app reports nothing either.
-                val near = stepBack(base.range, base.text, wholeCluster, joinedKind = joined == true) ?: return
+                val near = stepBack(base.range, base.text, wholeCluster, joinedKind = joined == true)
                 val far = if (joined != null) {
                     near
                 } else {
                     stepBack(base.joinedRange, base.joinedText, wholeCluster, joinedKind = true)
-                        ?: Landing(base.joinedRange.start, base.joinedText)
                 }
-                add(PendingKey(near.cursor, isStepBack = true, near.text, now, far.cursor, far.text))
+                // Nothing to step back over in either kind of field, so the app reports nothing
+                // either. Where only one kind has nothing left (a TextView's Backspace took an
+                // ideograph and its selector at once), that kind's cursor stays put.
+                if (near == null && far == null) return
+                val nearLanding = near ?: Landing(base.range.start, base.text)
+                val farLanding = far ?: Landing(base.joinedRange.start, base.joinedText)
+                add(
+                    PendingKey(
+                        nearLanding.cursor,
+                        isStepBack = true,
+                        nearLanding.text,
+                        now,
+                        farLanding.cursor,
+                        farLanding.text,
+                    )
+                )
             }
         }
 
