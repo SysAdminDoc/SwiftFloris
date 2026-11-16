@@ -8,7 +8,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$PackageName = "dev.patrickgold.florisboard.bench"
+$PackageName = "io.github.sysadmindoc.swiftfloris.bench"
 $ImeComponent = "$PackageName/dev.patrickgold.florisboard.FlorisImeService"
 $ActivityComponent = "$PackageName/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity"
 $AdbSerialArgs = @()

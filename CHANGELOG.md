@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix the benchmark scripts in `tools/`, which still looked for the benchmark app under its name from before v1.9.0 and couldn't find it.
 - Add a memory benchmark for the keyboard's heaviest work: first render, loading the dictionary, glide typing, emoji search, a full clipboard history and a full sticker cache. `tools/benchmark-ime-memory.ps1` runs each one in a fresh process and records memory before, after, and after the app gives memory back.
 - Learn the words you type on a physical keyboard. Its space bar only taught the keyboard a word when autocorrect had changed it, so suggestions never picked up the words you typed yourself. A word autocorrect fixes is also learned once instead of twice, which had taught suggestions odd pairs like "florida florida".
 - Keep the words you typed last in next-word learning when Android closes the keyboard. Learned word pairs were saved every 20 words, so a keyboard closed in the background, which Android 17 does to apps over their memory budget, forgot up to 19 of them. They're now saved each time the keyboard hides, including a word you finish right as it hides, and a save that fails is tried again next time.
