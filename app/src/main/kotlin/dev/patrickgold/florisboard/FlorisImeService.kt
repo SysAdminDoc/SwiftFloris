@@ -552,13 +552,6 @@ class FlorisImeService : LifecycleInputMethodService() {
         }
     }
 
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
-            dev.patrickgold.florisboard.ime.media.sticker.evictStickerBitmapCache()
-        }
-    }
-
     override fun onDestroy() {
         // Run our cleanup BEFORE super.onDestroy() — the lifecycle scope is
         // cancelled by super and any callbacks scheduled on it would be

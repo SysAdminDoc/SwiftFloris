@@ -665,6 +665,21 @@ class NlpManager(
         return candidate.isEligibleForUserRemoval
     }
 
+    /**
+     * Empties the lookups that refill on demand: word frequencies, the per-subtype word lists
+     * (the glide classifier keeps its own reference to the active one) and the debug overlay.
+     */
+    fun trimMemory() {
+        frequencyCache.evictAll()
+        wordsListCache.clear()
+        debugOverlaySuggestionsInfos.evictAll()
+        // The overlay redraws on a version change, so it stops showing what was just dropped.
+        debugOverlayVersion.update { it + 1 }
+    }
+
+    /** How many entries the frequency and word list caches hold, for tests. */
+    internal fun cacheSizes(): Pair<Int, Int> = frequencyCache.size() to wordsListCache.size
+
     fun getListOfWords(subtype: Subtype): List<String> {
         val cacheKey = subtype.toString()
         return wordsListCache.getOrPut(cacheKey) {

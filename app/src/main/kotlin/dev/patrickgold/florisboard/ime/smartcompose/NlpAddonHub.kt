@@ -95,6 +95,12 @@ class NlpAddonHub(
         return response
     }
 
+    /** Empties the smart compose and translation result caches, which refill on the next request. */
+    fun trimMemory() {
+        smartCompose.clearCache()
+        translate.clearCache()
+    }
+
     private fun recordSmartCompose(
         result: SmartComposeResult,
         inputType: Int,

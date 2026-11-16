@@ -177,6 +177,16 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     }
 
     /**
+     * Empties each classifier's on-demand caches. See [StatisticalGlideTypingClassifier.trimMemory].
+     * Runs on the serialized classifier scope, after any layout build or classification already
+     * queued there, so it can't put back a pruner that a failed or cancelled build just released.
+     */
+    fun trimMemory() {
+        val targets = synchronized(classifierLock) { classifiers.values.toList() }
+        scope.launch { targets.forEach { it.trimMemory() } }
+    }
+
+    /**
      * Releases every partial allocation and turns glide off for the rest of this IME session.
      * The next session re-evaluates, so a transient memory spike does not disable the feature
      * permanently. Only the error class is logged — never the gesture or any typed text.

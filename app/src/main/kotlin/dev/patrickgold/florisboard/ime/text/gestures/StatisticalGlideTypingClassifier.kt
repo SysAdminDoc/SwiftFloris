@@ -247,6 +247,24 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
     }
 
     /**
+     * Empties what refills on demand: the suggestion cache, the ideal-gesture cache and the
+     * pruners built for other subtypes. The active pruner, word list and layout stay, so the next
+     * glide works without a rebuild. Used when Android asks the process for memory back.
+     */
+    fun trimMemory() {
+        lruSuggestionCache.evictAll()
+        idealGestureCache.evictAll()
+        val subtype = currentSubtype
+        val active = subtype?.let { prunerCache.get(it) }
+        prunerCache.evictAll()
+        if (subtype != null && active != null) prunerCache.put(subtype, active)
+    }
+
+    /** How many entries each cache holds, for tests: suggestions, ideal gestures, pruners. */
+    internal fun cacheSizes(): Triple<Int, Int, Int> =
+        Triple(lruSuggestionCache.size(), idealGestureCache.size(), prunerCache.size())
+
+    /**
      * Drops every allocation this classifier owns — word list, pruner cache, ideal-gesture cache,
      * suggestion cache and layout keys — and resets [ready] so nothing classifies against partial
      * data. Used by the low-RAM gate and by the allocation-failure recovery path; no typed text or

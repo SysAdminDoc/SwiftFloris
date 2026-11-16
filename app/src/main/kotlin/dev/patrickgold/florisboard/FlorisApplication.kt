@@ -36,6 +36,7 @@ import dev.patrickgold.florisboard.ime.editor.EditorInstance
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardManager
 import dev.patrickgold.florisboard.ime.media.emoji.FlorisEmojiCompat
 import dev.patrickgold.florisboard.ime.nlp.NlpManager
+import dev.patrickgold.florisboard.ime.core.MemoryTrim
 import dev.patrickgold.florisboard.ime.smartcompose.NlpAddonHub
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingManager
 import dev.patrickgold.florisboard.ime.security.AdvancedProtectionPolicy
@@ -151,6 +152,12 @@ class FlorisApplication : Application() {
             CrashUtility.stageException(e)
             return
         }
+    }
+
+    /** Every component in the process gets this, so the keyboard service doesn't repeat it. */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        MemoryTrim.trim(this, level)
     }
 
     /**

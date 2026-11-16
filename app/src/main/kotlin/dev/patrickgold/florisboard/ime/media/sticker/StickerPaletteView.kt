@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.media.sticker
 
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.compose.foundation.Image
@@ -110,10 +111,10 @@ private val StickerBaseWidth = 96.dp
 // bytes — a 100k x 100k PNG is 40 GB).
 private const val MAX_STICKER_DIMENSION = 8192
 
-// Target longest edge for an on-keyboard sticker tile. We downsample so a
-// loaded `ImageBitmap` never holds more than a few MB regardless of source
-// resolution.
-private const val TARGET_STICKER_EDGE_PX = 512
+// Largest longest edge for an on-keyboard sticker tile, which is drawn at
+// 96 dp. Decoding downsamples by powers of two until the longest edge fits,
+// so a tile holds at most 512 x 512 x 4 bytes (1 MB) whatever the source.
+internal const val TARGET_STICKER_EDGE_PX = 512
 
 // Shared LRU of decoded sticker bitmaps, keyed by sourceUri string.
 //
@@ -126,16 +127,65 @@ private const val TARGET_STICKER_EDGE_PX = 512
 // After this cache: the first composition for a sourceUri pays the SAF
 // open + decode cost; every subsequent composition is a cache hit.
 //
-// Size budget: 64 entries × ≤512 px longest edge × 4 bytes/px ≈ 64 MB
-// absolute worst case (all square 512×512), ≈ 13 MB at typical sizes.
-// Downsampling keys on the longest edge, so non-square images are
-// aggressively shrunk and never blow the per-tile budget.
-private const val STICKER_BITMAP_CACHE_SIZE = 64
-private val stickerBitmapCache: androidx.collection.LruCache<String, ImageBitmap> =
-    androidx.collection.LruCache(STICKER_BITMAP_CACHE_SIZE)
+// Size budget: counted in bytes, not entries, so the cache never holds more
+// than 24 MB. That's 24 full 512 x 512 tiles, or about 100 of the 256 px
+// tiles most packs ship. Downsampling keys on the longest edge, so a single
+// tile never exceeds 1 MB.
+internal const val STICKER_BITMAP_CACHE_BYTES = 24 * 1024 * 1024
+private val stickerBitmapCache = object : androidx.collection.LruCache<String, ImageBitmap>(STICKER_BITMAP_CACHE_BYTES) {
+    // Decoding always asks for ARGB_8888, four bytes a pixel.
+    override fun sizeOf(key: String, value: ImageBitmap): Int = value.width * value.height * 4
+}
 
 fun evictStickerBitmapCache() {
     stickerBitmapCache.evictAll()
+}
+
+/** Bytes the cached sticker bitmaps hold now. */
+internal fun stickerBitmapCacheBytes(): Int = stickerBitmapCache.size()
+
+/**
+ * Returns the tile bitmap for [sourceUri] from the cache, or decodes it and caches the result.
+ * Blocks on IO, so call it off the main thread. Returns null for an unreadable or oversized file.
+ */
+fun loadStickerBitmap(context: Context, sourceUri: String): ImageBitmap? {
+    stickerBitmapCache.get(sourceUri)?.let { return it }
+    return runCatching {
+        val parsedUri = Uri.parse(sourceUri)
+        // Two-pass decode with bounds gate: a hostile / corrupted file
+        // returned by the SAF folder could otherwise allocate
+        // gigabytes (e.g. a 100k x 100k PNG) and crash the IME
+        // process. First pass reads bounds only, then we reject
+        // anything past a sanity ceiling and downsample the rest so
+        // a single tile never exceeds 512 px on its longest edge.
+        val boundsOptions = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
+        context.contentResolver.openInputStream(parsedUri)?.use { stream ->
+            BitmapFactory.decodeStream(stream, null, boundsOptions)
+        }
+        val srcWidth = boundsOptions.outWidth
+        val srcHeight = boundsOptions.outHeight
+        if (srcWidth <= 0 || srcHeight <= 0) return@runCatching null
+        if (srcWidth > MAX_STICKER_DIMENSION || srcHeight > MAX_STICKER_DIMENSION) {
+            return@runCatching null
+        }
+        val longestEdge = maxOf(srcWidth, srcHeight)
+        var sampleSize = 1
+        // Rounded up, since some decoders round a sampled edge up.
+        while ((longestEdge + sampleSize - 1) / sampleSize > TARGET_STICKER_EDGE_PX) {
+            sampleSize *= 2
+        }
+        val decodeOptions = BitmapFactory.Options().apply {
+            inSampleSize = sampleSize
+            inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
+        }
+        context.contentResolver.openInputStream(parsedUri)?.use { stream ->
+            BitmapFactory.decodeStream(stream, null, decodeOptions)?.asImageBitmap()
+        }
+    }.getOrNull()?.also { decoded ->
+        stickerBitmapCache.put(sourceUri, decoded)
+    }
 }
 
 @Composable
@@ -521,45 +571,7 @@ private fun BoxScope.StickerPreview(sticker: Sticker) {
     }
     LaunchedEffect(sourceUri) {
         if (bitmap != null) return@LaunchedEffect
-        val decoded = withContext(Dispatchers.IO) {
-            stickerBitmapCache.get(sourceUri)?.let { return@withContext it }
-            runCatching {
-                val parsedUri = Uri.parse(sourceUri)
-                // Two-pass decode with bounds gate: a hostile / corrupted file
-                // returned by the SAF folder could otherwise allocate
-                // gigabytes (e.g. a 100k x 100k PNG) and crash the IME
-                // process. First pass reads bounds only, then we reject
-                // anything past a sanity ceiling and downsample the rest so
-                // a single tile never exceeds ~512 px on its longest edge.
-                val boundsOptions = BitmapFactory.Options().apply {
-                    inJustDecodeBounds = true
-                }
-                context.contentResolver.openInputStream(parsedUri)?.use { stream ->
-                    BitmapFactory.decodeStream(stream, null, boundsOptions)
-                }
-                val srcWidth = boundsOptions.outWidth
-                val srcHeight = boundsOptions.outHeight
-                if (srcWidth <= 0 || srcHeight <= 0) return@runCatching null
-                if (srcWidth > MAX_STICKER_DIMENSION || srcHeight > MAX_STICKER_DIMENSION) {
-                    return@runCatching null
-                }
-                val longestEdge = maxOf(srcWidth, srcHeight)
-                var sampleSize = 1
-                while (longestEdge / (sampleSize * 2) >= TARGET_STICKER_EDGE_PX) {
-                    sampleSize *= 2
-                }
-                val decodeOptions = BitmapFactory.Options().apply {
-                    inSampleSize = sampleSize
-                    inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
-                }
-                context.contentResolver.openInputStream(parsedUri)?.use { stream ->
-                    BitmapFactory.decodeStream(stream, null, decodeOptions)?.asImageBitmap()
-                }
-            }.getOrNull()?.also { decoded ->
-                stickerBitmapCache.put(sourceUri, decoded)
-            }
-        }
-        bitmap = decoded
+        bitmap = withContext(Dispatchers.IO) { loadStickerBitmap(context, sourceUri) }
     }
     val loaded = bitmap
     if (loaded != null) {
