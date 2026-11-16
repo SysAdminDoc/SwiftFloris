@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Stop common words from counting as misspelled for the rest of a session. Each letter you type cancels the work started for the letter before, and a cancelled check of how common a word is got saved as "not a word" until the keyboard restarted. That word then lost the middle of the suggestion row, where space could swap it for a longer one.
 - Add `tools/check-memory-limiter-recovery.ps1`, which has Android 17's memory limiter close the keyboard on purpose and checks it comes back with your learned words, suggests from them again and reports the closing as a memory kill.
 - Fix the benchmark scripts in `tools/`, which still looked for the benchmark app under its name from before v1.9.0 and couldn't find it.
 - Add a memory benchmark for the keyboard's heaviest work: first render, loading the dictionary, glide typing, emoji search, a full clipboard history and a full sticker cache. `tools/benchmark-ime-memory.ps1` runs each one in a fresh process and records memory before, after, and after the app gives memory back.

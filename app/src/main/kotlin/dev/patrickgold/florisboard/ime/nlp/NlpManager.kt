@@ -99,8 +99,9 @@ class NlpManager(
     // typing session every unique word would otherwise accumulate forever in a
     // long-lived IME process, so it is bounded by an LruCache. 5000 entries is enough
     // for the warm vocabulary of a single language session without unbounded growth.
+    // FrequencyLookupCache never stores a lookup that a newer keystroke cancelled.
     private val wordsListCache = ConcurrentHashMap<String, List<String>>()
-    private val frequencyCache = LruCache<String, Double>(5000)
+    private val frequencyCache = FrequencyLookupCache(5000)
     private val autoCommitSuppression = AutoCommitSuppression()
     private val autoCommitUndoSession = AutoCommitUndoSession()
     private val glideAlternativeSession = GlideAlternativeSession()
@@ -758,12 +759,9 @@ class NlpManager(
             subtype.copy(primaryLocale = locale, secondaryLocales = emptyList())
         }
         val cacheKey = "${suggestionProvider.javaClass.name}:${locale.languageTag()}-$normalizedWord"
-        frequencyCache.get(cacheKey)?.let { return it }
-        val value = runCatching {
+        return frequencyCache.getOrLookup(cacheKey) {
             suggestionProvider.getFrequencyForWord(localeSubtype, normalizedWord)
-        }.getOrDefault(0.0).coerceIn(0.0, 1.0)
-        frequencyCache.put(cacheKey, value)
-        return value
+        }
     }
 
     private suspend fun candidateSignals(
