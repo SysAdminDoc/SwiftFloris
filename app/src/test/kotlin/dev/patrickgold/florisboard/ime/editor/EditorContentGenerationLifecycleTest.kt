@@ -1030,6 +1030,81 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun backspaceAfterLeftOverConjunctStepsFromWhereTheFieldLanded() {
+        val emoji = String(Character.toChars(0x1F600))
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a$emoji${conjunct()}")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // A Compose field's Left lands before the conjunct, and Backspace then deletes the emoji's
+        // two chars. A TextView would land inside the conjunct and delete one.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        editor.report(6, 3)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun knownFieldKindExplainsALaterCoalescedReport() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = conjunct() + conjunct())
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // The first Left lands where only a Compose field puts it.
+        editor.expectAppStepBack(wholeCluster = true)
+        connection.textBeforeSelection = conjunct()
+        editor.report(6, 3)
+        // Left, "x", "y" in one report at 2. A TextView's Left alone would land there too, but
+        // this field is known to move over the whole conjunct.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1)
+        editor.expectAppInsert(1)
+        editor.report(3, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun jumpLetsTheFieldKindBeLearnedAgain() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = conjunct() + conjunct())
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // A report reads as a Compose field's Left. If that was a wrong guess, the jump the next
+        // unexplained report makes lets a TextView's Left be expected again.
+        editor.expectAppStepBack(wholeCluster = true)
+        connection.textBeforeSelection = conjunct()
+        editor.report(6, 3)
+        connection.textBeforeSelection = conjunct() + conjunct()
+        editor.report(3, 6)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1)
+        editor.report(6, 5)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(5, 6)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(3, adjacencyBreaks.size)
+    }
+
+    @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")

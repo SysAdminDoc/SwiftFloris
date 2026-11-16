@@ -1252,6 +1252,9 @@ abstract class AbstractEditorInstance(context: Context) {
         fun dropPending() {
             synchronized(lock) {
                 pending.clear()
+                // The field's kind may have been read off a report another key caused (one that
+                // expired first), so a report nothing explains lets the next Left learn it again.
+                leftJoinsConjuncts = null
             }
         }
     }
