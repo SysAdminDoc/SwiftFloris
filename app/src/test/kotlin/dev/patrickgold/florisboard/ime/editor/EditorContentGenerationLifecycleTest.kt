@@ -750,6 +750,173 @@ class EditorContentGenerationLifecycleTest {
         assertFalse(editor.isContentBehindEditor())
     }
 
+    @Test
+    fun coalescedLoopClearsSoon() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // "ab", Backspace, "b" ends where "ab" did, and the app reports all four keys at once.
+        repeat(2) { editor.expectAppInsert(1) }
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        editor.report(7, 9)
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(400))
+
+        // No report followed, so the app is done, and a space can be corrected again.
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun splitLoopStillMatches() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // "ab", Backspace, "b", Backspace, "b", with the app reporting "ab" at once and then each
+        // key 200 ms apart, so the run outlasts one quiet timeout though no gap does.
+        repeat(2) { editor.expectAppInsert(1) }
+        repeat(2) {
+            editor.expectAppStepBack()
+            editor.expectAppInsert(1)
+        }
+        editor.report(7, 9)
+        for ((from, to) in listOf(9 to 8, 8 to 9, 9 to 8)) {
+            ShadowSystemClock.advanceBy(Duration.ofMillis(200))
+            editor.report(from, to)
+            assertTrue("behind after the report at $to", editor.isContentBehindEditor())
+        }
+        ShadowSystemClock.advanceBy(Duration.ofMillis(200))
+        editor.report(8, 9)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun overflowHoldsBehind() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // More keys than the tracker keeps: the first one's report matches nothing, but the app is
+        // still more than a thousand keys behind.
+        repeat(1025) { editor.expectAppInsert(1) }
+        editor.report(7, 8)
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofSeconds(3))
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun quietLoopYieldsToSpace() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        repeat(2) { editor.expectAppInsert(1) }
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        connection.textBeforeSelection = "purple ab"
+        editor.report(7, 9)
+        ShadowSystemClock.advanceBy(Duration.ofMillis(400))
+        // The app is done, so the keyboard types the space itself, and "c" lands after it.
+        editor.commitText(" ")
+        editor.expectAppInsert(1)
+        connection.textBeforeSelection = "purple ab "
+        editor.report(9, 10)
+        assertTrue(editor.isContentBehindEditor())
+        connection.textBeforeSelection = "purple ab c"
+        editor.report(10, 11)
+
+        assertFalse(editor.isContentBehindEditor())
+        // The Backspace in the burst breaks adjacency once, as in backspaceInBurstKeepsKeysTracked.
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun overflowEndsOnMatch() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        repeat(1025) { editor.expectAppInsert(1) }
+        editor.report(7, 8)
+        editor.report(8, 1032)
+        assertTrue(editor.isContentBehindEditor())
+        // The app caught up and the user types on. Its report matches, so typing in the next two
+        // seconds gets corrected again.
+        ShadowSystemClock.advanceBy(Duration.ofMillis(100))
+        editor.expectAppInsert(1)
+        editor.report(1032, 1033)
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun slowLoopKeepsKeys() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // "ab", Backspace, "b" in an app that takes 350 ms a key, longer than the quiet timeout.
+        repeat(2) { editor.expectAppInsert(1) }
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        for ((from, to) in listOf(7 to 8, 8 to 9, 9 to 8, 8 to 9)) {
+            ShadowSystemClock.advanceBy(Duration.ofMillis(350))
+            assertTrue("behind before the report at $to", editor.isContentBehindEditor())
+            editor.report(from, to)
+        }
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun stalledLoopKeepsKeys() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // "ab", Backspace, "b", "c": the app reports "a" right away, then stalls past the quiet
+        // timeout before reporting the rest one by one.
+        repeat(2) { editor.expectAppInsert(1) }
+        editor.expectAppStepBack()
+        repeat(2) { editor.expectAppInsert(1) }
+        editor.report(7, 8)
+        ShadowSystemClock.advanceBy(Duration.ofMillis(600))
+        for ((from, to) in listOf(8 to 9, 9 to 8, 8 to 9)) {
+            editor.report(from, to)
+            assertTrue("behind after the report at $to", editor.isContentBehindEditor())
+            ShadowSystemClock.advanceBy(Duration.ofMillis(100))
+        }
+        editor.report(9, 10)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
     /** The editor reports the cursor moving from [from] to [to], and the content read after it lands. */
     private fun TestEditorInstance.report(from: Int, to: Int) {
         handleSelectionUpdate(

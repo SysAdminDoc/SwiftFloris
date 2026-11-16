@@ -70,6 +70,12 @@ abstract class AbstractEditorInstance(context: Context) {
         private const val NumCharsForBackStepsBeforePassThrough: Int = 64
         /** An app reports its insert within a frame or two, so a cursor this late isn't that key's. */
         private const val PassThroughInsertTimeoutMillis: Long = 2_000L
+        /**
+         * How long keys a report may already cover hold the editor behind with no report after it,
+         * at least. An app still working through a burst reports again well within this, or within
+         * twice how late its last report came if that's longer.
+         */
+        private const val PassThroughQuietTimeoutMillis: Long = 300L
         //private const val NumCharsSafeMarginAfterCursor: Int = 0
 
         private const val CursorUpdateAll: Int =
@@ -898,14 +904,19 @@ abstract class AbstractEditorInstance(context: Context) {
          * A key the app handles itself and the cursor it should leave, a guess for a step back.
          * [backSteps] holds how far a Backspace steps back over each char right before [cursor],
          * nearest last, as far as the keyboard knows them, so a step back over an emoji takes all
-         * of it.
+         * of it. [quietUntil] is set while a report may already cover the key: past it the key no
+         * longer holds the editor behind, but a late report still matches it.
          */
         private class PendingKey(
             val cursor: Int,
             val isStepBack: Boolean,
             val backSteps: List<Int>,
             val atMillis: Long,
-        )
+        ) {
+            var quietUntil: Long = Long.MAX_VALUE
+
+            fun isExpired(now: Long): Boolean = now - atMillis > PassThroughInsertTimeoutMillis
+        }
 
         /** Where the next key starts, and the back steps before it. */
         private class Base(val range: EditorRange, val backSteps: List<Int>)
@@ -913,12 +924,15 @@ abstract class AbstractEditorInstance(context: Context) {
         private val lock = Any()
         private var reported = EditorRange.Unspecified
         private val pending = ArrayDeque<PendingKey>()
+        /** Until when a burst too long to track holds the editor behind. */
+        private var overflowUntil = 0L
         private var graphemes: BreakIterator? = null
 
         fun start(selection: EditorRange) {
             synchronized(lock) {
                 reported = selection
                 pending.clear()
+                overflowUntil = 0L
             }
         }
 
@@ -931,7 +945,7 @@ abstract class AbstractEditorInstance(context: Context) {
             synchronized(lock) {
                 val now = SystemClock.uptimeMillis()
                 dropExpired(now)
-                val base = baseOf(keyboardPending, published) ?: return
+                val base = baseOf(now, keyboardPending, published) ?: return
                 val backSteps = (base.backSteps + length).takeLast(NumKnownBackStepsBeforePassThrough)
                 add(PendingKey(base.range.start + length, isStepBack = false, backSteps, now))
             }
@@ -941,7 +955,7 @@ abstract class AbstractEditorInstance(context: Context) {
             synchronized(lock) {
                 val now = SystemClock.uptimeMillis()
                 dropExpired(now)
-                val base = baseOf(keyboardPending, published) ?: return
+                val base = baseOf(now, keyboardPending, published) ?: return
                 val range = base.range
                 val key = if (range.isSelectionMode) {
                     // Backspace deletes a selection and Left collapses it, both to its start.
@@ -961,10 +975,11 @@ abstract class AbstractEditorInstance(context: Context) {
         /**
          * Where the next key the app handles starts: the last key still pending, so a fast burst
          * predicts every cursor, or else the keyboard's newest edit, or else the last report. A typed
-         * char replaces a selection, so a range is kept lower end first.
+         * char replaces a selection, so a range is kept lower end first. A key past its quiet
+         * timeout left the cursor where the last report did, and the keyboard may have typed since.
          */
-        private fun baseOf(keyboardPending: EditorContent?, published: EditorContent): Base? {
-            val last = pending.lastOrNull()
+        private fun baseOf(now: Long, keyboardPending: EditorContent?, published: EditorContent): Base? {
+            val last = pending.lastOrNull()?.takeIf { now <= it.quietUntil }
             if (last != null) return Base(EditorRange.cursor(last.cursor), last.backSteps)
             val keyboard = keyboardPending?.takeIf { it.selection.isValid }
             val range = keyboard?.selection ?: reported.takeIf { it.isValid } ?: return null
@@ -1008,6 +1023,12 @@ abstract class AbstractEditorInstance(context: Context) {
 
         private fun add(key: PendingKey) {
             pending.addLast(key)
+            // The dropped key's report won't match, so it reads as a jump and drops the rest. The
+            // app is still that far behind, so hold until the burst has been quiet for a while or
+            // a report matches again.
+            if (pending.size > MaxPendingPassThroughKeys || key.atMillis < overflowUntil) {
+                overflowUntil = key.atMillis + PassThroughInsertTimeoutMillis
+            }
             while (pending.size > MaxPendingPassThroughKeys) {
                 pending.removeFirst()
             }
@@ -1019,7 +1040,8 @@ abstract class AbstractEditorInstance(context: Context) {
                 reported = selection
                 // A key the app took as a shortcut never moves the cursor, so its entry would let a
                 // tap that lands there much later pass as typing.
-                dropExpired(SystemClock.uptimeMillis())
+                val now = SystemClock.uptimeMillis()
+                dropExpired(now)
                 // Every key the app is passed moves the cursor, so a report that leaves it in place
                 // (the app answering a new composing region) is none of them. After a step back, a
                 // later key can expect that same cursor.
@@ -1030,8 +1052,24 @@ abstract class AbstractEditorInstance(context: Context) {
                 }
                 // The app may report several keys at once, so drop everything up to the match.
                 var steppedBack = false
+                var matchedAt = now
                 repeat(index + 1) {
-                    if (pending.removeFirst().isStepBack) steppedBack = true
+                    val key = pending.removeFirst()
+                    if (key.isStepBack) steppedBack = true
+                    matchedAt = key.atMillis
+                }
+                if (index >= 0) {
+                    // The app is keeping up, so whatever overflowed is behind it.
+                    overflowUntil = 0L
+                    // A step back and the char again leave this cursor a second time, and the text
+                    // reads the same either way, so this report may cover the keys up to there too.
+                    // If no report follows soon, the app is done with them. A slow app reports
+                    // later, so it gets longer.
+                    val quietFor = max(PassThroughQuietTimeoutMillis, 2 * (now - matchedAt))
+                    val lastSameCursor = pending.indexOfLast { it.cursor == selection.start }
+                    pending.forEachIndexed { i, key ->
+                        key.quietUntil = if (i <= lastSameCursor) now + quietFor else Long.MAX_VALUE
+                    }
                 }
                 when {
                     index < 0 -> PassThroughReport.None
@@ -1044,13 +1082,17 @@ abstract class AbstractEditorInstance(context: Context) {
         /** True when a key the app hasn't reported yet is still expected. */
         fun hasPending(): Boolean {
             return synchronized(lock) {
-                dropExpired(SystemClock.uptimeMillis())
-                pending.isNotEmpty()
+                val now = SystemClock.uptimeMillis()
+                dropExpired(now)
+                // The quiet keys are the oldest ones and share one deadline, so the newest key
+                // tells whether any key is still expected.
+                val newest = pending.lastOrNull()
+                (newest != null && now <= newest.quietUntil) || now < overflowUntil
             }
         }
 
         private fun dropExpired(now: Long) {
-            while (pending.isNotEmpty() && now - pending.first().atMillis > PassThroughInsertTimeoutMillis) {
+            while (pending.isNotEmpty() && pending.first().isExpired(now)) {
                 pending.removeFirst()
             }
         }
