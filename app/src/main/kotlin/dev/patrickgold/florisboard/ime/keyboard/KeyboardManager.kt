@@ -619,11 +619,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         return committed
     }
 
-    private fun commitAutoCommitCandidate(candidate: SuggestionCandidate) {
+    /** Returns whether the candidate was committed (and so learned by [commitCandidate]). */
+    private fun commitAutoCommitCandidate(candidate: SuggestionCandidate): Boolean {
         val contentBeforeCommit = editorInstance.activeContent
-        if (commitCandidate(candidate)) {
+        val committed = commitCandidate(candidate)
+        if (committed) {
             nlpManager.rememberAcceptedAutoCommit(contentBeforeCommit, candidate)
         }
+        return committed
     }
 
     private fun forgetLearnedWord(candidate: LearnedWordForgetSuggestionCandidate) {
@@ -1009,9 +1012,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * but skips handling changing to characters keyboard and double space periods.
      */
     fun handleHardwareKeyboardSpace() {
+        val typedWordBeforeCommit = editorInstance.activeContent.currentWordText
         val candidate = nlpManager.getSpacebarCandidate()
         val suppressPlainSpace = candidate == null && nlpManager.shouldSuppressPlainSpaceForPrediction()
-        candidate?.let { commitAutoCommitCandidate(it) }
+        val candidateCommitted = candidate?.let { commitAutoCommitCandidate(it) } ?: false
+        SpacebarLearnPolicy.typedWordToLearn(typedWordBeforeCommit, candidateCommitted)
+            ?.let { learnIfAllowed(it) }
         if (suppressPlainSpace) {
             return
         }
@@ -1027,16 +1033,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      */
     private fun handleSpace(data: KeyData) {
         // Snapshot the word the user actually typed *before* any auto-correct candidate
-        // overwrites it; we want to learn what the user committed, which is either the
-        // chosen candidate text (if autocorrect fired) or the literal typed word.
+        // overwrites it. A committed candidate is learned by the commit itself; otherwise
+        // the space learns the literal typed word.
         val typedWordBeforeCommit = editorInstance.activeContent.currentWordText
         val candidate = nlpManager.getSpacebarCandidate()
         val suppressPlainSpace = candidate == null && nlpManager.shouldSuppressPlainSpaceForPrediction()
-        candidate?.let { commitAutoCommitCandidate(it) }
-        val learnedText = candidate?.text?.toString() ?: typedWordBeforeCommit
-        if (learnedText.isNotBlank()) {
-            learnIfAllowed(learnedText)
-        }
+        val candidateCommitted = candidate?.let { commitAutoCommitCandidate(it) } ?: false
+        SpacebarLearnPolicy.typedWordToLearn(typedWordBeforeCommit, candidateCommitted)
+            ?.let { learnIfAllowed(it) }
         if (prefs.keyboard.spaceBarSwitchesToCharacters.get()) {
             when (activeState.keyboardMode) {
                 KeyboardMode.NUMERIC_ADVANCED,
