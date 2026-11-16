@@ -205,11 +205,20 @@ try {
     $limitOutput = (Invoke-AdbText shell am memory-limiter manual $oldPid $LimitPercent).Trim()
     Write-Output "Limit set on pid ${oldPid}: $limitOutput"
     Wait-Until { (Get-KeyboardPid) -ne $oldPid } $KillTimeoutSeconds "the limiter to kill pid $oldPid"
-    $exitInfo = Invoke-AdbText shell dumpsys activity exit-info $KeyboardPackage
     # The record for this pid, up to the next one, must name the limiter in its description
-    # ("reason=13 (OTHER KILLS BY SYSTEM) ... description=MemoryLimiter:AnonSwap").
-    if ($exitInfo -notmatch "(?s)pid=$oldPid\b(?:(?!ApplicationExitInfo #).)*?description=MemoryLimiter") {
-        throw "pid $oldPid ended, but exit-info has no MemoryLimiter record for it:`n$exitInfo"
+    # ("reason=13 (OTHER KILLS BY SYSTEM) ... description=MemoryLimiter:AnonSwap"). It can land
+    # a moment after the process is gone, so it's read again until it shows up.
+    $limiterRecord = "(?s)pid=$oldPid\b(?:(?!ApplicationExitInfo #).)*?description=MemoryLimiter"
+    $exitInfoDeadline = (Get-Date).AddSeconds(15)
+    do {
+        $exitInfo = Invoke-AdbText shell dumpsys activity exit-info $KeyboardPackage
+        if ($exitInfo -match $limiterRecord) {
+            break
+        }
+        Start-Sleep -Seconds 1
+    } while ((Get-Date) -lt $exitInfoDeadline)
+    if ($exitInfo -notmatch $limiterRecord) {
+        throw "pid $oldPid ended, but exit-info had no MemoryLimiter record for it after 15 s:`n$exitInfo"
     }
     Write-Pass "platform recorded pid $oldPid as a memory-limiter kill"
 
