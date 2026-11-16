@@ -74,6 +74,11 @@ abstract class AbstractEditorInstance(context: Context) {
          * or Malayalam conjunct (Unicode's InCB=Linker).
          */
         private val ConjunctViramas: Set<Int> = setOf(0x094D, 0x09CD, 0x0ACD, 0x0B4D, 0x0C4D, 0x0D4D)
+        /**
+         * Flags the back step of a consonant after one of the [ConjunctViramas]: a TextView's Left
+         * arrow stops before it, a Compose or Chrome field's moves over the whole conjunct.
+         */
+        private const val ConjunctConsonantStep: Int = 1 shl 16
         /** An app reports its insert within a frame or two, so a cursor this late isn't that key's. */
         private const val PassThroughInsertTimeoutMillis: Long = 2_000L
         /**
@@ -924,22 +929,46 @@ abstract class AbstractEditorInstance(context: Context) {
          * [backSteps] holds how far a Backspace steps back over each char right before [cursor],
          * nearest last, as far as the keyboard knows them, so a step back over an emoji takes all
          * of it. A negative one is an accent the letter before it carries along on a Left arrow.
+         * [joinedCursor] and [joinedBackSteps] are the same for a field whose Left arrow moves over
+         * a whole conjunct; they differ from [cursor] and [backSteps] only after a Left over one
+         * while the field's kind isn't known yet.
          * [quietUntil] is set while a report may already cover the key: past it the key no
          * longer holds the editor behind, but a late report still matches it.
          */
         private class PendingKey(
-            val cursor: Int,
+            var cursor: Int,
             val isStepBack: Boolean,
-            val backSteps: List<Int>,
+            var backSteps: List<Int>,
             val atMillis: Long,
+            var joinedCursor: Int = cursor,
+            var joinedBackSteps: List<Int> = backSteps,
         ) {
             var quietUntil: Long = Long.MAX_VALUE
 
             fun isExpired(now: Long): Boolean = now - atMillis > PassThroughInsertTimeoutMillis
+
+            /** Keeps the guess for the field's kind, [joins] for one that moves over a whole conjunct. */
+            fun settle(joins: Boolean) {
+                if (joins) {
+                    cursor = joinedCursor
+                    backSteps = joinedBackSteps
+                } else {
+                    joinedCursor = cursor
+                    joinedBackSteps = backSteps
+                }
+            }
         }
 
-        /** Where the next key starts, and the back steps before it. */
-        private class Base(val range: EditorRange, val backSteps: List<Int>)
+        /** Where the next key starts, and the back steps before it, in both kinds of field. */
+        private class Base(
+            val range: EditorRange,
+            val backSteps: List<Int>,
+            val joinedRange: EditorRange = range,
+            val joinedBackSteps: List<Int> = backSteps,
+        )
+
+        /** Where a step back leaves the cursor, and the back steps still before it. */
+        private class Landing(val cursor: Int, val backSteps: List<Int>)
 
         private val lock = Any()
         private var reported = EditorRange.Unspecified
@@ -947,12 +976,19 @@ abstract class AbstractEditorInstance(context: Context) {
         /** Until when a burst too long to track holds the editor behind. */
         private var overflowUntil = 0L
         private var graphemes: BreakIterator? = null
+        /**
+         * Whether this field's Left arrow moves over a whole conjunct (Compose, Chrome) or stops
+         * before the consonant after the virama (a TextView), once a report has told them apart.
+         * EditorInfo doesn't say reliably.
+         */
+        private var leftJoinsConjuncts: Boolean? = null
 
         fun start(selection: EditorRange) {
             synchronized(lock) {
                 reported = selection
                 pending.clear()
                 overflowUntil = 0L
+                leftJoinsConjuncts = null
             }
         }
 
@@ -966,8 +1002,16 @@ abstract class AbstractEditorInstance(context: Context) {
                 val now = SystemClock.uptimeMillis()
                 dropExpired(now)
                 val base = baseOf(now, keyboardPending, published) ?: return
-                val backSteps = (base.backSteps + length).takeLast(NumKnownBackStepsBeforePassThrough)
-                add(PendingKey(base.range.start + length, isStepBack = false, backSteps, now))
+                add(
+                    PendingKey(
+                        base.range.start + length,
+                        isStepBack = false,
+                        (base.backSteps + length).takeLast(NumKnownBackStepsBeforePassThrough),
+                        now,
+                        joinedCursor = base.joinedRange.start + length,
+                        joinedBackSteps = (base.joinedBackSteps + length).takeLast(NumKnownBackStepsBeforePassThrough),
+                    )
+                )
             }
         }
 
@@ -980,26 +1024,42 @@ abstract class AbstractEditorInstance(context: Context) {
                 val now = SystemClock.uptimeMillis()
                 dropExpired(now)
                 val base = baseOf(now, keyboardPending, published) ?: return
-                val range = base.range
-                val key = if (range.isSelectionMode) {
-                    // Backspace deletes a selection and Left collapses it, both to its start.
-                    PendingKey(range.start, isStepBack = true, base.backSteps, now)
-                } else if (range.start > 0) {
-                    val steps = base.backSteps
-                    var taken = if (steps.isEmpty()) 0 else 1
-                    if (wholeCluster) {
-                        while (taken < steps.size && steps[steps.size - taken] < 0) taken++
-                    }
-                    // A char the keyboard doesn't know is most likely a single one.
-                    val step = if (taken == 0) 1 else steps.takeLast(taken).sumOf { abs(it) }
-                    PendingKey(max(0, range.start - step), isStepBack = true, steps.dropLast(taken), now)
+                val joins = leftJoinsConjuncts
+                // Nothing to step back over, so the app reports nothing either.
+                val near = stepBack(base.range, base.backSteps, wholeCluster, overConjunct = joins == true) ?: return
+                val far = if (joins != null) {
+                    near
                 } else {
-                    // Nothing to step back over, so the app reports nothing either.
-                    return
+                    stepBack(base.joinedRange, base.joinedBackSteps, wholeCluster, overConjunct = true)
+                        ?: Landing(base.joinedRange.start, base.joinedBackSteps)
                 }
-                add(key)
+                add(PendingKey(near.cursor, isStepBack = true, near.backSteps, now, far.cursor, far.backSteps))
             }
         }
+
+        /**
+         * Where a step back from [range] lands, or null at the start of the text. [overConjunct]
+         * moves a Left arrow over a whole conjunct, as Compose and Chrome fields do.
+         */
+        private fun stepBack(range: EditorRange, steps: List<Int>, wholeCluster: Boolean, overConjunct: Boolean): Landing? {
+            // Backspace deletes a selection and Left collapses it, both to its start.
+            if (range.isSelectionMode) return Landing(range.start, steps)
+            if (range.start <= 0) return null
+            var taken = if (steps.isEmpty()) 0 else 1
+            if (wholeCluster) {
+                while (taken < steps.size && carriesAlong(steps[steps.size - taken], overConjunct)) taken++
+            }
+            // A char the keyboard doesn't know is most likely a single one.
+            val step = if (taken == 0) 1 else steps.takeLast(taken).sumOf { stepLength(it) }
+            return Landing(max(0, range.start - step), steps.dropLast(taken))
+        }
+
+        /** True when a Left arrow over [step] also moves over the char before it. */
+        private fun carriesAlong(step: Int, overConjunct: Boolean): Boolean {
+            return step < 0 || (overConjunct && (step and ConjunctConsonantStep) != 0)
+        }
+
+        private fun stepLength(step: Int): Int = abs(step) and (ConjunctConsonantStep - 1)
 
         /**
          * Where the next key the app handles starts: the last key still pending, so a fast burst
@@ -1009,7 +1069,14 @@ abstract class AbstractEditorInstance(context: Context) {
          */
         private fun baseOf(now: Long, keyboardPending: EditorContent?, published: EditorContent): Base? {
             val last = pending.lastOrNull()?.takeIf { now <= it.quietUntil }
-            if (last != null) return Base(EditorRange.cursor(last.cursor), last.backSteps)
+            if (last != null) {
+                return Base(
+                    EditorRange.cursor(last.cursor),
+                    last.backSteps,
+                    EditorRange.cursor(last.joinedCursor),
+                    last.joinedBackSteps,
+                )
+            }
             val keyboard = keyboardPending?.takeIf { it.selection.isValid }
             val range = keyboard?.selection ?: reported.takeIf { it.isValid } ?: return null
             val content = keyboard ?: published.takeIf { it.selection == range }
@@ -1025,8 +1092,8 @@ abstract class AbstractEditorInstance(context: Context) {
          * selector) and a CR LF go in one step, the way a text field deletes them. The accents and
          * vowel signs after a letter go one code point at a time, as its Backspace takes them, and
          * are negative, since a Left arrow moves over them with the letter. A consonant after a
-         * virama is positive: a TextView's Left arrow stops before it, though Compose and Chrome
-         * move over the whole conjunct.
+         * virama is positive with [ConjunctConsonantStep] set: a TextView's Left arrow stops
+         * before it, though Compose and Chrome move over the whole conjunct.
          */
         private fun backStepLengths(text: String): List<Int> {
             var from = max(0, text.length - NumCharsForBackStepsBeforePassThrough)
@@ -1044,9 +1111,15 @@ abstract class AbstractEditorInstance(context: Context) {
                         val codePoint = window.codePointBefore(at)
                         val length = Character.charCount(codePoint)
                         at -= length
-                        val startsStep = at == start ||
+                        val afterVirama = at > start &&
                             Character.isLetter(codePoint) && window.codePointBefore(at) in ConjunctViramas
-                        lengths.addFirst(if (startsStep) length else -length)
+                        lengths.addFirst(
+                            when {
+                                at == start -> length
+                                afterVirama -> length or ConjunctConsonantStep
+                                else -> -length
+                            }
+                        )
                     }
                 } else {
                     lengths.addFirst(end - start)
@@ -1080,10 +1153,21 @@ abstract class AbstractEditorInstance(context: Context) {
                 // Every key the app is passed moves the cursor, so a report that leaves it in place
                 // (the app answering a new composing region) is none of them. After a step back, a
                 // later key can expect that same cursor.
-                val index = if (selection.isCursorMode && selection != oldSelection) {
-                    pending.indexOfFirst { it.cursor == selection.start }
-                } else {
-                    -1
+                val moved = selection.isCursorMode && selection != oldSelection
+                val near = if (moved) pending.indexOfFirst { it.cursor == selection.start } else -1
+                val far = if (moved) pending.indexOfFirst { it.joinedCursor == selection.start } else -1
+                val index = when {
+                    near < 0 -> far
+                    far < 0 -> near
+                    else -> min(near, far)
+                }
+                // Only one kind of field explains the report, so the key it matched is one they
+                // leave in different places (after a Left over a conjunct): that kind is this field's.
+                // When both do at different keys (a coalesced report), the next report may tell.
+                if (near != far && (near < 0 || far < 0)) {
+                    val joins = far >= 0
+                    leftJoinsConjuncts = joins
+                    pending.forEach { it.settle(joins) }
                 }
                 // The app may report several keys at once, so drop everything up to the match.
                 var steppedBack = false
@@ -1101,7 +1185,9 @@ abstract class AbstractEditorInstance(context: Context) {
                     // If no report follows soon, the app is done with them. A slow app reports
                     // later, so it gets longer.
                     val quietFor = max(PassThroughQuietTimeoutMillis, 2 * (now - matchedAt))
-                    val lastSameCursor = pending.indexOfLast { it.cursor == selection.start }
+                    val lastSameCursor = pending.indexOfLast {
+                        it.cursor == selection.start || it.joinedCursor == selection.start
+                    }
                     pending.forEachIndexed { i, key ->
                         key.quietUntil = if (i <= lastSameCursor) now + quietFor else Long.MAX_VALUE
                     }

@@ -833,6 +833,77 @@ class EditorContentGenerationLifecycleTest {
         assertEquals(2, adjacencyBreaks.size)
     }
 
+    private fun conjunct(): String = String(Character.toChars(0x915)) + String(Character.toChars(0x94D)) +
+        String(Character.toChars(0x924))
+
+    @Test
+    fun leftOverConjunctMovesOverItWhole() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a${conjunct()}")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // A Compose or Chrome field's Left moves over the whole conjunct, then over "a".
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1)
+        editor.report(4, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 0)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(0, 1)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun coalescedReportPastConjunctLeft() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a${conjunct()}")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // Left and "x" in one report ("ax" plus the conjunct, cursor 2), then "y" on its own.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1)
+        editor.expectAppInsert(1)
+        editor.report(4, 2)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun conjunctLeftsSettleOnTheReportOnlyOneFieldExplains() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = conjunct() + conjunct())
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // Left, Left, "x". A TextView lands at 5, 3, 4; a Compose field at 3, 0, 1. Its first
+        // report, 3, is also where a TextView's second Left lands, so only the next one tells.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1)
+        editor.report(6, 3)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 0)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(0, 1)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
     @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
