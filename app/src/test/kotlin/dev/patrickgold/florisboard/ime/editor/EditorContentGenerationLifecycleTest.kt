@@ -1163,6 +1163,33 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    @Config(sdk = [29])
+    @SQLiteMode(SQLiteMode.Mode.LEGACY) // See leftOverConjunctTypedInBurstOnOlderAndroid.
+    fun leftOverGujaratiConjunctWithZaOnOlderAndroid() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // Gujarati KA, the virama and ZA, typed key by key, then a Chrome field's Left over all of
+        // it, then "x".
+        intArrayOf(0xA95, 0xACD, 0xAF9).forEach { editor.expectAppInsert(1, it) }
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        editor.report(2, 3)
+        editor.report(3, 4)
+        editor.report(4, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
     fun backspaceOverAccentTypedAfterDigitInBurst() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")

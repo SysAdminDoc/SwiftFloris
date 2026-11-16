@@ -1362,9 +1362,8 @@ abstract class AbstractEditorInstance(context: Context) {
                 in 0x58..0x5F -> codePoint != 0x0C5D && codePoint != 0x0D5F
                 // Devanagari's HIGH SPACING DOT is a letter there but not a consonant.
                 in 0x70..0x71 -> codePoint != 0x0971
-                // Consonants Unicode added later, for Sindhi and other languages.
-                in 0x78..0x7F -> before == 0x094D
-                0xF9 -> before == 0x0ACD
+                // Consonants Unicode added later: Devanagari's for Sindhi and other languages, and Gujarati ZA.
+                in 0x78..0x7F -> before == 0x094D || codePoint == 0x0AF9
                 else -> false
             }
         }
