@@ -59,6 +59,8 @@ import dev.patrickgold.florisboard.ime.addon.AddonEnumerator
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
 import dev.patrickgold.florisboard.ime.core.LocaleHints
 import dev.patrickgold.florisboard.ime.core.LocaleHints.toLocales
+import dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore
+import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
 import dev.patrickgold.florisboard.ime.editor.InputAttributes
@@ -594,6 +596,9 @@ class FlorisImeService : LifecycleInputMethodService() {
         try { NlpInlineAutofill.clearInlineSuggestions() } catch (e: Exception) {
             flogWarning(LogTopic.IMS_EVENTS) { "NlpInlineAutofill.clearInlineSuggestions() failed: $e" }
         }
+        try { savePendingLearning() } catch (e: Exception) {
+            flogWarning(LogTopic.IMS_EVENTS) { "savePendingLearning() failed: $e" }
+        }
         keyboardManager.clearIncognitoModeChangedListener(flagSecureIncognitoModeChangedListener)
         FlorisImeServiceReference = WeakReference(null)
         super.onDestroy()
@@ -873,9 +878,21 @@ class FlorisImeService : LifecycleInputMethodService() {
                 activeState.isActionsOverflowVisible = false
                 activeState.isActionsEditorVisible = false
             }
+            savePendingLearning()
         } else {
             flogWarning(LogTopic.IMS_EVENTS) { "Ignoring (is already hidden)" }
         }
+    }
+
+    /**
+     * Learned word pairs and triples reach disk in batches of 20 commits. Once
+     * the keyboard is off screen the process can be killed without warning
+     * (Android 17's memory limiter gives hidden apps a smaller budget), so the
+     * unsaved rest is written now. Both calls return at once and write on IO.
+     */
+    private fun savePendingLearning() {
+        PersonalBigramStore.get(this).flushPending()
+        PersonalTrigramStore.get(this).flushPending()
     }
 
     override fun onEvaluateFullscreenMode(): Boolean {

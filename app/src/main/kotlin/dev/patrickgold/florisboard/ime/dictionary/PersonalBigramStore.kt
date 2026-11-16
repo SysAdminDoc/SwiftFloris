@@ -513,12 +513,46 @@ class PersonalBigramStore private constructor(private val context: Context) {
 
     /**
      * Forces an immediate flush of [localeTag]'s table to disk. Called by the
-     * commit-count threshold and from the IME service shutdown path.
+     * commit-count threshold.
      */
     fun flush(localeTag: String) {
         ioScope.launch {
             flushAndAwait(localeTag)
         }
+    }
+
+    /**
+     * Writes every language that has learned or rejected pairs not yet on disk.
+     *
+     * The keyboard calls this when it hides and when its service is destroyed.
+     * A process can die off screen without either callback finishing (Android
+     * 17's memory limiter kills over-budget apps that way), and the commit-count
+     * threshold alone would leave up to [FLUSH_EVERY_N_COMMITS] - 1 pairs per
+     * language only in memory.
+     */
+    fun flushPending() {
+        // A learn launched just before this call may not have counted itself yet (the first
+        // one in a process is still loading the table), so the flush waits for it.
+        val earlier = ioScope.coroutineContext.job.children.toList()
+        ioScope.launch {
+            earlier.forEach { it.join() }
+            flushPendingNow()
+        }
+    }
+
+    /**
+     * Waits for the work already started on [ioScope], then does what [flushPending] does.
+     * Returns the language tags that had unsaved changes and were written. Never call it
+     * from [ioScope] itself, which would wait for its own coroutine.
+     */
+    suspend fun flushPendingAndAwait(): List<String> {
+        ioScope.coroutineContext.job.children.toList().forEach { it.join() }
+        return flushPendingNow()
+    }
+
+    private suspend fun flushPendingNow(): List<String> {
+        val pendingTags = pendingCommitsByLocale.filterValues { it.get() > 0 }.keys.sorted()
+        return pendingTags.filter { tag -> flushAndAwait(tag) }
     }
 
     suspend fun flushAndAwait(localeTag: String): Boolean {
@@ -661,6 +695,11 @@ class PersonalBigramStore private constructor(private val context: Context) {
                 PersonalNgramPersistence.LoadState.READY
             } else {
                 PersonalNgramPersistence.LoadState.WRITE_FAILED
+            }
+            if (!persistedAll) {
+                // The count was cleared above. Keep the language pending so the next flush
+                // tries again instead of treating the failed write as saved.
+                pendingCommitsByLocale.getOrPut(localeTag) { AtomicInteger(0) }.updateAndGet { maxOf(it, 1) }
             }
             persistedAll
         }

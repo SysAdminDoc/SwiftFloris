@@ -18,6 +18,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -519,6 +520,34 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Writes every language that has learned or rejected triples not yet on
+     * disk. Same reason and callers as [PersonalBigramStore.flushPending].
+     */
+    fun flushPending() {
+        // Waits for learns launched just before, as [PersonalBigramStore.flushPending] does.
+        val earlier = ioScope.coroutineContext.job.children.toList()
+        ioScope.launch {
+            earlier.forEach { it.join() }
+            flushPendingNow()
+        }
+    }
+
+    /**
+     * Waits for the work already started on [ioScope], then does what [flushPending] does.
+     * Returns the language tags that had unsaved changes and were written. Never call it
+     * from [ioScope] itself, which would wait for its own coroutine.
+     */
+    suspend fun flushPendingAndAwait(): List<String> {
+        ioScope.coroutineContext.job.children.toList().forEach { it.join() }
+        return flushPendingNow()
+    }
+
+    private suspend fun flushPendingNow(): List<String> {
+        val pendingTags = pendingCommitsByLocale.filterValues { it.get() > 0 }.keys.sorted()
+        return pendingTags.filter { tag -> flushAndAwait(tag) }
+    }
+
     suspend fun flushAndAwait(localeTag: String): Boolean {
         return loadGuard.withLock {
             val table = tablesByLocale[localeTag] ?: return@withLock true
@@ -673,6 +702,10 @@ class PersonalTrigramStore private constructor(private val context: Context) {
                 PersonalNgramPersistence.LoadState.READY
             } else {
                 PersonalNgramPersistence.LoadState.WRITE_FAILED
+            }
+            if (!persistedAll) {
+                // Same as PersonalBigramStore: a failed write stays pending for the next flush.
+                pendingCommitsByLocale.getOrPut(localeTag) { AtomicInteger(0) }.updateAndGet { maxOf(it, 1) }
             }
             persistedAll
         }
