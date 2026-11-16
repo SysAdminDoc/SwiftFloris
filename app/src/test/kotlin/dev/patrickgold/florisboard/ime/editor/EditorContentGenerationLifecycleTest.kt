@@ -1540,12 +1540,13 @@ class EditorContentGenerationLifecycleTest {
         val adjacencyBreaks = collectAdjacencyBreaks(editor)
 
         editor.inputConnection = connection.connection
-        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        editor.handleStartInputView(editorInfo(selection = 1, selectionEnd = 3), isRestart = false)
         scheduler.runCurrent()
         // Left collapses the selection to its left end, which in Hebrew is where it ends.
         editor.expectAppStepBack(wholeCluster = true)
         editor.expectAppInsert(1, 'x'.code)
-        editor.report(1, 3)
+        editor.handleSelectionUpdate(EditorRange(1, 3), EditorRange.cursor(3), EditorRange.Unspecified)
+        scheduler.runCurrent()
         assertTrue(editor.isContentBehindEditor())
         editor.report(3, 4)
 
@@ -1676,7 +1677,7 @@ class EditorContentGenerationLifecycleTest {
         val adjacencyBreaks = collectAdjacencyBreaks(editor)
 
         editor.inputConnection = connection.connection
-        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        editor.handleStartInputView(editorInfo(selection = 2, selectionEnd = 7), isRestart = false)
         scheduler.runCurrent()
         // A selection from a Hebrew line into a Latin one. Compose collapses it the way of the
         // line it ends on, so to its start.
@@ -1713,6 +1714,152 @@ class EditorContentGenerationLifecycleTest {
 
         assertFalse(editor.isContentBehindEditor())
         assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftCollapsesSelectionFromHebrewLineToItsEndInTextView() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9, 0x5DC),
+            textAfterSelection = "llo",
+            selectedText = text(0x5D5, 0x5DD) + "\nhe",
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2, selectionEnd = 7), isRestart = false)
+        scheduler.runCurrent()
+        // A TextView collapses a selection over a line break the way the line its anchor is on
+        // runs, here the Hebrew one, so to its left end, which is where it ends.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.handleSelectionUpdate(EditorRange(2, 7), EditorRange.cursor(7), EditorRange.Unspecified)
+        scheduler.runCurrent()
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(7, 8)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftInHebrewInLeftToRightFieldStepsBack() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9, 0x5DC),
+            textAfterSelection = text(0x5D5, 0x5DD),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // A Compose field in an English app and a web field with no direction set run left to
+        // right whatever the text, so their Left steps back through Hebrew.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftInLatinInRightToLeftFieldMovesForward() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab", textAfterSelection = "cd")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // A Compose field in a Hebrew app and a web page set right to left run that way whatever
+        // the text, so their Left moves forward through Latin.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 3)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftDirectionIsLearnedFromTheFieldsFirstReport() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9, 0x5DC, 0x5D5, 0x5DD),
+            textAfterSelection = text(0x5E2, 0x5D5, 0x5DC, 0x5DD),
+        )
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // This field's Left stepped back through Hebrew, so it runs left to right, and a later
+        // Left the field reports as a move forward is something else, like a tap.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(4, 3)
+        editor.report(3, 4)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'y'.code)
+        editor.report(4, 5)
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun leftDeepInLongHebrewParagraphMovesForward() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5D0).repeat(300),
+            textAfterSelection = text(0x5D1, 0x5D2),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 300), isRestart = false)
+        scheduler.runCurrent()
+        // The field gives fewer chars before the cursor than the paragraph has, so the keyboard
+        // never sees where it starts. The Hebrew it does see still moves the Left forward, and so
+        // does the next one after a Hebrew letter typed.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 0x5D3)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.report(300, 301)
+        editor.report(301, 302)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(302, 303)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftAtEndOfTextFromAppThatReturnsAllOfIt() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = "",
+            textAfterSelection = text(0x5D0).repeat(130),
+            returnsAllText = true,
+        )
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 0), isRestart = false)
+        scheduler.runCurrent()
+        // The app gave all 130 chars after the cursor though only 128 were asked for, so the
+        // keyboard knows where the text ends, and the last Left, which has nowhere to go, isn't
+        // waited for.
+        repeat(131) { editor.expectAppStepBack(wholeCluster = true) }
+        editor.expectAppInsert(1, 'x'.code)
+        for (cursor in 0 until 130) editor.report(cursor, cursor + 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(130, 131)
+
+        assertFalse(editor.isContentBehindEditor())
     }
 
     @Test
@@ -1975,6 +2122,8 @@ private class LifecycleRecordingInputConnection(
     var textBeforeSelection: String,
     private val textAfterSelection: String = "",
     private val selectedText: String = "",
+    /** Like an app that ignores how many chars a read asks for. */
+    private val returnsAllText: Boolean = false,
 ) : InvocationHandler {
     private val calls = mutableListOf<String>()
     val composingCalls: List<String>
@@ -1994,13 +2143,14 @@ private class LifecycleRecordingInputConnection(
         return when (method.name) {
             "getTextBeforeCursor" -> {
                 calls += "getTextBeforeCursor(${args?.get(0)})"
-                textBeforeSelection
+                if (returnsAllText) textBeforeSelection else textBeforeSelection.takeLast(args?.get(0) as Int)
             }
             "commitText" -> {
                 calls += "commitText"
                 true
             }
-            "getTextAfterCursor" -> textAfterSelection
+            "getTextAfterCursor" ->
+                if (returnsAllText) textAfterSelection else textAfterSelection.take(args?.get(0) as Int)
             "getSelectedText" -> selectedText
             "setComposingRegion" -> {
                 calls += "setComposingRegion(${args?.get(0)},${args?.get(1)})"
@@ -2037,12 +2187,12 @@ private class LifecycleRecordingInputConnection(
     }
 }
 
-private fun editorInfo(selection: Int): FlorisEditorInfo {
+private fun editorInfo(selection: Int, selectionEnd: Int = selection): FlorisEditorInfo {
     return FlorisEditorInfo.wrap(
         EditorInfo().apply {
             inputType = InputType.TYPE_CLASS_TEXT
             initialSelStart = selection
-            initialSelEnd = selection
+            initialSelEnd = selectionEnd
         },
     )
 }
