@@ -33,7 +33,8 @@
     ],
     "signaturePermissionPrefix": "io.github.sysadmindoc.swiftfloris.permission.",
     "baseManifestPermissions": [
-      "io.github.sysadmindoc.swiftfloris.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+      "io.github.sysadmindoc.swiftfloris.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+      "io.github.sysadmindoc.swiftfloris.bench.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
     ],
     "baseManifestPermissionPrefixes": [
       "io.github.sysadmindoc.swiftfloris.debug."

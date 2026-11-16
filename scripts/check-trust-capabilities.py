@@ -307,7 +307,10 @@ def derive_enrollment_policy(root: Path) -> tuple[list[str], str, list[str], lis
     return (
         allowed,
         "io.github.sysadmindoc.swiftfloris.permission.",
-        ["io.github.sysadmindoc.swiftfloris.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"],
+        [
+            "io.github.sysadmindoc.swiftfloris.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+            "io.github.sysadmindoc.swiftfloris.bench.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+        ],
         ["io.github.sysadmindoc.swiftfloris.debug."],
     )
 

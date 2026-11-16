@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix the benchmark build, which has failed its permission check since August. The check allowed the receiver permission every Android app gets under the release and debug names but not under the benchmark build's own name.
+
 ## v1.9.67 (2026-11-15)
 
 - Stop turning away a Tasker action that arrives while the keyboard is starting up. If the action was what started the app, it got there before your settings had loaded and was refused as if Tasker automation were off. It now waits a few seconds for them.
