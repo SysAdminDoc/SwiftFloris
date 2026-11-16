@@ -372,6 +372,26 @@ class EditorContentGenerationLifecycleTest {
         assertEquals(1, adjacencyBreaks.size)
     }
 
+    @Test
+    fun leavingTheFieldPublishesAdjacencyBreakSignal() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hello")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 5), isRestart = false)
+        scheduler.runCurrent()
+        editor.updateLastCommitPosition()
+        // Closing the field and opening one that looks the same (the same chat after a trip to
+        // another app) takes the field info to Unspecified and back to an equal value, which a
+        // collector of the info alone can miss. The next word isn't typed after this one.
+        editor.handleFinishInputView()
+        editor.handleStartInputView(editorInfo(selection = 5), isRestart = false)
+        scheduler.runCurrent()
+
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
     private fun collectAdjacencyBreaks(editor: AbstractEditorInstance): List<Unit> {
         val adjacencyBreaks = mutableListOf<Unit>()
         CoroutineScope(dispatcher).launch {

@@ -258,6 +258,10 @@ abstract class AbstractEditorInstance(context: Context) {
         expectedContentQueue.clear()
         passThroughInserts.start(EditorRange.Unspecified)
         _lastCommitPosition.reset()
+        // Leaving or restarting the field means the next word isn't typed after the last one. Say
+        // so here: the info flow can go Unspecified and back to an equal value (the same chat after
+        // a trip to another app) faster than its collector runs, and then it never sees a change.
+        notifyCommitAdjacencyBrokenIfNeeded(true)
     }
 
     protected open fun reevaluateInputShiftState() {
