@@ -20,7 +20,11 @@ import dev.patrickgold.florisboard.lib.FlorisLocale
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.io.File
+import java.nio.file.Files
 import java.util.concurrent.Executors
 import kotlin.time.measureTime
 
@@ -131,6 +135,71 @@ class DictionaryManagerTest : FunSpec({
         pendingLearnedMisspellingCleanup(table, "teh\nuntill\nthier\n") shouldBe emptySet()
         // A word added to the table after the last cleanup is still pending.
         pendingLearnedMisspellingCleanup(table, "teh\r\n untill \n") shouldBe setOf("thier")
+    }
+
+    test("isAutoLearnedMisspelling covers 240 to 250 and hyphenated English tags") {
+        val misspellings = setOf("teh")
+        fun row(freq: Int, locale: String = "en_US") =
+            UserDictionaryEntry(id = 0, word = "teh", freq = freq, locale = locale, shortcut = null)
+
+        // v1.8.26 learned new words at 240.
+        isAutoLearnedMisspelling(row(240), misspellings) shouldBe true
+        isAutoLearnedMisspelling(row(239), misspellings) shouldBe false
+        isAutoLearnedMisspelling(row(250), misspellings) shouldBe true
+        // Learning caps at 250, so anything above was set by hand or an import.
+        isAutoLearnedMisspelling(row(251), misspellings) shouldBe false
+        isAutoLearnedMisspelling(row(245, locale = "en-GB"), misspellings) shouldBe true
+    }
+
+    test("cleanUpLearnedMisspellingsOnce removes, forgets and records each word once") {
+        val marker = File(Files.createTempDirectory("missp-cleanup").toFile(), LEARNED_MISSPELLING_CLEANUP_FILE)
+        val dao = RepairUserDictionaryDao().apply {
+            seed(word = "teh", freq = 245, locale = "en_US")
+            seed(word = "alot", freq = FREQUENCY_DEFAULT, locale = "en_US")
+        }
+        val forgotten = mutableListOf<String>()
+        val table = setOf("teh", "alot", "untill")
+
+        val first = cleanUpLearnedMisspellingsOnce(dao, table, marker) { forgotten += it.word }
+
+        first.shouldNotBeNull()
+        first.removed.map { it.word } shouldBe listOf("teh")
+        first.markerSaved.shouldBeTrue()
+        forgotten shouldBe listOf("teh")
+        dao.queryAll().map { it.word } shouldBe listOf("alot")
+        marker.readLines() shouldBe listOf("alot", "teh", "untill")
+
+        // Typed and learned again after the cleanup: the user meant it, so it stays.
+        dao.seed(word = "teh", freq = 245, locale = "en_US")
+        cleanUpLearnedMisspellingsOnce(dao, table, marker) { forgotten += it.word }.shouldBeNull()
+        dao.queryAll().map { it.word }.shouldContainExactlyInAnyOrder("alot", "teh")
+        forgotten shouldBe listOf("teh")
+    }
+
+    test("cleanUpLearnedMisspellingsOnce keeps words an earlier table had in the marker") {
+        val marker = File(Files.createTempDirectory("missp-cleanup").toFile(), LEARNED_MISSPELLING_CLEANUP_FILE)
+        marker.writeText("recieve\nteh\n")
+        val dao = RepairUserDictionaryDao().apply {
+            seed(word = "untill", freq = 250, locale = "en_GB")
+        }
+
+        val result = cleanUpLearnedMisspellingsOnce(dao, setOf("teh", "untill"), marker) {}
+
+        result.shouldNotBeNull()
+        result.removed.map { it.word } shouldBe listOf("untill")
+        // "recieve" left the table but stays handled, so it isn't cleaned again if it comes back.
+        marker.readLines() shouldBe listOf("recieve", "teh", "untill")
+    }
+
+    test("cleanUpLearnedMisspellingsOnce does nothing without a table") {
+        val marker = File(Files.createTempDirectory("missp-cleanup").toFile(), LEARNED_MISSPELLING_CLEANUP_FILE)
+        val dao = RepairUserDictionaryDao().apply {
+            seed(word = "teh", freq = 245, locale = "en_US")
+        }
+
+        cleanUpLearnedMisspellingsOnce(dao, emptySet(), marker) { error("nothing to forget") }.shouldBeNull()
+        marker.exists() shouldBe false
+        dao.queryAll().map { it.word } shouldBe listOf("teh")
     }
 
     test("DictionarySyncBridge returns fallback when a blocking Room query exceeds budget") {

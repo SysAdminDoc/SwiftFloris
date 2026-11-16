@@ -144,10 +144,24 @@ internal const val LEARNED_MISSPELLING_CLEANUP_FILE = "learned_misspelling_clean
  * Each word is cleaned once, so a misspelling the user teaches the keyboard afterwards stays.
  */
 internal fun pendingLearnedMisspellingCleanup(table: Set<String>, processedMarker: String?): Set<String> {
-    if (processedMarker.isNullOrBlank()) return table
-    val processed = processedMarker.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toHashSet()
+    val processed = parseLearnedMisspellingMarker(processedMarker)
+    if (processed.isEmpty()) return table
     return table.filterNotTo(HashSet()) { it in processed }
 }
+
+private fun parseLearnedMisspellingMarker(marker: String?): Set<String> {
+    if (marker.isNullOrBlank()) return emptySet()
+    return marker.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toHashSet()
+}
+
+/**
+ * Lowest frequency the misspelling cleanup treats as learned: v1.8.26 learned new words at 240,
+ * later versions at [LEARN_INITIAL_FREQUENCY]. v1.6.0 to v1.8.25 started at 80 and added 6 per
+ * use, and later uses added 5, so those rows can sit anywhere from 80 to 250. Nothing tells one of
+ * them from a frequency picked by hand, so they're left alone; the chip that forgets a learned
+ * word and the personal dictionary screen still remove them.
+ */
+internal const val LEARNED_MISSPELLING_MIN_FREQUENCY = 240
 
 /**
  * True for a row that [DictionaryManager.learnWord] wrote for an English misspelling: lowercase,
@@ -156,7 +170,7 @@ internal fun pendingLearnedMisspellingCleanup(table: Set<String>, processedMarke
  */
 internal fun isAutoLearnedMisspelling(entry: UserDictionaryEntry, misspellings: Set<String>): Boolean {
     if (entry.shortcut != null) return false
-    if (entry.freq < LEARN_INITIAL_FREQUENCY) return false
+    if (entry.freq !in LEARNED_MISSPELLING_MIN_FREQUENCY..LEARN_MAX_FREQUENCY) return false
     if (entry.word != entry.word.lowercase() || entry.word !in misspellings) return false
     val language = entry.locale?.substringBefore('_')?.substringBefore('-') ?: return false
     return language == "en"
@@ -175,6 +189,36 @@ internal fun removeAutoLearnedMisspellings(
     val removed = dao.queryAll().filter { isAutoLearnedMisspelling(it, misspellings) }
     for (entry in removed) dao.delete(entry)
     return removed
+}
+
+internal class LearnedMisspellingCleanupResult(val removed: List<UserDictionaryEntry>, val markerSaved: Boolean)
+
+/**
+ * Cleans the [table] words [markerFile] doesn't list yet out of the learned words: deletes the rows
+ * [removeAutoLearnedMisspellings] matches, hands each one to [forget] so the caller can drop it
+ * from memory, then adds the whole table to the marker. Words already in the marker stay there, so
+ * one that leaves the table and comes back isn't cleaned a second time. Returns `null` when
+ * every word was already handled.
+ */
+internal fun cleanUpLearnedMisspellingsOnce(
+    dao: UserDictionaryDao,
+    table: Set<String>,
+    markerFile: File,
+    forget: (UserDictionaryEntry) -> Unit,
+): LearnedMisspellingCleanupResult? {
+    if (table.isEmpty()) return null
+    val marker = if (markerFile.isFile) markerFile.readText() else null
+    val pending = pendingLearnedMisspellingCleanup(table, marker)
+    if (pending.isEmpty()) return null
+    val removed = removeAutoLearnedMisspellings(dao, pending)
+    removed.forEach(forget)
+    val markerSaved = PersonalNgramPersistence.atomicReplace(markerFile) { writer ->
+        for (word in (parseLearnedMisspellingMarker(marker) + table).sorted()) {
+            writer.write(word)
+            writer.write("\n")
+        }
+    }
+    return LearnedMisspellingCleanupResult(removed, markerSaved)
 }
 
 /**
@@ -636,7 +680,7 @@ class DictionaryManager private constructor(context: Context) {
     private fun repairLegacyLearnedLocaleRowsAsync() {
         if (!legacyLocaleRepairStarted.compareAndSet(false, true)) return
         ioScope.launch {
-            runCatching {
+            val repaired = runCatching {
                 val dao = florisUserDictionaryDao() ?: return@launch
                 val result = repairLegacyLearnedLocaleRows(dao)
                 if (result.rewritten > 0 || result.merged > 0) {
@@ -646,8 +690,10 @@ class DictionaryManager private constructor(context: Context) {
                 }
             }.onFailure { e ->
                 flogError(LogTopic.DICTIONARY) { "Legacy learned-locale repair failed: ${e.message}" }
-            }
-            // After the locale repair, so rows it rewrote to en_* are seen as English.
+            }.isSuccess
+            // Only after a finished locale repair: a row it didn't rewrite to en_* yet wouldn't
+            // count as English, and the marker would then skip it for good.
+            if (!repaired) return@launch
             runCatching {
                 val dao = florisUserDictionaryDao() ?: return@launch
                 removeAutoLearnedMisspellingsOnce(dao)
@@ -664,33 +710,24 @@ class DictionaryManager private constructor(context: Context) {
      * once per table word and later additions to the table are cleaned on the next start.
      */
     private fun removeAutoLearnedMisspellingsOnce(dao: UserDictionaryDao) {
-        val markerFile = File(applicationContext.filesDir, LEARNED_MISSPELLING_CLEANUP_FILE)
         val raw = applicationContext.assets.open(LatinDictionaryStore.EnglishMisspellingsPath)
             .bufferedReader().use { it.readText() }
-        val table = LatinDictionaryStore.parseMisspellings(raw).keys
-        if (table.isEmpty()) return
-        val processedMarker = if (markerFile.isFile) markerFile.readText() else null
-        val pending = pendingLearnedMisspellingCleanup(table, processedMarker)
-        if (pending.isEmpty()) return
-        val removed = removeAutoLearnedMisspellings(dao, pending)
-        if (removed.isNotEmpty()) {
-            val bigrams = PersonalBigramStore.get(applicationContext)
-            val trigrams = PersonalTrigramStore.get(applicationContext)
-            for (entry in removed) {
-                val locale = FlorisLocale.fromTag(entry.locale ?: continue)
-                UserDictionaryOverlay.get().forget(entry.word, locale)
-                bigrams.forget(entry.word, locale)
-                trigrams.forget(entry.word, locale)
-            }
-            flogInfo(LogTopic.DICTIONARY) { "Removed ${removed.size} learned misspellings" }
+        val bigrams by lazy { PersonalBigramStore.get(applicationContext) }
+        val trigrams by lazy { PersonalTrigramStore.get(applicationContext) }
+        val result = cleanUpLearnedMisspellingsOnce(
+            dao = dao,
+            table = LatinDictionaryStore.parseMisspellings(raw).keys,
+            markerFile = File(applicationContext.filesDir, LEARNED_MISSPELLING_CLEANUP_FILE),
+        ) { entry ->
+            val locale = FlorisLocale.fromTag(entry.locale ?: return@cleanUpLearnedMisspellingsOnce)
+            UserDictionaryOverlay.get().forget(entry.word, locale)
+            bigrams.forget(entry.word, locale)
+            trigrams.forget(entry.word, locale)
+        } ?: return
+        if (result.removed.isNotEmpty()) {
+            flogInfo(LogTopic.DICTIONARY) { "Removed ${result.removed.size} learned misspellings" }
         }
-        val written = PersonalNgramPersistence.atomicReplace(markerFile) { writer ->
-            for (word in table.sorted()) {
-                writer.write(word)
-                writer.write("\n")
-            }
-        }
-        if (!written) {
+        if (!result.markerSaved) {
             flogWarning(LogTopic.DICTIONARY) { "Learned misspelling cleanup marker not saved; retrying next start" }
         }
     }
