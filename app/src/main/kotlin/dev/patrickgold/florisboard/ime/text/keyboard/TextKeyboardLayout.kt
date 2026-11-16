@@ -92,6 +92,7 @@ import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
 import dev.patrickgold.florisboard.ime.keyboard.SpaceBarMode
+import dev.patrickgold.florisboard.ime.keyboard.rememberKeyLayoutWindowSpec
 import dev.patrickgold.florisboard.ime.nlp.SuggestionPrivacyPolicy
 import dev.patrickgold.florisboard.ime.nlp.TouchDecoderCandidate
 import dev.patrickgold.florisboard.ime.popup.ExceptionsForKeyCodes
@@ -307,7 +308,7 @@ fun TextKeyboardLayout(
         val keyboardRowBaseHeight = FlorisImeSizing.keyboardRowBaseHeight
 
         val windowController = LocalWindowController.current
-        val windowSpec by windowController.activeWindowSpec.collectAsState()
+        val windowSpec by rememberKeyLayoutWindowSpec(windowController)
         val activeWindowInsets by windowController.activeWindowInsets.collectAsState()
         val keyMarginH by remember { derivedStateOf { windowSpec.keyMarginH.toPx() } }
         val keyMarginV by remember { derivedStateOf { windowSpec.keyMarginV.toPx() } }

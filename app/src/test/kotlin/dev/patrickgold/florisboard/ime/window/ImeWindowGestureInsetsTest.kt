@@ -25,15 +25,19 @@ import dev.patrickgold.jetpref.datastore.jetprefDataStoreOf
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.test.TestScope
 import io.kotest.engine.coroutines.backgroundScope
+import io.kotest.engine.coroutines.testScheduler
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * Issue #23 ("janky" resize): in fixed mode the content inset the app behind the keyboard lays itself out
  * against followed the window on every frame of a drag, so the app re-laid itself out once per frame.
  * The inset now holds the value from before the gesture and moves once, when the finger lifts.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class ImeWindowGestureInsetsTest : FunSpec({
     val density = Density(2.625f, 1f)
     val imeRowCount = 4
@@ -103,6 +107,65 @@ class ImeWindowGestureInsetsTest : FunSpec({
 
             windowController.editor.cancelGesture()
             windowController.reportedInsetsTop() shouldBe 1420
+        }
+    }
+
+    // The service requests a view layout pass on every emission of reportedInsetsChanges(), so during a drag it
+    // must stay quiet while the keyboard window changes height on every frame.
+    test("the reported insets change once per resize drag, when the finger lifts") {
+        fixedController { windowController ->
+            windowController.editor.enable()
+            val reports = mutableListOf<ReportedImeInsets?>()
+            backgroundScope.launch { windowController.reportedInsetsChanges().collect { reports += it } }
+            testScheduler.runCurrent()
+            reports shouldBe listOf(ReportedImeInsets(1500, rootInsets.boundsPx))
+
+            val initialSpec = windowController.editor.beginResizeGesture()
+            var spec: ImeWindowSpec = initialSpec
+            for (step in 1..5) {
+                spec = initialSpec.resizedBy(
+                    DpOffset(0.dp, (-8 * step).dp),
+                    ImeWindowResizeHandle.TOP,
+                    imeRowCount,
+                    smartbarRowCount,
+                ).shouldBeInstanceOf<ImeWindowSpec.Fixed>()
+                windowController.editor.onSpecUpdated(spec)
+                windowController.updateWindowInsets(windowInsetsWithTop(1500 - 21 * step))
+                testScheduler.runCurrent()
+            }
+            reports shouldBe listOf(ReportedImeInsets(1500, rootInsets.boundsPx))
+
+            windowController.editor.endResizeGesture(spec)
+            testScheduler.runCurrent()
+            reports shouldBe listOf(
+                ReportedImeInsets(1500, rootInsets.boundsPx),
+                ReportedImeInsets(1395, rootInsets.boundsPx),
+            )
+        }
+    }
+
+    test("a keyboard height change outside a drag reports new insets") {
+        fixedController { windowController ->
+            val reports = mutableListOf<ReportedImeInsets?>()
+            backgroundScope.launch { windowController.reportedInsetsChanges().collect { reports += it } }
+            testScheduler.runCurrent()
+
+            windowController.updateWindowInsets(windowInsetsWithTop(1300))
+            testScheduler.runCurrent()
+            reports shouldBe listOf(
+                ReportedImeInsets(1500, windowInsetsWithTop(1500).boundsPx),
+                ReportedImeInsets(1300, windowInsetsWithTop(1300).boundsPx),
+            )
+        }
+    }
+
+    test("the touchable area is the whole root only while the editor is enabled") {
+        fixedController { windowController ->
+            windowController.reportedInsets() shouldBe ReportedImeInsets(1500, windowInsetsWithTop(1500).boundsPx)
+            windowController.editor.enable()
+            windowController.reportedInsets() shouldBe ReportedImeInsets(1500, rootInsets.boundsPx)
+            windowController.editor.disable()
+            windowController.reportedInsets() shouldBe ReportedImeInsets(1500, windowInsetsWithTop(1500).boundsPx)
         }
     }
 })

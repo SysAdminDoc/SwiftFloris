@@ -45,6 +45,10 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState
 
 private val LocalKeyboardRowBaseHeight = compositionLocalOf { 65.dp }
 private val LocalSmartbarHeight = compositionLocalOf { 40.dp }
+private val NoResizePreview: State<Dp?> = object : State<Dp?> {
+    override val value: Dp? = null
+}
+private val LocalResizePreviewExtraHeight = compositionLocalOf { NoResizePreview }
 
 object FlorisImeSizing {
     val minInteractiveTouchSize: Dp = ImeWindowConstraints.MinInteractiveTouchSize
@@ -59,20 +63,42 @@ object FlorisImeSizing {
         @ReadOnlyComposable
         get() = LocalSmartbarHeight.current
 
+    /**
+     * How much taller than its laid-out rows the keyboard is drawn while a resize drag runs, or null when
+     * none is. See [resizeGesturePreview].
+     */
+    val resizePreviewExtraHeight: State<Dp?>
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalResizePreviewExtraHeight.current
+
     @Composable
     fun keyboardUiHeight(): Dp {
+        val rowCount by keyboardRowCountAsState()
+        return (keyboardRowBaseHeight * rowCount)
+    }
+
+    /**
+     * The key row count [keyboardUiHeight] sizes the keyboard for: the last character layout's while a
+     * characters, symbols or advanced numeric layout is up, the active layout's otherwise.
+     */
+    @Composable
+    fun keyboardRowCountAsState(): State<Int> {
         val context = LocalContext.current
         val keyboardManager by context.keyboardManager()
-        val evaluator by keyboardManager.activeEvaluator.collectAsState()
-        val lastCharactersEvaluator by keyboardManager.lastCharactersEvaluator.collectAsState()
-        val rowCount = when (evaluator.keyboard.mode) {
-            KeyboardMode.CHARACTERS,
-            KeyboardMode.NUMERIC_ADVANCED,
-            KeyboardMode.SYMBOLS,
-            KeyboardMode.SYMBOLS2 -> lastCharactersEvaluator.keyboard as TextKeyboard
-            else -> evaluator.keyboard as TextKeyboard
-        }.rowCount.let(TextKeyboardLayoutPolicy::effectiveRowCount)
-        return (keyboardRowBaseHeight * rowCount)
+        val evaluator = keyboardManager.activeEvaluator.collectAsState()
+        val lastCharactersEvaluator = keyboardManager.lastCharactersEvaluator.collectAsState()
+        return remember(evaluator, lastCharactersEvaluator) {
+            derivedStateOf {
+                when (evaluator.value.keyboard.mode) {
+                    KeyboardMode.CHARACTERS,
+                    KeyboardMode.NUMERIC_ADVANCED,
+                    KeyboardMode.SYMBOLS,
+                    KeyboardMode.SYMBOLS2 -> lastCharactersEvaluator.value.keyboard as TextKeyboard
+                    else -> evaluator.value.keyboard as TextKeyboard
+                }.rowCount.let(TextKeyboardLayoutPolicy::effectiveRowCount)
+            }
+        }
     }
 
     @Composable
@@ -124,7 +150,8 @@ object FlorisImeSizing {
 }
 
 /**
- * Provides [LocalKeyboardRowBaseHeight] / [LocalSmartbarHeight] to [content].
+ * Provides [LocalKeyboardRowBaseHeight] / [LocalSmartbarHeight] to [content], held at the start of a resize
+ * drag, plus [FlorisImeSizing.resizePreviewExtraHeight] for [resizeGesturePreview] to stretch them with.
  *
  * This is the current, load-bearing API — its single caller is `ImeWindow`.
  * It was previously annotated `@Deprecated("TODO: move logic fully into ImeWindow
@@ -139,16 +166,34 @@ fun ProvideKeyboardRowBaseHeight(content: @Composable () -> Unit) {
     val windowController = LocalWindowController.current
     val density = LocalDensity.current
 
-    val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val windowSpecState = windowController.activeWindowSpec.collectAsState()
+    val windowSpec by windowSpecState
+    val editorState = windowController.editor.state.collectAsState()
+    val keyboardRowCount = FlorisImeSizing.keyboardRowCountAsState()
+    val smartbarRowCount = FlorisImeSizing.smartbarRowCountAsState()
 
-    val heights by remember {
+    val liveHeights = remember(windowSpecState) {
+        derivedStateOf { ImeRowHeights.of(windowSpecState.value) }
+    }
+    // A resize drag keeps the rows the drag began with, and resizeGesturePreview stretches them to the dragged
+    // height. Handing out the live heights made every key lay out again on every frame of the drag (issue
+    // #23). The live heights aren't read here during the drag, so the drag doesn't recompose this either.
+    val gestureStartSpec = windowController.editor.gestureStartSpec
+        .takeIf { editorState.value.isResizeGesture }
+    val (rowHeight, smartbarRowHeight) = gestureStartSpec?.let { ImeRowHeights.of(it) } ?: liveHeights.value
+    val resizePreviewExtraHeight = remember(windowSpecState, editorState, keyboardRowCount, smartbarRowCount) {
         derivedStateOf {
-            val rowHeight = windowSpec.calcRowHeight(windowSpec.props.keyboardHeight)
-            val smartbarRowHeight = windowSpec.calcSmartbarRowHeight(windowSpec.props.keyboardHeight)
-            rowHeight to smartbarRowHeight
+            val startSpec = windowController.editor.gestureStartSpec
+                .takeIf { editorState.value.isResizeGesture }
+                ?: return@derivedStateOf null
+            ResizeGesturePreview.extraHeight(
+                start = ImeRowHeights.of(startSpec),
+                live = ImeRowHeights.of(windowSpecState.value),
+                keyboardRowCount = keyboardRowCount.value,
+                smartbarRowCount = smartbarRowCount.value,
+            )
         }
     }
-    val (rowHeight, smartbarRowHeight) = heights
 
     SideEffect {
         val marginV = InlineSuggestionsChipMargin.calculateTopPadding() +
@@ -168,6 +213,7 @@ fun ProvideKeyboardRowBaseHeight(content: @Composable () -> Unit) {
     CompositionLocalProvider(
         LocalKeyboardRowBaseHeight provides rowHeight,
         LocalSmartbarHeight provides smartbarRowHeight,
+        LocalResizePreviewExtraHeight provides resizePreviewExtraHeight,
     ) {
         content()
     }

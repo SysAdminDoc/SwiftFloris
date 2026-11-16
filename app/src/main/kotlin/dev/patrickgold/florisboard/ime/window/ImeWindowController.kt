@@ -18,15 +18,18 @@ package dev.patrickgold.florisboard.ime.window
 
 import android.content.res.Configuration
 import android.inputmethodservice.InputMethodService
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.width
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
@@ -238,32 +241,45 @@ class ImeWindowController(
         outInsets: InputMethodService.Insets,
         isFullscreenInputRequired: Boolean,
     ) {
-        val rootBounds = activeRootInsets.value.boundsPx
-        val windowBounds = activeWindowInsets.value?.boundsPx ?: return
-        val insetsTop = reportedInsetsTop() ?: return
-        val editorState = editor.state.value
-
-        outInsets.contentTopInsets = insetsTop
-        outInsets.visibleTopInsets = insetsTop
-        when {
-            isFullscreenInputRequired || editorState.isEnabled -> {
-                outInsets.touchableRegion.set(
-                    rootBounds.left,
-                    rootBounds.top,
-                    rootBounds.right,
-                    rootBounds.bottom,
-                )
-            }
-            else -> {
-                outInsets.touchableRegion.set(
-                    windowBounds.left,
-                    windowBounds.top,
-                    windowBounds.right,
-                    windowBounds.bottom,
-                )
-            }
+        val reported = reportedInsets() ?: return
+        val touchableBounds = if (isFullscreenInputRequired) {
+            activeRootInsets.value.boundsPx
+        } else {
+            reported.touchableBoundsPx
         }
+
+        outInsets.contentTopInsets = reported.insetsTop
+        outInsets.visibleTopInsets = reported.insetsTop
+        outInsets.touchableRegion.set(
+            touchableBounds.left,
+            touchableBounds.top,
+            touchableBounds.right,
+            touchableBounds.bottom,
+        )
         outInsets.touchableInsets = InputMethodService.Insets.TOUCHABLE_INSETS_REGION
+    }
+
+    /**
+     * What [onComputeInsets] reports from this controller's state alone: the content and visible top line
+     * ([reportedInsetsTop]) and the touchable bounds, which are the whole root while the editor is enabled
+     * and the keyboard window otherwise. Null while the window insets are unknown.
+     */
+    internal fun reportedInsets(): ReportedImeInsets? {
+        val windowBounds = activeWindowInsets.value?.boundsPx ?: return null
+        val insetsTop = reportedInsetsTop() ?: return null
+        val touchableBounds = if (editor.state.value.isEnabled) activeRootInsets.value.boundsPx else windowBounds
+        return ReportedImeInsets(insetsTop, touchableBounds)
+    }
+
+    /**
+     * Emits [reportedInsets] each time it changes. Android only asks for the insets at the start of a view
+     * traversal, and the keyboard is laid out later in that traversal, so the service requests another one
+     * on every emission to get the new insets to the app behind the keyboard.
+     */
+    fun reportedInsetsChanges(): Flow<ReportedImeInsets?> {
+        return combine(activeRootInsets, activeWindowInsets, activeWindowSpec, editor.state) { _, _, _, _ ->
+            reportedInsets()
+        }.distinctUntilChanged()
     }
 
     /**
@@ -577,6 +593,14 @@ class ImeWindowController(
         internal var gestureFontScale: Float? = null
             private set
 
+        /**
+         * The [activeWindowSpec] from when the current resize gesture began, held until it ends. The keys keep
+         * the layout they had at this size for the whole drag, and are stretched to the dragged height instead
+         * of being laid out again on every frame (issue #23).
+         */
+        internal var gestureStartSpec: ImeWindowSpec? = null
+            private set
+
         private fun syncFromPrefs() {
             version.update { it + 1 }
         }
@@ -643,6 +667,7 @@ class ImeWindowController(
         fun beginResizeGesture(): ImeWindowSpec {
             gestureInsetsTop = reportedInsetsTop()
             gestureFontScale = activeWindowSpec.value.fontScale
+            gestureStartSpec = activeWindowSpec.value
             state.value = EditorState.ACTIVE_RESIZE_GESTURE
             return activeWindowSpec.value
         }
@@ -726,3 +751,11 @@ class ImeWindowController(
             get() = isMoveGesture || isResizeGesture
     }
 }
+
+/**
+ * The insets [ImeWindowController.onComputeInsets] reports, see [ImeWindowController.reportedInsets].
+ *
+ * @property insetsTop The content and visible top inset in px.
+ * @property touchableBoundsPx The touchable bounds in px.
+ */
+data class ReportedImeInsets(val insetsTop: Int, val touchableBoundsPx: IntRect)

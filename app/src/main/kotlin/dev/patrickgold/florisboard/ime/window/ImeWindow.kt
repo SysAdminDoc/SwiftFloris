@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -65,7 +66,10 @@ import dev.patrickgold.florisboard.app.devtools.DevtoolsOverlay
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardInputLayout
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
+import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard.ProvideKeyboardRowBaseHeight
+import dev.patrickgold.florisboard.ime.keyboard.rememberResizePreviewSnapshot
+import dev.patrickgold.florisboard.ime.keyboard.resizeGesturePreview
 import dev.patrickgold.florisboard.ime.media.MediaInputLayout
 import dev.patrickgold.florisboard.ime.sheet.BottomSheetWindow
 import dev.patrickgold.florisboard.ime.text.TextInputLayout
@@ -155,7 +159,7 @@ fun BoxScope.ImeWindow() {
     val density = LocalDensity.current
     val windowController = LocalWindowController.current
 
-    val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val placementProps by rememberWindowPlacementProps(windowController)
     val windowConfig by windowController.activeWindowConfig.collectAsState()
 
     val attributes = remember(windowConfig.mode) {
@@ -171,11 +175,11 @@ fun BoxScope.ImeWindow() {
         attributes = attributes,
         modifier = Modifier
             .align(Alignment.BottomStart)
-            .ifIsInstance<ImeWindowProps.Fixed>(windowSpec.props) {
+            .ifIsInstance<ImeWindowProps.Fixed>(placementProps) {
                 Modifier
                     .fillMaxWidth()
             }
-            .ifIsInstance<ImeWindowProps.Floating>(windowSpec.props) { props ->
+            .ifIsInstance<ImeWindowProps.Floating>(placementProps) { props ->
                 Modifier
                     .offset(props.offsetLeft, -props.offsetBottom)
                     .width(props.keyboardWidth)
@@ -199,13 +203,33 @@ fun BoxScope.ImeWindow() {
     }
 }
 
+/**
+ * The live window spec's props with the keyboard height left out, for placing the window. A resize drag changes
+ * the height on every frame, and reading the whole spec here would recompose the window each time (issue #23).
+ */
+@Composable
+private fun rememberWindowPlacementProps(windowController: ImeWindowController): State<ImeWindowProps> {
+    val windowSpec = windowController.activeWindowSpec.collectAsState()
+    return remember(windowSpec) {
+        derivedStateOf {
+            when (val props = windowSpec.value.props) {
+                is ImeWindowProps.Fixed -> props.copy(keyboardHeight = 0.dp)
+                is ImeWindowProps.Floating -> props.copy(keyboardHeight = 0.dp)
+            }
+        }
+    }
+}
+
 @Composable
 private fun BoxScope.FloatingOnboardingTooltip() {
     val windowController = LocalWindowController.current
-    val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val windowSpec = windowController.activeWindowSpec.collectAsState()
+    val isFloating by remember(windowSpec) {
+        derivedStateOf { windowSpec.value is ImeWindowSpec.Floating }
+    }
     val visible by windowController.floatingOnboardingVisible.collectAsState()
 
-    val isVisible = visible && windowSpec is ImeWindowSpec.Floating
+    val isVisible = visible && isFloating
     val tooltipText = stringRes(R.string.ime__floating_onboarding_tooltip)
 
     LaunchedEffect(isVisible) {
@@ -250,7 +274,9 @@ private fun ImeInnerWindow() {
     val keyboardManager by context.keyboardManager()
 
     val state by keyboardManager.activeState.collectAsState()
-    val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val placementProps by rememberWindowPlacementProps(windowController)
+    val resizePreviewExtraHeight = FlorisImeSizing.resizePreviewExtraHeight
+    val resizePreviewSnapshot = rememberResizePreviewSnapshot(resizePreviewExtraHeight)
 
     ProvideActualLayoutDirection {
         val layoutDirection = LocalLayoutDirection.current
@@ -264,7 +290,7 @@ private fun ImeInnerWindow() {
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .ifIsInstance<ImeWindowProps.Fixed>(windowSpec.props) { props ->
+            .ifIsInstance<ImeWindowProps.Fixed>(placementProps) { props ->
                 Modifier
                     .safeDrawingPadding()
                     .systemGestureExclusion()
@@ -274,12 +300,12 @@ private fun ImeInnerWindow() {
                         bottom = props.paddingBottom.coerceAtLeast(0.dp),
                     )
             }
-            .ifIsInstance<ImeWindowProps.Floating>(windowSpec.props) {
+            .ifIsInstance<ImeWindowProps.Floating>(placementProps) {
                 Modifier.systemGestureExclusion()
             },
         allowClip = false,
     ) {
-        Column {
+        Column(modifier = Modifier.resizeGesturePreview(resizePreviewExtraHeight, resizePreviewSnapshot)) {
             when (state.imeUiMode) {
                 ImeUiMode.TEXT -> TextInputLayout()
                 ImeUiMode.MEDIA -> ProvideActualLayoutDirection { MediaInputLayout() }
@@ -296,12 +322,13 @@ private fun BoxScope.FloatingDockToFixedIndicator() {
     val inputFeedbackController = LocalInputFeedbackController.current
     val windowController = LocalWindowController.current
 
-    val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val windowSpec = windowController.activeWindowSpec.collectAsState()
+    val constraints by rememberWindowConstraints(windowController)
     val editorState by windowController.editor.state.collectAsState()
 
     val visible by remember {
         derivedStateOf {
-            windowSpec.let { spec ->
+            windowSpec.value.let { spec ->
                 editorState.isMoveGesture && spec is ImeWindowSpec.Floating &&
                     spec.props.offsetBottom <= spec.constraints.dockToFixedHeight
             }
@@ -332,7 +359,7 @@ private fun BoxScope.FloatingDockToFixedIndicator() {
         modifier = Modifier
             .align(Alignment.BottomCenter)
             .fillMaxWidth()
-            .height(windowSpec.constraints.dockToFixedHeight)
+            .height(constraints.dockToFixedHeight)
             .navigationBarsPadding()
             .graphicsLayer { alpha = animatedAlpha }
             .drawBehind {
@@ -348,7 +375,7 @@ private fun BoxScope.FloatingDockToFixedIndicator() {
                 drawBorder(
                     color = color,
                     topLeft = animatedTopLeft,
-                    stroke = Stroke(windowSpec.constraints.dockToFixedBorder.toPx()),
+                    stroke = Stroke(constraints.dockToFixedBorder.toPx()),
                 )
             },
     )
@@ -357,13 +384,21 @@ private fun BoxScope.FloatingDockToFixedIndicator() {
 @Composable
 private fun BoxScope.OneHandedPanel() {
     val windowController = LocalWindowController.current
-    val windowSpec by windowController.activeWindowSpec.collectAsState()
-
-    when (val spec = windowSpec) {
-        is ImeWindowSpec.Fixed if spec.fixedMode == ImeWindowMode.Fixed.COMPACT -> {
-            OneHandedPanel(spec)
+    val windowSpec = windowController.activeWindowSpec.collectAsState()
+    // Only the compact mode reads the whole spec, so a resize drag in any other mode doesn't recompose this.
+    val isCompact by remember(windowSpec) {
+        derivedStateOf {
+            (windowSpec.value as? ImeWindowSpec.Fixed)?.fixedMode == ImeWindowMode.Fixed.COMPACT
         }
-        else -> { }
+    }
+
+    if (isCompact) {
+        when (val spec = windowSpec.value) {
+            is ImeWindowSpec.Fixed if spec.fixedMode == ImeWindowMode.Fixed.COMPACT -> {
+                OneHandedPanel(spec)
+            }
+            else -> { }
+        }
     }
 }
 

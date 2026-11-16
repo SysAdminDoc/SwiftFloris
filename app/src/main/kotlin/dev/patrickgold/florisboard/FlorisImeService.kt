@@ -33,6 +33,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InlineSuggestionsRequest
 import android.view.inputmethod.InlineSuggestionsResponse
@@ -399,14 +400,16 @@ class FlorisImeService : LifecycleInputMethodService() {
         windowController.activeWindowConfig.collectLatestIn(lifecycleScope) {
             keyboardManager.updateActiveEvaluators() // TODO: wacky solution, but works for now
         }
-        // The content inset holds still during an editor drag. When the finger lifts nothing on screen may
-        // change, so request a traversal to make onComputeInsets report the final inset to the app behind.
-        windowController.editor.state
-            .map { it.isAnyGesture }
-            .distinctUntilChanged()
-            .collectIn(lifecycleScope) { isAnyGesture ->
-                if (!isAnyGesture) window.window?.decorView?.requestLayout()
-            }
+        windowController.editor.state.map { it.isEnabled }.distinctUntilChanged().collectIn(lifecycleScope) {
+            window.window?.let { configureWindowHeight(it, isFullscreenMode) }
+        }
+        // While the size editor is open, Compose lays the keyboard out while it draws, after Android asked
+        // onComputeInsets for this frame's insets (see onConfigureWindow). Each time the reported insets change,
+        // request a layout pass so the app behind gets them on the next frame. They hold still during an editor
+        // drag, so this fires once, when the finger lifts.
+        windowController.reportedInsetsChanges().collectIn(lifecycleScope) {
+            window.window?.decorView?.requestLayout()
+        }
 
         combine(
             systemLocalesFlow,
@@ -898,6 +901,34 @@ class FlorisImeService : LifecycleInputMethodService() {
         PersonalBigramStore.get(this).flushPending()
         PersonalTrigramStore.get(this).flushPending()
         DictionaryManager.default().flushPendingLearnedWords()
+    }
+
+    /**
+     * Makes the input method window MATCH_PARENT tall while the size editor is open, where the default makes it
+     * WRAP_CONTENT outside fullscreen mode. The keyboard's root view fills the window, and Android measures a
+     * WRAP_CONTENT input method window against the whole display while placing it below the status bar, so the
+     * measured height never matches the window. Every layout pass then resizes the window through the window
+     * manager and measures twice, and Compose, measured with two constraints, turns each change of the
+     * keyboard's height into another full view layout. A resize drag paid for all of that on every frame
+     * (issue #23). The window covers the same area either way.
+     *
+     * Outside the editor the window stays WRAP_CONTENT: there Compose lays the keyboard out in the layout pass,
+     * before Android asks [onComputeInsets], so the app behind gets new insets in the same frame. In a
+     * MATCH_PARENT window Compose lays out while it draws, and the insets would trail by a frame.
+     */
+    override fun onConfigureWindow(win: Window, isFullscreen: Boolean, isCandidatesOnly: Boolean) {
+        configureWindowHeight(win, isFullscreen)
+    }
+
+    private fun configureWindowHeight(win: Window, isFullscreen: Boolean) {
+        val height = if (isFullscreen || windowController.editor.state.value.isEnabled) {
+            ViewGroup.LayoutParams.MATCH_PARENT
+        } else {
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+        if (win.attributes.width != ViewGroup.LayoutParams.MATCH_PARENT || win.attributes.height != height) {
+            win.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, height)
+        }
     }
 
     override fun onEvaluateFullscreenMode(): Boolean {

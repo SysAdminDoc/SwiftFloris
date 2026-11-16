@@ -136,11 +136,11 @@ private fun ImeWindowResizeHandle(
 
     val currentAlpha by alphaState
 
-    val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val constraints by rememberWindowConstraints(windowController)
     val windowConfig by windowController.activeWindowConfig.collectAsState()
 
-    val thickness = windowSpec.constraints.resizeHandleDrawThickness
-    val cornerRadius = windowSpec.constraints.resizeHandleDrawCornerRadius
+    val thickness = constraints.resizeHandleDrawThickness
+    val cornerRadius = constraints.resizeHandleDrawCornerRadius
 
     val showWindowResizeHandleBoundaries by prefs.devtools.showWindowResizeHandleBoundaries.collectAsState()
 
@@ -157,14 +157,14 @@ private fun ImeWindowResizeHandle(
 
     Box(
         modifier = modifier
-            .size(windowSpec.constraints.resizeHandleTouchSize)
+            .size(constraints.resizeHandleTouchSize)
             .imeWindowResizeHandle(windowController, handle)
             .conditional(showWindowResizeHandleBoundaries) {
                 Modifier
                     .background(Color.Yellow)
             }
             .systemGestureExclusion()
-            .padding(windowSpec.constraints.resizeHandleDrawPadding),
+            .padding(constraints.resizeHandleDrawPadding),
     ) {
         val handleShape = remember(handle, thickness, cornerRadius) {
             handle.shape(thickness, cornerRadius)
@@ -185,17 +185,30 @@ private fun ImeWindowResizeHandle(
     }
 }
 
+/**
+ * The live window spec's constraints. A resize drag gives the spec new props on every frame but keeps the same
+ * constraints, so reading them through this doesn't recompose the caller on each frame of the drag (issue #23).
+ */
+@Composable
+internal fun rememberWindowConstraints(windowController: ImeWindowController): State<ImeWindowConstraints> {
+    val windowSpec = windowController.activeWindowSpec.collectAsState()
+    return remember(windowSpec) {
+        derivedStateOf { windowSpec.value.constraints }
+    }
+}
+
 @Composable
 fun BoxScope.ImeWindowResizeHandlesFixed() {
     val windowController = LocalWindowController.current
 
-    val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val windowSpec = windowController.activeWindowSpec.collectAsState()
+    val constraints by rememberWindowConstraints(windowController)
     val windowConfig by windowController.activeWindowConfig.collectAsState()
     val editorState by windowController.editor.state.collectAsState()
 
     val visible by remember {
         derivedStateOf {
-            editorState.isEnabled && windowSpec is ImeWindowSpec.Fixed
+            editorState.isEnabled && windowSpec.value is ImeWindowSpec.Fixed
         }
     }
     val animatedAlpha = animateFloatAsState(
@@ -230,7 +243,7 @@ fun BoxScope.ImeWindowResizeHandlesFixed() {
         Row(
             modifier = Modifier
                 .matchParentSize()
-                .padding(vertical = windowSpec.constraints.resizeHandleTouchSize),
+                .padding(vertical = constraints.resizeHandleTouchSize),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
