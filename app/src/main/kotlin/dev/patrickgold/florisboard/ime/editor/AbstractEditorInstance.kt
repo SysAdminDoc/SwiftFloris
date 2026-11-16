@@ -65,10 +65,17 @@ abstract class AbstractEditorInstance(context: Context) {
          * the reports, and dropping the oldest key makes every later report read as a jump.
          */
         private const val MaxPendingPassThroughKeys: Int = 1024
-        /** Chars before the cursor a pending key remembers, enough to step back over a typed word. */
+        /** Chars before the cursor one step back looks at, enough to step back over a typed word. */
         private const val NumKnownBackStepsBeforePassThrough: Int = 16
-        /** Text read for those chars, enough for 16 of them unless they're long emoji sequences. */
+        /**
+         * Text a pending key remembers before its cursor, enough for 16 chars unless they're long
+         * emoji sequences.
+         */
         private const val NumCharsForBackStepsBeforePassThrough: Int = 64
+        /** Stands in for a typed char the keyboard doesn't know: it never joins the char before it. */
+        private val UnknownCharStandIn: Char = Char(0xFFFC)
+        /** The same for a typed char two chars long (a private-use code point). */
+        private const val UnknownSurrogatePairStandIn: Int = 0xF0000
         /**
          * The viramas that join two consonants into one Devanagari, Bengali, Gujarati, Odia, Telugu
          * or Malayalam conjunct (Unicode's InCB=Linker).
@@ -140,8 +147,8 @@ abstract class AbstractEditorInstance(context: Context) {
     /**
      * Records that the app is about to insert [length] chars for a key the keyboard passed through
      * to it (a hardware key with no mapped layout), so the cursor move it reports reads as typing.
-     * [codePoint] is the char typed, 0 if unknown: a combining accent goes with the letter before it
-     * on a later Left arrow.
+     * [codePoint] is the char typed, 0 if unknown: a later Backspace or Left arrow steps back over
+     * it the way the field reads the text, so an accent typed on its own key goes with its letter.
      */
     fun expectAppInsert(length: Int, codePoint: Int = 0) {
         passThroughKeys.expect(length, codePoint, expectedContentQueue.peekNewestOrNull(), _activeContentFlow.value)
@@ -928,24 +935,22 @@ abstract class AbstractEditorInstance(context: Context) {
     private class PassThroughKeyTracker {
         /**
          * A key the app handles itself and the cursor it should leave, a guess for a step back.
-         * [backSteps] holds how far a Backspace steps back over each char right before [cursor],
-         * nearest last, as far as the keyboard knows them, so a step back over an emoji takes all
-         * of it. A negative one is an accent the letter before it carries along on a Left arrow.
-         * [joinedCursor] and [joinedBackSteps] are the same for a field whose Left arrow moves over
-         * a whole conjunct; they differ from [cursor] and [backSteps] only after a Left over one
-         * while the field's kind isn't known yet. [typed] is the char a typed key leaves before
-         * [cursor], 0 if unknown.
+         * [textBefore] holds the last chars right before [cursor], as far as the keyboard knows
+         * them: the text read from the field plus what the keys since typed, so a step back over
+         * an emoji or a letter with its accents goes the way the field's own would.
+         * [joinedCursor] and [joinedTextBefore] are the same for a field whose Left arrow moves
+         * over a whole conjunct; they differ from [cursor] and [textBefore] only after a Left over
+         * one while the field's kind isn't known yet.
          * [quietUntil] is set while a report may already cover the key: past it the key no
          * longer holds the editor behind, but a late report still matches it.
          */
         private class PendingKey(
             var cursor: Int,
             val isStepBack: Boolean,
-            var backSteps: List<Int>,
+            var textBefore: String,
             val atMillis: Long,
             var joinedCursor: Int = cursor,
-            var joinedBackSteps: List<Int> = backSteps,
-            val typed: Int = 0,
+            var joinedTextBefore: String = textBefore,
         ) {
             var quietUntil: Long = Long.MAX_VALUE
 
@@ -955,28 +960,24 @@ abstract class AbstractEditorInstance(context: Context) {
             fun settle(joins: Boolean) {
                 if (joins) {
                     cursor = joinedCursor
-                    backSteps = joinedBackSteps
+                    textBefore = joinedTextBefore
                 } else {
                     joinedCursor = cursor
-                    joinedBackSteps = backSteps
+                    joinedTextBefore = textBefore
                 }
             }
         }
 
-        /**
-         * Where the next key starts, and the back steps before it, in both kinds of field.
-         * [charBefore] is the char right before the start, 0 if unknown.
-         */
+        /** Where the next key starts, and the text before it, in both kinds of field. */
         private class Base(
             val range: EditorRange,
-            val backSteps: List<Int>,
+            val text: String,
             val joinedRange: EditorRange = range,
-            val joinedBackSteps: List<Int> = backSteps,
-            val charBefore: Int = 0,
+            val joinedText: String = text,
         )
 
-        /** Where a step back leaves the cursor, and the back steps still before it. */
-        private class Landing(val cursor: Int, val backSteps: List<Int>)
+        /** Where a step back leaves the cursor, and the text still before it. */
+        private class Landing(val cursor: Int, val text: String)
 
         private val lock = Any()
         private var reported = EditorRange.Unspecified
@@ -1010,36 +1011,37 @@ abstract class AbstractEditorInstance(context: Context) {
                 val now = SystemClock.uptimeMillis()
                 dropExpired(now)
                 val base = baseOf(now, keyboardPending, published) ?: return
-                val step = typedStep(length, codePoint, base.charBefore)
+                val typed = typedText(length, codePoint)
                 add(
                     PendingKey(
                         base.range.start + length,
                         isStepBack = false,
-                        (base.backSteps + step).takeLast(NumKnownBackStepsBeforePassThrough),
+                        knownTail(base.text + typed),
                         now,
                         joinedCursor = base.joinedRange.start + length,
-                        joinedBackSteps = (base.joinedBackSteps + step).takeLast(NumKnownBackStepsBeforePassThrough),
-                        typed = codePoint,
+                        joinedTextBefore = knownTail(base.joinedText + typed),
                     )
                 )
             }
         }
 
         /**
-         * The back step for [length] chars typed as [codePoint] after [charBefore], the way
-         * [backStepLengths] reads them from the text: an accent or vowel sign goes with the char
-         * before it on a Left arrow, and a consonant after a virama is flagged as part of a conjunct.
+         * The chars a key typed as [codePoint] leaves, or for an unknown one, [length] chars that
+         * each stand alone, so a later step back still knows how long it is.
          */
-        private fun typedStep(length: Int, codePoint: Int, charBefore: Int): Int = when {
-            codePoint <= 0 || charBefore <= 0 -> length
-            isMark(codePoint) && (Character.isLetter(charBefore) || isMark(charBefore)) -> -length
-            Character.isLetter(codePoint) && charBefore in ConjunctViramas -> length or ConjunctConsonantStep
-            else -> length
+        private fun typedText(length: Int, codePoint: Int): String = when {
+            codePoint > 0 && Character.isValidCodePoint(codePoint) && Character.charCount(codePoint) == length ->
+                String(Character.toChars(codePoint))
+            length == 2 -> String(Character.toChars(UnknownSurrogatePairStandIn))
+            else -> UnknownCharStandIn.toString().repeat(length)
         }
 
-        private fun isMark(codePoint: Int): Boolean = when (Character.getType(codePoint).toByte()) {
-            Character.NON_SPACING_MARK, Character.COMBINING_SPACING_MARK, Character.ENCLOSING_MARK -> true
-            else -> false
+        /** The end of [text] a step back can still need, never starting inside a surrogate pair. */
+        private fun knownTail(text: String): String {
+            var from = text.length - NumCharsForBackStepsBeforePassThrough
+            if (from <= 0) return text
+            if (Character.isLowSurrogate(text[from])) from++
+            return text.substring(from)
         }
 
         /**
@@ -1053,32 +1055,34 @@ abstract class AbstractEditorInstance(context: Context) {
                 val base = baseOf(now, keyboardPending, published) ?: return
                 val joins = leftJoinsConjuncts
                 // Nothing to step back over, so the app reports nothing either.
-                val near = stepBack(base.range, base.backSteps, wholeCluster, overConjunct = joins == true) ?: return
+                val near = stepBack(base.range, base.text, wholeCluster, overConjunct = joins == true) ?: return
                 val far = if (joins != null) {
                     near
                 } else {
-                    stepBack(base.joinedRange, base.joinedBackSteps, wholeCluster, overConjunct = true)
-                        ?: Landing(base.joinedRange.start, base.joinedBackSteps)
+                    stepBack(base.joinedRange, base.joinedText, wholeCluster, overConjunct = true)
+                        ?: Landing(base.joinedRange.start, base.joinedText)
                 }
-                add(PendingKey(near.cursor, isStepBack = true, near.backSteps, now, far.cursor, far.backSteps))
+                add(PendingKey(near.cursor, isStepBack = true, near.text, now, far.cursor, far.text))
             }
         }
 
         /**
-         * Where a step back from [range] lands, or null at the start of the text. [overConjunct]
-         * moves a Left arrow over a whole conjunct, as Compose and Chrome fields do.
+         * Where a step back from [range] over the end of [text] lands, or null at the start of the
+         * text. [overConjunct] moves a Left arrow over a whole conjunct, as Compose and Chrome
+         * fields do.
          */
-        private fun stepBack(range: EditorRange, steps: List<Int>, wholeCluster: Boolean, overConjunct: Boolean): Landing? {
+        private fun stepBack(range: EditorRange, text: String, wholeCluster: Boolean, overConjunct: Boolean): Landing? {
             // Backspace deletes a selection and Left collapses it, both to its start.
-            if (range.isSelectionMode) return Landing(range.start, steps)
+            if (range.isSelectionMode) return Landing(range.start, text)
             if (range.start <= 0) return null
+            val steps = backStepLengths(text)
             var taken = if (steps.isEmpty()) 0 else 1
             if (wholeCluster) {
                 while (taken < steps.size && carriesAlong(steps[steps.size - taken], overConjunct)) taken++
             }
             // A char the keyboard doesn't know is most likely a single one.
             val step = if (taken == 0) 1 else steps.takeLast(taken).sumOf { stepLength(it) }
-            return Landing(max(0, range.start - step), steps.dropLast(taken))
+            return Landing(max(0, range.start - step), text.dropLast(step))
         }
 
         /** True when a Left arrow over [step] also moves over the char before it. */
@@ -1099,20 +1103,17 @@ abstract class AbstractEditorInstance(context: Context) {
             if (last != null) {
                 return Base(
                     EditorRange.cursor(last.cursor),
-                    last.backSteps,
+                    last.textBefore,
                     EditorRange.cursor(last.joinedCursor),
-                    last.joinedBackSteps,
-                    charBefore = last.typed,
+                    last.joinedTextBefore,
                 )
             }
             val keyboard = keyboardPending?.takeIf { it.selection.isValid }
             val range = keyboard?.selection ?: reported.takeIf { it.isValid } ?: return null
             val content = keyboard ?: published.takeIf { it.selection == range }
-            val text = content?.textBeforeSelection.orEmpty()
             return Base(
                 EditorRange(min(range.start, range.end), max(range.start, range.end)),
-                backStepLengths(text),
-                charBefore = if (text.isEmpty()) 0 else text.codePointBefore(text.length),
+                knownTail(content?.textBeforeSelection.orEmpty()),
             )
         }
 

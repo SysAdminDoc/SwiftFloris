@@ -956,6 +956,80 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun leftOverConjunctTypedInBurstStopsAtSecondConsonant() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // The conjunct typed key by key, then a TextView's Left, which stops before the
+        // consonant after the virama, then "x".
+        conjunct().codePoints().toArray().forEach { editor.expectAppInsert(1, it) }
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        editor.report(2, 3)
+        editor.report(3, 4)
+        editor.report(4, 3)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftOverSpacingMarkTypedInBurstMovesOverItAlone() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 0), isRestart = false)
+        scheduler.runCurrent()
+        // Myanmar's vowel sign aa is a spacing mark that starts a cluster of its own, so Left
+        // moves over it and not the consonant before it.
+        editor.expectAppInsert(1, 0x1000)
+        editor.expectAppInsert(1, 0x102C)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(0, 1)
+        editor.report(1, 2)
+        editor.report(2, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftOverAccentTypedAfterDigitInBurst() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // An accent typed after a digit joins its cluster too, so Left moves over both.
+        editor.expectAppInsert(1, '1'.code)
+        editor.expectAppInsert(1, 0x301)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        editor.report(2, 3)
+        editor.report(3, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")
