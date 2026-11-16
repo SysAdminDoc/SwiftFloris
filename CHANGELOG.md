@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix the keyboard sometimes opening with only the suggestion bar and no keys. When Android had closed the keyboard and it started fresh, it could look for its built-in layouts a moment before they were ready, and it kept showing that empty result until it restarted again.
 - Stop space from changing a word into a suggestion meant for another one. Hit space right after the last letter and the suggestions on screen could still be the ones for a few letters earlier, so "river" turned into "riverbed". Typed fast enough, the next word could even get the previous word's suggestion. Space now only uses suggestions made for the word you're on and leaves it as typed otherwise.
 - Stop common words from counting as misspelled for the rest of a session. Each letter you type cancels the work started for the letter before, and a cancelled check of how common a word is got saved as "not a word" until the keyboard restarted. That word then lost the middle of the suggestion row, where space could swap it for a longer one.
 - Add `tools/check-memory-limiter-recovery.ps1`, which has Android 17's memory limiter close the keyboard on purpose and checks it comes back with your learned words, suggests from them again and reports the closing as a memory kill.

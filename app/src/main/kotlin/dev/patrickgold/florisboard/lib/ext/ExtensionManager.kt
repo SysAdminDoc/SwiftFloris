@@ -177,8 +177,14 @@ class ExtensionManager(context: Context) {
         }
     }
 
+    // Reads the indexes, not `extensions`, which catches up on another thread.
+    // KeyboardManager rebuilds its layouts from keyboardExtensions and reloads
+    // them at once, so reading `extensions` there could miss an extension the
+    // index already had, and a cold start kept a keyboard with no keys.
     fun getExtensionById(id: String): Extension? {
-        return extensions.value.find { it.meta.id == id }
+        return keyboardExtensions.value.find { it.meta.id == id }
+            ?: themes.value.find { it.meta.id == id }
+            ?: languagePacks.value.find { it.meta.id == id }
     }
 
     fun canDelete(ext: Extension): Boolean {
