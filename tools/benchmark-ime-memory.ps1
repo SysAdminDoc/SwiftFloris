@@ -116,8 +116,8 @@ function Read-MemInfo {
 
 function Invoke-FirstRender([int]$Iteration) {
     Start-FreshProcess
-    Invoke-Adb shell ime enable $ImeComponent
-    Invoke-Adb shell ime set $ImeComponent
+    Invoke-Adb shell ime enable $ImeComponent | Out-Null
+    Invoke-Adb shell ime set $ImeComponent | Out-Null
     $selectedIme = (Invoke-AdbText shell settings get secure default_input_method).Trim()
     if ($selectedIme -ne $ImeComponent) {
         throw "Expected $ImeComponent to be selected for iteration $Iteration, got $selectedIme"

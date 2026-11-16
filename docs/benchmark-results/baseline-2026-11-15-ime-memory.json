@@ -1,0 +1,550 @@
+{
+  "benchmark": "imeMemory",
+  "measuredAt": "2026-11-15T21:03:41.9565167-05:00",
+  "packageName": "io.github.sysadmindoc.swiftfloris.bench",
+  "iterations": 3,
+  "keyboardDuringScenarios": "com.samsung.android.honeyboard/.service.HoneyBoardService",
+  "device": {
+    "deviceKey": "sha256:7fde90da128b3bcf889c9cfbbed9a92e88712ea28af8e9fa7d2a78070087b835",
+    "manufacturer": "samsung",
+    "model": "SM-S908U1",
+    "device": "b0q",
+    "androidRelease": "16",
+    "sdk": "36"
+  },
+  "summary": {
+    "dictionary": {
+      "before": {
+        "pssKbMedian": 39902.0,
+        "javaHeapKbMedian": 2792.0,
+        "nativeHeapKbMedian": 7172.0,
+        "graphicsKbMedian": 14416.0
+      },
+      "loaded": {
+        "pssKbMedian": 112270.0,
+        "javaHeapKbMedian": 71032.0,
+        "nativeHeapKbMedian": 9444.0,
+        "graphicsKbMedian": 14416.0
+      },
+      "trimmed": {
+        "pssKbMedian": 112258.0,
+        "javaHeapKbMedian": 71036.0,
+        "nativeHeapKbMedian": 9444.0,
+        "graphicsKbMedian": 14416.0
+      }
+    },
+    "glide": {
+      "before": {
+        "pssKbMedian": 39953.0,
+        "javaHeapKbMedian": 2800.0,
+        "nativeHeapKbMedian": 7308.0,
+        "graphicsKbMedian": 14416.0
+      },
+      "loaded": {
+        "pssKbMedian": 125517.0,
+        "javaHeapKbMedian": 81072.0,
+        "nativeHeapKbMedian": 10224.0,
+        "graphicsKbMedian": 14416.0
+      },
+      "trimmed": {
+        "pssKbMedian": 114593.0,
+        "javaHeapKbMedian": 70328.0,
+        "nativeHeapKbMedian": 10364.0,
+        "graphicsKbMedian": 14416.0
+      }
+    },
+    "emojiSearch": {
+      "before": {
+        "pssKbMedian": 39911.0,
+        "javaHeapKbMedian": 3388.0,
+        "nativeHeapKbMedian": 7240.0,
+        "graphicsKbMedian": 14416.0
+      },
+      "loaded": {
+        "pssKbMedian": 164923.0,
+        "javaHeapKbMedian": 4852.0,
+        "nativeHeapKbMedian": 129808.0,
+        "graphicsKbMedian": 14416.0
+      },
+      "trimmed": {
+        "pssKbMedian": 164919.0,
+        "javaHeapKbMedian": 4852.0,
+        "nativeHeapKbMedian": 129808.0,
+        "graphicsKbMedian": 14416.0
+      }
+    },
+    "clipboard": {
+      "before": {
+        "pssKbMedian": 40759.0,
+        "javaHeapKbMedian": 2776.0,
+        "nativeHeapKbMedian": 7588.0,
+        "graphicsKbMedian": 14416.0
+      },
+      "loaded": {
+        "pssKbMedian": 45874.0,
+        "javaHeapKbMedian": 2924.0,
+        "nativeHeapKbMedian": 9988.0,
+        "graphicsKbMedian": 14416.0
+      },
+      "trimmed": {
+        "pssKbMedian": 45947.0,
+        "javaHeapKbMedian": 2924.0,
+        "nativeHeapKbMedian": 10016.0,
+        "graphicsKbMedian": 14416.0
+      }
+    },
+    "sticker": {
+      "before": {
+        "pssKbMedian": 40579.0,
+        "javaHeapKbMedian": 2780.0,
+        "nativeHeapKbMedian": 7580.0,
+        "graphicsKbMedian": 14416.0
+      },
+      "loaded": {
+        "pssKbMedian": 65566.0,
+        "javaHeapKbMedian": 2796.0,
+        "nativeHeapKbMedian": 32220.0,
+        "graphicsKbMedian": 14416.0
+      },
+      "trimmed": {
+        "pssKbMedian": 40908.0,
+        "javaHeapKbMedian": 2788.0,
+        "nativeHeapKbMedian": 7548.0,
+        "graphicsKbMedian": 14416.0
+      }
+    },
+    "firstRender": {
+      "rendered": {
+        "pssKbMedian": 213569.0,
+        "javaHeapKbMedian": 75940.0,
+        "nativeHeapKbMedian": 18860.0,
+        "graphicsKbMedian": 84336.0
+      }
+    }
+  },
+  "runs": [
+    {
+      "scenario": "dictionary",
+      "iteration": 1,
+      "phases": {
+        "before": {
+          "pssKb": 40055.0,
+          "javaHeapKb": 2788.0,
+          "nativeHeapKb": 7172.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 112296.0,
+          "javaHeapKb": 71024.0,
+          "nativeHeapKb": 9472.0,
+          "graphicsKb": 14416.0,
+          "loadMs": 1493.317448
+        },
+        "trimmed": {
+          "pssKb": 112296.0,
+          "javaHeapKb": 71024.0,
+          "nativeHeapKb": 9472.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "dictionary",
+      "iteration": 2,
+      "phases": {
+        "before": {
+          "pssKb": 39787.0,
+          "javaHeapKb": 2792.0,
+          "nativeHeapKb": 7028.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 112240.0,
+          "javaHeapKb": 71032.0,
+          "nativeHeapKb": 9396.0,
+          "graphicsKb": 14416.0,
+          "loadMs": 1391.265833
+        },
+        "trimmed": {
+          "pssKb": 112228.0,
+          "javaHeapKb": 71036.0,
+          "nativeHeapKb": 9396.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "dictionary",
+      "iteration": 3,
+      "phases": {
+        "before": {
+          "pssKb": 39902.0,
+          "javaHeapKb": 2796.0,
+          "nativeHeapKb": 7244.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 112270.0,
+          "javaHeapKb": 71036.0,
+          "nativeHeapKb": 9444.0,
+          "graphicsKb": 14416.0,
+          "loadMs": 1417.927916
+        },
+        "trimmed": {
+          "pssKb": 112258.0,
+          "javaHeapKb": 71040.0,
+          "nativeHeapKb": 9444.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "glide",
+      "iteration": 1,
+      "phases": {
+        "before": {
+          "pssKb": 40160.0,
+          "javaHeapKb": 2780.0,
+          "nativeHeapKb": 7424.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 114874.0,
+          "javaHeapKb": 71488.0,
+          "nativeHeapKb": 10096.0,
+          "graphicsKb": 14416.0,
+          "words": 10.0,
+          "decoded": 10.0
+        },
+        "trimmed": {
+          "pssKb": 106829.0,
+          "javaHeapKb": 63200.0,
+          "nativeHeapKb": 10364.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "glide",
+      "iteration": 2,
+      "phases": {
+        "before": {
+          "pssKb": 39953.0,
+          "javaHeapKb": 3668.0,
+          "nativeHeapKb": 7308.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 127594.0,
+          "javaHeapKb": 84420.0,
+          "nativeHeapKb": 10224.0,
+          "graphicsKb": 14416.0,
+          "words": 10.0,
+          "decoded": 10.0
+        },
+        "trimmed": {
+          "pssKb": 116674.0,
+          "javaHeapKb": 73680.0,
+          "nativeHeapKb": 10224.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "glide",
+      "iteration": 3,
+      "phases": {
+        "before": {
+          "pssKb": 39891.0,
+          "javaHeapKb": 2800.0,
+          "nativeHeapKb": 7132.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 125517.0,
+          "javaHeapKb": 81072.0,
+          "nativeHeapKb": 10600.0,
+          "graphicsKb": 14416.0,
+          "words": 10.0,
+          "decoded": 10.0
+        },
+        "trimmed": {
+          "pssKb": 114593.0,
+          "javaHeapKb": 70328.0,
+          "nativeHeapKb": 10600.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "emojiSearch",
+      "iteration": 1,
+      "phases": {
+        "before": {
+          "pssKb": 40271.0,
+          "javaHeapKb": 3708.0,
+          "nativeHeapKb": 7380.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 164923.0,
+          "javaHeapKb": 5200.0,
+          "nativeHeapKb": 129808.0,
+          "graphicsKb": 14416.0,
+          "queries": 20.0,
+          "results": 685.0
+        },
+        "trimmed": {
+          "pssKb": 164919.0,
+          "javaHeapKb": 5200.0,
+          "nativeHeapKb": 129808.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "emojiSearch",
+      "iteration": 2,
+      "phases": {
+        "before": {
+          "pssKb": 39911.0,
+          "javaHeapKb": 2800.0,
+          "nativeHeapKb": 7168.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 168508.0,
+          "javaHeapKb": 4276.0,
+          "nativeHeapKb": 133528.0,
+          "graphicsKb": 14416.0,
+          "queries": 20.0,
+          "results": 685.0
+        },
+        "trimmed": {
+          "pssKb": 168504.0,
+          "javaHeapKb": 4276.0,
+          "nativeHeapKb": 133528.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "emojiSearch",
+      "iteration": 3,
+      "phases": {
+        "before": {
+          "pssKb": 39744.0,
+          "javaHeapKb": 3388.0,
+          "nativeHeapKb": 7240.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 157672.0,
+          "javaHeapKb": 4852.0,
+          "nativeHeapKb": 122876.0,
+          "graphicsKb": 14416.0,
+          "queries": 20.0,
+          "results": 685.0
+        },
+        "trimmed": {
+          "pssKb": 157668.0,
+          "javaHeapKb": 4852.0,
+          "nativeHeapKb": 122876.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "clipboard",
+      "iteration": 1,
+      "phases": {
+        "before": {
+          "pssKb": 40881.0,
+          "javaHeapKb": 2776.0,
+          "nativeHeapKb": 7728.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 45947.0,
+          "javaHeapKb": 2924.0,
+          "nativeHeapKb": 10108.0,
+          "graphicsKb": 14416.0,
+          "inserted": 200.0,
+          "historySize": 20.0
+        },
+        "trimmed": {
+          "pssKb": 45947.0,
+          "javaHeapKb": 2924.0,
+          "nativeHeapKb": 10108.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "clipboard",
+      "iteration": 2,
+      "phases": {
+        "before": {
+          "pssKb": 40405.0,
+          "javaHeapKb": 3396.0,
+          "nativeHeapKb": 7424.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 45395.0,
+          "javaHeapKb": 3496.0,
+          "nativeHeapKb": 9868.0,
+          "graphicsKb": 14416.0,
+          "inserted": 200.0,
+          "historySize": 20.0
+        },
+        "trimmed": {
+          "pssKb": 45395.0,
+          "javaHeapKb": 3496.0,
+          "nativeHeapKb": 9868.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "clipboard",
+      "iteration": 3,
+      "phases": {
+        "before": {
+          "pssKb": 40759.0,
+          "javaHeapKb": 2776.0,
+          "nativeHeapKb": 7588.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 45874.0,
+          "javaHeapKb": 2916.0,
+          "nativeHeapKb": 9988.0,
+          "graphicsKb": 14416.0,
+          "inserted": 200.0,
+          "historySize": 20.0
+        },
+        "trimmed": {
+          "pssKb": 49314.0,
+          "javaHeapKb": 2920.0,
+          "nativeHeapKb": 10016.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "sticker",
+      "iteration": 1,
+      "phases": {
+        "before": {
+          "pssKb": 40579.0,
+          "javaHeapKb": 3416.0,
+          "nativeHeapKb": 7712.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 65566.0,
+          "javaHeapKb": 3420.0,
+          "nativeHeapKb": 32456.0,
+          "graphicsKb": 14416.0,
+          "files": 72.0,
+          "decoded": 72.0
+        },
+        "trimmed": {
+          "pssKb": 40908.0,
+          "javaHeapKb": 3416.0,
+          "nativeHeapKb": 7792.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "sticker",
+      "iteration": 2,
+      "phases": {
+        "before": {
+          "pssKb": 40014.0,
+          "javaHeapKb": 2768.0,
+          "nativeHeapKb": 7196.0,
+          "graphicsKb": 14416.0
+        },
+        "loaded": {
+          "pssKb": 65207.0,
+          "javaHeapKb": 2796.0,
+          "nativeHeapKb": 31920.0,
+          "graphicsKb": 14416.0,
+          "files": 72.0,
+          "decoded": 72.0
+        },
+        "trimmed": {
+          "pssKb": 40524.0,
+          "javaHeapKb": 2784.0,
+          "nativeHeapKb": 7244.0,
+          "graphicsKb": 14416.0
+        }
+      }
+    },
+    {
+      "scenario": "sticker",
+      "iteration": 3,
+      "phases": {
+        "before": {
+          "pssKb": 42521.0,
+          "javaHeapKb": 2780.0,
+          "nativeHeapKb": 7580.0,
+          "graphicsKb": 16464.0
+        },
+        "loaded": {
+          "pssKb": 67602.0,
+          "javaHeapKb": 2796.0,
+          "nativeHeapKb": 32220.0,
+          "graphicsKb": 16464.0,
+          "files": 72.0,
+          "decoded": 72.0
+        },
+        "trimmed": {
+          "pssKb": 42931.0,
+          "javaHeapKb": 2788.0,
+          "nativeHeapKb": 7548.0,
+          "graphicsKb": 16464.0
+        }
+      }
+    },
+    {
+      "scenario": "firstRender",
+      "iteration": 1,
+      "phases": {
+        "rendered": {
+          "pssKb": 281992.0,
+          "javaHeapKb": 161584.0,
+          "nativeHeapKb": 21484.0,
+          "graphicsKb": 64232.0
+        }
+      }
+    },
+    {
+      "scenario": "firstRender",
+      "iteration": 2,
+      "phases": {
+        "rendered": {
+          "pssKb": 213515.0,
+          "javaHeapKb": 75900.0,
+          "nativeHeapKb": 18720.0,
+          "graphicsKb": 84336.0
+        }
+      }
+    },
+    {
+      "scenario": "firstRender",
+      "iteration": 3,
+      "phases": {
+        "rendered": {
+          "pssKb": 213569.0,
+          "javaHeapKb": 75940.0,
+          "nativeHeapKb": 18860.0,
+          "graphicsKb": 84336.0
+        }
+      }
+    }
+  ]
+}
