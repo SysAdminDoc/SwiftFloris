@@ -95,6 +95,12 @@ abstract class AbstractEditorInstance(context: Context) {
         private const val VariationSelectorStep: Int = 1 shl 17
         /** The combining enclosing keycap, deleted with the digit and selector it closes. */
         private const val KeycapMark: Int = 0x20E3
+        /**
+         * The selector that makes [InformationSource], the one letter that's also an emoji, an
+         * emoji. Every field deletes the two at once, a Compose field too (it deletes an emoji whole).
+         */
+        private const val EmojiPresentationSelector: Int = 0xFE0F
+        private const val InformationSource: Int = 0x2139
         /** An app reports its insert within a frame or two, so a cursor this late isn't that key's. */
         private const val PassThroughInsertTimeoutMillis: Long = 2_000L
         /**
@@ -999,8 +1005,10 @@ abstract class AbstractEditorInstance(context: Context) {
          * EditorInfo doesn't say reliably. A Compose field's Left arrow moves over a whole conjunct
          * and its Backspace deletes a variation selector alone. A TextView's Left stops before the
          * consonant after the virama and its Backspace deletes a selector with the char it's on.
-         * Chrome is a mix (Left as Compose, Backspace as a TextView), so a burst there that does
-         * both reads one of them as a jump, which lets the next one learn the kind again.
+         * Chrome is a mix (Left as Compose, Backspace as a TextView), and so is a Compose field on
+         * Android 10 and older (its Left splits a conjunct like a TextView's, its Backspace deletes
+         * a selector alone). A burst there that does both reads one of them as a jump, which lets
+         * the next one learn the kind again.
          */
         private var isJoinedKind: Boolean? = null
 
@@ -1146,14 +1154,14 @@ abstract class AbstractEditorInstance(context: Context) {
 
         /**
          * How far a Backspace steps back over each of the last chars of [text], nearest last. An
-         * emoji sequence (a flag, a skin tone, a keycap, a ZWJ family, a heart with its variation
-         * selector) and a CR LF go in one step, the way a text field deletes them. The accents and
-         * vowel signs after a letter (or a digit, a space) go one code point at a time, as its
-         * Backspace takes them, and are negative, since a Left arrow moves over them with the
-         * letter. A consonant after a virama is positive with [ConjunctConsonantStep] set,
-         * whichever cluster ICU puts it in: a TextView's Left arrow stops before it, though
-         * Compose and Chrome move over the whole conjunct. A variation selector on a char with no
-         * accent has [VariationSelectorStep] set.
+         * emoji sequence (a flag, a skin tone, a keycap, a ZWJ family, a heart or the information
+         * letter with its variation selector) and a CR LF go in one step, the way a text field
+         * deletes them. The accents and vowel signs after a letter (or a digit, a space) go one
+         * code point at a time, as its Backspace takes them, and are negative, since a Left arrow
+         * moves over them with the letter. A consonant after a virama is positive with
+         * [ConjunctConsonantStep] set, whichever cluster ICU puts it in: a TextView's Left arrow
+         * stops before it, though Compose and Chrome move over the whole conjunct. A variation
+         * selector on a char with no accent has [VariationSelectorStep] set.
          */
         private fun backStepLengths(text: String): List<Int> {
             var from = max(0, text.length - NumCharsForBackStepsBeforePassThrough)
@@ -1167,18 +1175,28 @@ abstract class AbstractEditorInstance(context: Context) {
                 val start = clusters.previous()
                 if (Character.isLetter(window.codePointAt(start))) {
                     var at = end
+                    // The length of a selector that goes in one step with the char before it.
+                    var selector = 0
                     while (at > start && lengths.size < NumKnownBackStepsBeforePassThrough) {
                         val codePoint = window.codePointBefore(at)
                         val length = Character.charCount(codePoint)
                         at -= length
+                        if (codePoint == EmojiPresentationSelector && at > start &&
+                            window.codePointBefore(at) == InformationSource
+                        ) {
+                            selector = length
+                            continue
+                        }
                         val afterVirama = at > 0 && Character.isLetter(codePoint) &&
                             isConjunctConsonant(window.codePointBefore(at), codePoint, inCluster = at > start)
+                        val step = length + selector
+                        selector = 0
                         lengths.addFirst(
                             when {
-                                afterVirama -> length or ConjunctConsonantStep
-                                at == start -> length
-                                isPlainCharSelector(window, at, codePoint) -> -(length or VariationSelectorStep)
-                                else -> -length
+                                afterVirama -> step or ConjunctConsonantStep
+                                at == start -> step
+                                isPlainCharSelector(window, at, codePoint) -> -(step or VariationSelectorStep)
+                                else -> -step
                             }
                         )
                     }
@@ -1187,12 +1205,15 @@ abstract class AbstractEditorInstance(context: Context) {
                     if (at > start) lengths.addFirst(at - start)
                 } else {
                     // A Backspace deletes an accent after a digit, a space or a symbol on its own
-                    // too, and a Left arrow moves over it with the char it's on.
+                    // too, and a variation selector after an accent, and a Left arrow moves over
+                    // them with the char they're on.
                     var at = end
                     while (lengths.size < NumKnownBackStepsBeforePassThrough) {
                         val codePoint = window.codePointBefore(at)
                         val before = at - Character.charCount(codePoint)
-                        if (before <= start || !isLoneMark(codePoint)) break
+                        val alone = isLoneMark(codePoint) ||
+                            (isVariationSelector(codePoint) && !isPlainCharSelector(window, before, codePoint))
+                        if (before <= start || !alone) break
                         lengths.addFirst(before - at)
                         at = before
                     }
@@ -1207,13 +1228,23 @@ abstract class AbstractEditorInstance(context: Context) {
          * True when [codePoint] after [before] is the second consonant of a conjunct. Android 10
          * and older (ICU 63) end a cluster at the virama, though Chrome's own ICU keeps the conjunct
          * together, so a consonant starting its own cluster counts too when it's one of the
-         * virama's script's consonants. Each of the [ConjunctViramas] sits at 0x4D in its block.
+         * virama's script's consonants (Unicode's InCB=Consonant). Each of the [ConjunctViramas]
+         * sits at 0x4D in its block, and most of their consonants sit at the same offsets.
          */
         private fun isConjunctConsonant(before: Int, codePoint: Int, inCluster: Boolean): Boolean {
             if (before !in ConjunctViramas) return false
             if (inCluster) return true
-            val offset = codePoint - (before - 0x4D)
-            return offset in 0x15..0x3A || offset in 0x58..0x5F || offset in 0x70..0x71
+            return when (codePoint - (before - 0x4D)) {
+                in 0x15..0x3A -> true
+                // Telugu's NAKAARA POLLU and Malayalam's ARCHAIC II are letters there but not consonants.
+                in 0x58..0x5F -> codePoint != 0x0C5D && codePoint != 0x0D5F
+                // Devanagari's HIGH SPACING DOT is a letter there but not a consonant.
+                in 0x70..0x71 -> codePoint != 0x0971
+                // Consonants Unicode added later, for Sindhi and other languages.
+                in 0x78..0x7F -> before == 0x094D
+                0xF9 -> before == 0x0ACD
+                else -> false
+            }
         }
 
         /**
@@ -1228,8 +1259,10 @@ abstract class AbstractEditorInstance(context: Context) {
                 type == Character.COMBINING_SPACING_MARK.toInt()
         }
 
+        /** Android's variation selectors, Mongolian's free variation selectors among them. */
         private fun isVariationSelector(codePoint: Int): Boolean {
-            return codePoint in 0xFE00..0xFE0F || codePoint in 0xE0100..0xE01EF
+            return codePoint in 0xFE00..0xFE0F || codePoint in 0xE0100..0xE01EF ||
+                codePoint in 0x180B..0x180D || codePoint == 0x180F
         }
 
         /**

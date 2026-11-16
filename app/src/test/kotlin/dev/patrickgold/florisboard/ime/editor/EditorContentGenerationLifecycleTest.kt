@@ -1131,6 +1131,32 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    @Config(sdk = [29])
+    fun leftOverConjunctWithLaterConsonantOnOlderAndroid() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // A conjunct ending in a consonant Unicode added later (GGA, for Sindhi), typed key by
+        // key, then a Chrome field's Left over all of it, then "x".
+        intArrayOf(0x915, 0x94D, 0x97B).forEach { editor.expectAppInsert(1, it) }
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        editor.report(2, 3)
+        editor.report(3, 4)
+        editor.report(4, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
     fun backspaceOverAccentTypedAfterDigitInBurst() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")
@@ -1264,6 +1290,75 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun backspaceOverSelectorAfterAccentOnDigit() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = "1" + String(Character.toChars(0x301)) + String(Character.toChars(0xFE00)),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 3), isRestart = false)
+        scheduler.runCurrent()
+        // After an accent every field's Backspace deletes the selector alone, on a digit too.
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(3, 2)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun backspaceOverMongolianLetterAndSelectorInTextView() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a" + text(0x1820, 0x180B))
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 3), isRestart = false)
+        scheduler.runCurrent()
+        // Android counts Mongolian's free variation selectors as variation selectors, so a
+        // TextView's Backspace deletes one with its letter.
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(3, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun backspaceOverInfoEmojiLeavesFieldKindOpen() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = "a" + conjunct() + text(0x2139, 0xFE0F),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // Every field deletes the emoji whole, a Compose field too, so that Backspace can't tell
+        // the kinds apart. The Left after it, a Compose field's over the whole conjunct, does.
+        editor.expectAppStepBack()
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(6, 4)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(4, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
     fun leftOverLongRunOfAccentsAfterDigit() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(
@@ -1306,6 +1401,8 @@ class EditorContentGenerationLifecycleTest {
         assertFalse(editor.isContentBehindEditor())
         assertEquals(1, adjacencyBreaks.size)
     }
+
+    private fun text(vararg codePoints: Int): String = String(codePoints, 0, codePoints.size)
 
     @Test
     fun composingReportAfterStepBack() {
