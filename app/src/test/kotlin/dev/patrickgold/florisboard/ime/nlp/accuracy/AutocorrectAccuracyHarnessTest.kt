@@ -194,7 +194,8 @@ private val TapNoiseLevels = listOf(
  *
  * careful: 101 slipped, 51.5% fixed, 37.6% left as typed, 10.9% changed to another word, 71.3% in the top three.
  * sloppy: 840 slipped, 45.0% fixed, 38.5% left as typed, 16.5% changed to another word, 58.3% in the top three.
- * No correctly typed word was changed at either level, and all six real misspellings were fixed.
+ * No correctly typed word was changed at either level, and all six real misspellings were fixed. The strip offered
+ * a swap for 29 (1.2%) and 22 (1.3%) of the correctly typed words.
  *
  * Before the context model the same run fixed 50 and 344, changed 13 and 172 to another word, and had the
  * intended word in the top three 58 and 415 times.
@@ -208,6 +209,7 @@ private val Baseline = mapOf(
         stripHits = 72,
         clean = 2392,
         wronglyChanged = 0,
+        cleanOfferedSwap = 29,
     ),
     "sloppy" to AccuracyCounts(
         slipped = 840,
@@ -217,6 +219,7 @@ private val Baseline = mapOf(
         stripHits = 490,
         clean = 1653,
         wronglyChanged = 0,
+        cleanOfferedSwap = 22,
     ),
 )
 
@@ -236,6 +239,11 @@ private data class AccuracyCounts(
     val clean: Int = 0,
     /** Correctly typed words space changed. */
     val wronglyChanged: Int = 0,
+    /**
+     * Correctly typed words whose first three candidates offered a swap: another word that isn't a longer one
+     * starting with what was typed. Space leaves these alone, but each is noise in the strip.
+     */
+    val cleanOfferedSwap: Int = 0,
 ) {
     fun describe(noise: TapNoise): String {
         return "${noise.name} taps (sigma ${noise.sigmaKeyWidths} key widths, seed ${noise.seed}): " +
@@ -243,7 +251,8 @@ private data class AccuracyCounts(
             "$leftAlone left as typed (${percent(leftAlone, slipped)}), " +
             "$changedToOther changed to another word (${percent(changedToOther, slipped)}), " +
             "intended word in the first three candidates $stripHits times (${percent(stripHits, slipped)}). " +
-            "$clean typed right: $wronglyChanged changed by space (${percent(wronglyChanged, clean)})."
+            "$clean typed right: $wronglyChanged changed by space (${percent(wronglyChanged, clean)}), " +
+            "$cleanOfferedSwap offered a swap in the strip (${percent(cleanOfferedSwap, clean)})."
     }
 
     private fun percent(part: Int, whole: Int): String {
@@ -284,9 +293,14 @@ private fun AutocorrectReplay.typeCorpus(sentences: List<List<String>>, noise: T
             if (!scored) continue
             val committed = outcome.committed.lowercase()
             counts = if (typedLower == intended) {
+                val offeredSwap = outcome.strip.any { candidate ->
+                    val other = candidate.lowercase()
+                    other != intended && !other.startsWith(intended)
+                }
                 counts.copy(
                     clean = counts.clean + 1,
                     wronglyChanged = counts.wronglyChanged + if (committed != intended) 1 else 0,
+                    cleanOfferedSwap = counts.cleanOfferedSwap + if (offeredSwap) 1 else 0,
                 )
             } else {
                 counts.copy(
