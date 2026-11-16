@@ -34,7 +34,9 @@ import dev.patrickgold.florisboard.ime.nlp.SpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.SpellingResult
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionProvider
+import dev.patrickgold.florisboard.ime.nlp.TypingContextExtractor
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
+import dev.patrickgold.florisboard.ime.nlp.context.ContextModelStore
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -187,7 +189,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         val locales = subtype.locales()
         val multilingual = prefs.correction.multilingualSuggestions.get() && locales.size > 1
         return if (multilingual) {
-            suggestMultilingual(currentWord, locales, maxCandidateCount)
+            suggestMultilingual(currentWord, content, locales, maxCandidateCount)
         } else {
             val languageCode = LatinDictionaryStore.normalizeLanguageCode(subtype.primaryLocale.language)
             // Lazy hydrate so a process restart picks up the user's vocabulary
@@ -203,6 +205,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 maxCandidateCount = maxCandidateCount,
                 languageCode = languageCode,
                 userOverlay = overlay,
+                contextFit = contextFit(languageCode, content, currentWord),
             ).map { candidate ->
                 WordSuggestionCandidate(
                     text = candidate.text,
@@ -214,8 +217,24 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
     }
 
+    /**
+     * How well a word fits the one or two words before [currentWord] by [languageCode]'s bundled context model,
+     * or null when the language has no model or [currentWord] starts its sentence.
+     */
+    private suspend fun contextFit(
+        languageCode: String,
+        content: EditorContent,
+        currentWord: String,
+    ): ((String) -> Double?)? {
+        val model = ContextModelStore.modelFor(appContext, languageCode) ?: return null
+        val previous = TypingContextExtractor.previousWordsBeforeCurrentWord(content.textBeforeSelection, currentWord)
+        val prev1 = previous.prev1 ?: return null
+        return { word -> model.contextProbability(previous.prev2, prev1, word) }
+    }
+
     private suspend fun suggestMultilingual(
         rawWord: String,
+        content: EditorContent,
         locales: List<dev.patrickgold.florisboard.lib.FlorisLocale>,
         maxCandidateCount: Int,
     ): List<SuggestionCandidate> {
@@ -239,6 +258,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 maxCandidateCount = maxCandidateCount,
                 languageCode = langCode,
                 userOverlay = overlay,
+                contextFit = contextFit(langCode, content, rawWord),
             )
             PerLocale(
                 recognised = dict.contains(normalized) || overlay.containsKey(normalized),
@@ -1007,12 +1027,26 @@ internal object LatinDictionarySuggester {
      */
     private const val AutoCommitMinFrequencyDistance2 = 0.92
 
+    /** A dictionary word is a likely real-word slip when it fits the words before it this badly or worse. */
+    internal const val RealWordMaxTypedFit = 0.35
+
+    /** And a one-edit dictionary word fits them at least this much better. */
+    internal const val RealWordMinFitGain = 0.25
+
+    private const val MaxRealWordCorrections = 2
+
+    /**
+     * [contextFit] tells how well a word fits the words typed before it, 0.0 to 1.0, or null when that can't be
+     * told. With it a dictionary word that fits badly, like "form" in "a letter form my mother", gets one-edit
+     * words that fit better as candidates. They're never eligible for auto-commit.
+     */
     fun suggest(
         rawWord: String,
         dictionary: LatinDictionarySnapshot,
         maxCandidateCount: Int,
         languageCode: String = LatinDictionaryStore.DefaultLanguageCode,
         userOverlay: Map<String, Int> = emptyMap(),
+        contextFit: ((String) -> Double?)? = null,
     ): List<LatinSuggestion> {
         if (maxCandidateCount <= 0 || !dictionary.isLoaded) return emptyList()
         val normalizedWord = normalizeWord(rawWord) ?: return emptyList()
@@ -1089,10 +1123,18 @@ internal object LatinDictionarySuggester {
                 shouldPromoteCorrectionBeforeCompletions(normalizedWord, completionCandidates, candidate)
             }
         }
+        val realWordCorrections = if (contextFit != null && dictionary.contains(normalizedWord)) {
+            realWordCorrections(normalizedWord, dictionary, userOverlay, contextFit)
+        } else {
+            emptyList()
+        }
 
         val seen = mutableSetOf<String>()
         return buildList {
             primaryCorrections.forEach { candidate ->
+                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
+            }
+            realWordCorrections.forEach { candidate ->
                 if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
             }
             completionCandidates.forEach { candidate ->
@@ -1102,6 +1144,40 @@ internal object LatinDictionarySuggester {
                 if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
             }
         }.take(maxCandidateCount)
+    }
+
+    /**
+     * One-edit dictionary words that fit the context at least [RealWordMinFitGain] better than [word], best fit
+     * first, when [word] fits it [RealWordMaxTypedFit] or worse. None are eligible for auto-commit.
+     */
+    private fun realWordCorrections(
+        word: String,
+        dictionary: LatinDictionarySnapshot,
+        userOverlay: Map<String, Int>,
+        contextFit: (String) -> Double?,
+    ): List<LatinSuggestion> {
+        if (word.length < MinCorrectionLength) return emptyList()
+        val typedFit = contextFit(word) ?: return emptyList()
+        if (typedFit > RealWordMaxTypedFit) return emptyList()
+        return knownEdits1(word, dictionary)
+            .asSequence()
+            .filter { (_, distance) -> distance == 1 }
+            .mapNotNull { (candidate, _) ->
+                contextFit(candidate)?.takeIf { fit -> fit >= typedFit + RealWordMinFitGain }?.let { candidate to it }
+            }
+            .sortedByDescending { (_, fit) -> fit }
+            .take(MaxRealWordCorrections)
+            .map { (candidate, _) ->
+                LatinSuggestion(
+                    text = candidate,
+                    confidence = correctionConfidence(
+                        blendedFrequencyForCorrection(candidate, dictionary, userOverlay),
+                        distance = 1,
+                    ),
+                    isEligibleForAutoCommit = false,
+                )
+            }
+            .toList()
     }
 
     /**

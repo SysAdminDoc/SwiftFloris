@@ -233,6 +233,9 @@ configure<ApplicationExtension> {
         // Android Settings -> Apps -> SwiftFloris -> Language on Android 13+.
         // Without it the app's UI language can only follow the system.
         generateLocaleConfig = true
+        // The English context model is memory-mapped straight out of the APK
+        // (ContextModelStore), which only works for an asset stored uncompressed.
+        noCompress += "sflm"
     }
 
     buildFeatures {

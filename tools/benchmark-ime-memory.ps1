@@ -2,7 +2,7 @@ param(
     [int]$Iterations = 3,
     [string]$Serial = "",
     [string]$ApkPath = "app/build/outputs/apk/benchmark/app-benchmark.apk",
-    [string]$Scenarios = "dictionary,glide,emojiSearch,clipboard,sticker,firstRender",
+    [string]$Scenarios = "dictionary,glide,emojiSearch,clipboard,sticker,contextModel,firstRender",
     [string]$OutputPath = "docs/benchmark-results/baseline-$(Get-Date -Format yyyy-MM-dd)-ime-memory.json"
 )
 
@@ -17,7 +17,8 @@ $ImeComponent = "$PackageName/dev.patrickgold.florisboard.FlorisImeService"
 $InputActivity = "$PackageName/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity"
 $MemoryActivity = "$PackageName/dev.patrickgold.florisboard.benchmark.BenchmarkMemoryActivity"
 $ScenarioExtra = "dev.patrickgold.florisboard.benchmark.MEMORY_SCENARIO"
-$Fields = @("pssKb", "javaHeapKb", "nativeHeapKb", "graphicsKb")
+# codeKb is mapped files: the APK's code and resources, and the context model mapped out of it.
+$Fields = @("pssKb", "javaHeapKb", "nativeHeapKb", "graphicsKb", "codeKb")
 $AdbSerialArgs = @()
 if ($Serial.Trim().Length -gt 0) {
     $AdbSerialArgs = @("-s", $Serial)
@@ -111,6 +112,7 @@ function Read-MemInfo {
         javaHeapKb = & $read "Java Heap:\s+(\d+)"
         nativeHeapKb = & $read "Native Heap:\s+(\d+)"
         graphicsKb = & $read "Graphics:\s+(\d+)"
+        codeKb = & $read "Code:\s+(\d+)"
     }
 }
 

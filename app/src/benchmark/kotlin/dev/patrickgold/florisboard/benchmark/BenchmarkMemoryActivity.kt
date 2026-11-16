@@ -36,6 +36,7 @@ import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiData
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSearch
 import dev.patrickgold.florisboard.ime.media.sticker.loadStickerBitmap
+import dev.patrickgold.florisboard.ime.nlp.context.ContextModelStore
 import dev.patrickgold.florisboard.ime.nlp.latin.LatinLanguageProvider
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingGesture
 import dev.patrickgold.florisboard.ime.text.gestures.StatisticalGlideTypingClassifier
@@ -70,6 +71,7 @@ class BenchmarkMemoryActivity : ComponentActivity() {
                     "emojiSearch" -> emojiSearch()
                     "clipboard" -> clipboard()
                     "sticker" -> sticker()
+                    "contextModel" -> contextModel()
                     else -> error("unknown scenario '$scenario'")
                 }
                 Log.i(Tag, "swiftfloris.mem.done scenario=$scenario")
@@ -159,6 +161,34 @@ class BenchmarkMemoryActivity : ComponentActivity() {
         record("sticker", "trimmed")
     }
 
+    /**
+     * Maps the English context model and scores every word of [ContextSentences] after the two before it, the
+     * lookups typing those sentences makes. The model is a memory-mapped APK asset, so what it costs shows up as
+     * clean file pages (codeKb), not heap.
+     */
+    private suspend fun contextModel() {
+        record("contextModel", "before")
+        val startedAt = SystemClock.elapsedRealtimeNanos()
+        val model = checkNotNull(ContextModelStore.modelFor(this, "en")) { "no English context model" }
+        val loadMs = (SystemClock.elapsedRealtimeNanos() - startedAt) / 1_000_000.0
+        val words = ContextSentences.flatMap { it.split(' ') }
+        var lookups = 0
+        var scored = 0
+        val lookupStartedAt = SystemClock.elapsedRealtimeNanos()
+        withContext(Dispatchers.Default) {
+            repeat(ContextRounds) {
+                for (index in 1 until words.size) {
+                    lookups++
+                    if (model.score(words.getOrNull(index - 2), words[index - 1], words[index]) != null) scored++
+                }
+            }
+        }
+        val lookupUs = (SystemClock.elapsedRealtimeNanos() - lookupStartedAt) / 1_000.0 / lookups
+        record("contextModel", "loaded", "loadMs=$loadMs lookups=$lookups scored=$scored usPerLookup=$lookupUs")
+        trimApp()
+        record("contextModel", "trimmed")
+    }
+
     /** Keeps the generated sticker files between runs so only the first run pays for writing them. */
     private suspend fun stickerFiles(): List<File> = withContext(Dispatchers.IO) {
         val dir = File(noBackupFilesDir, "bench-stickers").apply { mkdirs() }
@@ -209,7 +239,8 @@ class BenchmarkMemoryActivity : ComponentActivity() {
             "swiftfloris.mem.result scenario=$scenario phase=$phase pssKb=${sample.totalPss} " +
                 "javaHeapKb=${sample.stat("summary.java-heap")} " +
                 "nativeHeapKb=${sample.stat("summary.native-heap")} " +
-                "graphicsKb=${sample.stat("summary.graphics")} $detail".trimEnd(),
+                "graphicsKb=${sample.stat("summary.graphics")} " +
+                "codeKb=${sample.stat("summary.code")} $detail".trimEnd(),
         )
     }
 
@@ -228,6 +259,17 @@ class BenchmarkMemoryActivity : ComponentActivity() {
 
         private val GlideWords = listOf(
             "hello", "world", "keyboard", "typing", "quick", "brown", "the", "memory", "android", "phone",
+        )
+        private const val ContextRounds = 200
+        private val ContextSentences = listOf(
+            "i got a letter from my mother this morning",
+            "we went to the store to buy some bread and milk",
+            "can you tell me what time it is",
+            "she said that she would be here at noon",
+            "the weather has been really nice all week",
+            "i think we should talk about it tomorrow",
+            "do you want to come over for dinner tonight",
+            "he left his phone at the office again",
         )
         private val EmojiQueries = listOf(
             "smile", "heart", "cat", "dog", "fire", "thumbs", "party", "sad", "laugh", "flag",

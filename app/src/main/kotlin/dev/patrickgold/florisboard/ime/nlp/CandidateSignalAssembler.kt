@@ -20,8 +20,8 @@ import dev.patrickgold.florisboard.ime.nlp.latin.ColdStartNextWordPriors
 import dev.patrickgold.florisboard.lib.FlorisLocale
 
 /**
- * Where [CandidateSignalAssembler] reads dictionary frequencies, personal word pairs and past corrections.
- * NlpManager backs it with the live dictionaries and stores; tests back it with fixed data.
+ * Where [CandidateSignalAssembler] reads dictionary frequencies, personal word pairs, the bundled context model
+ * and past corrections. NlpManager backs it with the live dictionaries and stores; tests back it with fixed data.
  */
 internal interface CandidateSignalSources {
     /** How common [word] is in [locale]'s dictionary, 0.0 when it isn't there. [word] isn't normalized yet. */
@@ -32,6 +32,18 @@ internal interface CandidateSignalSources {
     suspend fun bigramScore(previousWord: String, word: String, locale: FlorisLocale): Double
 
     suspend fun trigramScore(secondPreviousWord: String, previousWord: String, word: String, locale: FlorisLocale): Double
+
+    /**
+     * How well [word] fits after [secondPreviousWord] [previousWord] by [locale]'s bundled context model, 0.0 to
+     * 1.0, and 0.0 when the language has no model or the model doesn't know the words. A null
+     * [secondPreviousWord] means [previousWord] starts the sentence.
+     */
+    suspend fun contextModelProbability(
+        secondPreviousWord: String?,
+        previousWord: String,
+        word: String,
+        locale: FlorisLocale,
+    ): Double
 
     fun outcomeSignal(originalText: CharSequence, correctedText: CharSequence): CorrectionOutcomeSignal
 
@@ -208,10 +220,14 @@ internal object CandidateSignalAssembler {
                     candidateWord = candidateText,
                     maxCandidateCount = maxOf(MaxColdStartContextCandidates, candidates.size),
                 )
+                val modelProbability = previousWords.prev1?.let { prev1 ->
+                    sources.contextModelProbability(previousWords.prev2, prev1, candidateText, primaryLocale)
+                } ?: 0.0
                 val contextProbability = maxOf(
                     bigramProbability * BigramContextWeight,
                     trigramProbability,
                     coldStartProbability,
+                    modelProbability,
                 ).coerceIn(0.0, 1.0)
                 val languageConfidence = if (localeCount <= 1) 1.0 else languageSignal.languageConfidence
                 val outcomeSignal = sources.outcomeSignal(

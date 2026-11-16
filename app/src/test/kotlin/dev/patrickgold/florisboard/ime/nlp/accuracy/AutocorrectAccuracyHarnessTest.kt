@@ -30,8 +30,10 @@ import dev.patrickgold.florisboard.ime.nlp.SwiftKeyDecoderContext
 import dev.patrickgold.florisboard.ime.nlp.TouchDecoderCandidate
 import dev.patrickgold.florisboard.ime.nlp.TouchDecoderEvidenceBuffer
 import dev.patrickgold.florisboard.ime.nlp.TouchDecoderSample
+import dev.patrickgold.florisboard.ime.nlp.TypingContextExtractor
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.candidateSignalKeyOf
+import dev.patrickgold.florisboard.ime.nlp.context.ContextModel
 import dev.patrickgold.florisboard.ime.nlp.latin.LatinDictionaryAssetReader
 import dev.patrickgold.florisboard.ime.nlp.latin.LatinDictionarySnapshot
 import dev.patrickgold.florisboard.ime.nlp.latin.LatinDictionaryStore
@@ -40,9 +42,13 @@ import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.text.keyboard.NearbyKeyConfidence
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.nio.channels.FileChannel
+import java.nio.file.StandardOpenOption
 import java.util.Random
 import kotlin.math.floor
 
@@ -55,8 +61,9 @@ import kotlin.math.floor
  * nearby keys and their confidences come from the same [NearbyKeyConfidence] the keyboard uses, picked from
  * every key on the grid (number row, shift, backspace and the bottom row too) before the non-letters drop out.
  * The first word of a sentence is typed with shift on, as auto-capitalization does by default. The word then
- * goes through the path a fresh install takes: [LatinDictionarySuggester], the default offensive-word filter,
- * [CandidateSignalAssembler] with empty personal stores, [SwiftKeyCandidateRanker] with the touch evidence, and
+ * goes through the path a fresh install takes: [LatinDictionarySuggester] with the bundled English context
+ * model's fit, the default offensive-word filter, [CandidateSignalAssembler] with empty personal stores and that
+ * model, [SwiftKeyCandidateRanker] with the touch evidence, and
  * the default settings of [CandidateAutoCommitPolicy.selectSpacebarCandidate] when space ends the word, or of
  * [CandidateAutoCommitPolicy.selectAutoCommitCandidate] when a period, comma, question mark or exclamation mark
  * comes straight after it. Whatever gets committed becomes the context for the next word.
@@ -65,14 +72,14 @@ import kotlin.math.floor
  * in the same commit. The report is printed and written to build/reports/autocorrect-accuracy.txt.
  */
 class AutocorrectAccuracyHarnessTest : FunSpec({
+    val dictionary by lazy { bundledEnglishDictionary() }
     val replay by lazy {
         AutocorrectReplay(
-            runBlocking {
-                LatinDictionaryStore(readAsset = LatinDictionaryAssetReader { path -> bundledAsset(path)?.readText() })
-                    .dictionaryForLanguage("en")
-            },
+            dictionary = dictionary,
+            contextModel = mapContextModel(checkNotNull(bundledAsset(ContextModelAsset)) { "missing $ContextModelAsset" }),
         )
     }
+    val withoutContext by lazy { AutocorrectReplay(dictionary = dictionary, contextModel = null) }
     val sentences by lazy { AccuracyCorpus.load(CorpusPath) }
 
     test("simulated taps over the sentence corpus give the recorded baseline") {
@@ -117,9 +124,45 @@ class AutocorrectAccuracyHarnessTest : FunSpec({
         }
         committed shouldBe MustFix
     }
+
+    test("the words before a slip pick the fix that fits them") {
+        // Without the context model space turned these into poplar and sad.
+        replay.space(textBefore = "a lot of ", typed = "peoplr", samples = centerTaps("peoplr"))
+            .committed shouldBe "people"
+        replay.space(textBefore = "she ", typed = "saod", samples = centerTaps("saod")).committed shouldBe "said"
+    }
+
+    test("a real word that doesn't fit the words before it puts the one that does in the strip, never on space") {
+        val slips = listOf(
+            Triple("I got a letter ", "form", "from"),
+            Triple("It is ", "nit", "not"),
+            Triple("I have ", "bern", "been"),
+            Triple("Do you ", "lime", "like"),
+        )
+        for ((before, typed, meant) in slips) {
+            val outcome = replay.space(textBefore = before, typed = typed, samples = centerTaps(typed))
+            outcome.strip shouldContain meant
+            outcome.committed shouldBe typed
+            withoutContext.space(textBefore = before, typed = typed, samples = centerTaps(typed))
+                .strip shouldNotContain meant
+        }
+    }
 })
 
 private const val CorpusPath = "accuracy/tatoeba_en_sentences.tsv"
+private const val ContextModelAsset = "lm/en_context.sflm"
+
+private fun bundledEnglishDictionary(): LatinDictionarySnapshot = runBlocking {
+    LatinDictionaryStore(readAsset = LatinDictionaryAssetReader { path -> bundledAsset(path)?.readText() })
+        .dictionaryForLanguage("en")
+}
+
+/** [file] mapped the way ContextModelStore maps the APK asset. */
+private fun mapContextModel(file: File): ContextModel {
+    return FileChannel.open(file.toPath(), StandardOpenOption.READ).use { channel ->
+        ContextModel.read(channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size()))
+    }
+}
 
 /** Words space turned into longer ones before the 2026-11-15 fix (riverbed, violets, hedgehogs). */
 private val MustNotChange = listOf("river", "violet", "hedgehog")
@@ -147,28 +190,31 @@ private val TapNoiseLevels = listOf(
 
 /**
  * Recorded 2026-11-16 on accuracy/tatoeba_en_sentences.tsv (400 sentences, 2,493 scored words) with the
- * dictionary and settings of that day.
+ * dictionary, context model and settings of that day.
  *
- * careful: 101 slipped, 49.5% fixed, 37.6% left as typed, 12.9% changed to another word, 57.4% in the top three.
- * sloppy: 840 slipped, 41.0% fixed, 38.6% left as typed, 20.5% changed to another word, 49.4% in the top three.
+ * careful: 101 slipped, 51.5% fixed, 37.6% left as typed, 10.9% changed to another word, 71.3% in the top three.
+ * sloppy: 840 slipped, 45.0% fixed, 38.5% left as typed, 16.5% changed to another word, 58.3% in the top three.
  * No correctly typed word was changed at either level, and all six real misspellings were fixed.
+ *
+ * Before the context model the same run fixed 50 and 344, changed 13 and 172 to another word, and had the
+ * intended word in the top three 58 and 415 times.
  */
 private val Baseline = mapOf(
     "careful" to AccuracyCounts(
         slipped = 101,
-        fixed = 50,
+        fixed = 52,
         leftAlone = 38,
-        changedToOther = 13,
-        stripHits = 58,
+        changedToOther = 11,
+        stripHits = 72,
         clean = 2392,
         wronglyChanged = 0,
     ),
     "sloppy" to AccuracyCounts(
         slipped = 840,
-        fixed = 344,
-        leftAlone = 324,
-        changedToOther = 172,
-        stripHits = 415,
+        fixed = 378,
+        leftAlone = 323,
+        changedToOther = 139,
+        stripHits = 490,
         clean = 1653,
         wronglyChanged = 0,
     ),
@@ -258,9 +304,13 @@ private fun AutocorrectReplay.typeCorpus(sentences: List<List<String>>, noise: T
 }
 
 /**
- * What a fresh English install commits when a word ends: no learned words, no word pairs, no past corrections.
+ * What a fresh English install commits when a word ends: no learned words, no word pairs, no past corrections,
+ * only the bundled dictionary and [contextModel].
  */
-private class AutocorrectReplay(private val dictionary: LatinDictionarySnapshot) {
+private class AutocorrectReplay(
+    private val dictionary: LatinDictionarySnapshot,
+    private val contextModel: ContextModel?,
+) {
     private val english = FlorisLocale.from("en")
     private val suppression = AutoCommitSuppression()
     private val sources = object : CandidateSignalSources {
@@ -278,6 +328,13 @@ private class AutocorrectReplay(private val dictionary: LatinDictionarySnapshot)
             word: String,
             locale: FlorisLocale,
         ) = 0.0
+
+        override suspend fun contextModelProbability(
+            secondPreviousWord: String?,
+            previousWord: String,
+            word: String,
+            locale: FlorisLocale,
+        ) = contextModel?.contextProbability(secondPreviousWord, previousWord, word) ?: 0.0
 
         override fun outcomeSignal(originalText: CharSequence, correctedText: CharSequence) = CorrectionOutcomeSignal()
 
@@ -305,6 +362,12 @@ private class AutocorrectReplay(private val dictionary: LatinDictionarySnapshot)
         trigger: CommitTrigger,
     ): CommitOutcome = runBlocking {
         val touchEvidence = TouchDecoderEvidenceBuffer().apply { samples.forEach(::record) }.evidenceFor(typed)
+        val textBeforeCursor = textBefore + typed
+        // The same fit LatinLanguageProvider hands the suggester.
+        val contextFit = contextModel?.let { model ->
+            val previous = TypingContextExtractor.previousWordsBeforeCurrentWord(textBeforeCursor, typed)
+            previous.prev1?.let { prev1 -> { word: String -> model.contextProbability(previous.prev2, prev1, word) } }
+        }
         val suggestions = OffensiveWordPolicy.filterCandidates(
             candidates = LatinDictionarySuggester.suggest(
                 rawWord = typed,
@@ -312,6 +375,7 @@ private class AutocorrectReplay(private val dictionary: LatinDictionarySnapshot)
                 maxCandidateCount = 8,
                 languageCode = "en",
                 userOverlay = emptyMap(),
+                contextFit = contextFit,
             ).map { suggestion ->
                 WordSuggestionCandidate(
                     text = suggestion.text,
@@ -321,7 +385,6 @@ private class AutocorrectReplay(private val dictionary: LatinDictionarySnapshot)
             },
             tier = OffensiveWordPolicy.tier(blockPossiblyOffensive = false, blockSlursOnly = false),
         )
-        val textBeforeCursor = textBefore + typed
         val typedKey = candidateSignalKeyOf(typed)
         val typedWordKnown = typedKey != null && sources.frequency(english, typedKey) > 0.0
         val signals = CandidateSignalAssembler.assemble(

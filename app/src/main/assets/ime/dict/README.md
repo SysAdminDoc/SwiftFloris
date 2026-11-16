@@ -36,3 +36,16 @@ under CC0-1.0. The source file is a frequency-ranked Portuguese word list with c
 imports only normalized words and counts.
 
 Source: https://huggingface.co/datasets/diplomaticvegetation/portuguese/blob/main/words-top.txt
+
+## English context model
+
+`../../lm/en_context.sflm` tells English autocorrect how well a word fits the one or two words before it. It holds
+pruned counts of word pairs and triples among the 50,000 most common words, read with stupid backoff. The keyboard
+memory-maps it straight out of the APK, which stores `.sflm` files uncompressed for that, so it takes no heap.
+`utils/build_english_context_model.py` builds it and documents the file layout.
+
+The counts come from the first shard of AllenAI's C4 web text, `en/c4-train.00000-of-01024.json.gz` (356,317 pages,
+about 127 million words). C4 is released under ODC-BY 1.0 and is also subject to the Common Crawl terms of use. The
+model keeps only how often short word sequences occur, not the pages or their sentences.
+
+Source: https://huggingface.co/datasets/allenai/c4

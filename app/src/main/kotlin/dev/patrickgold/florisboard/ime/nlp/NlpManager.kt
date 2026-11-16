@@ -33,6 +33,7 @@ import dev.patrickgold.florisboard.ime.editor.EditorCompatibilityPolicy
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
+import dev.patrickgold.florisboard.ime.nlp.context.ContextModelStore
 import dev.patrickgold.florisboard.ime.nlp.latin.ColdStartNextWordPriors
 import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
 import dev.patrickgold.florisboard.ime.smartcompose.SmartComposeContext
@@ -876,6 +877,16 @@ class NlpManager(
                 locale: FlorisLocale,
             ): Double {
                 return trigramStore.score(secondPreviousWord, previousWord, word, locale)
+            }
+
+            override suspend fun contextModelProbability(
+                secondPreviousWord: String?,
+                previousWord: String,
+                word: String,
+                locale: FlorisLocale,
+            ): Double {
+                val model = ContextModelStore.modelFor(appContext, locale.language) ?: return 0.0
+                return model.contextProbability(secondPreviousWord, previousWord, word) ?: 0.0
             }
 
             override fun outcomeSignal(originalText: CharSequence, correctedText: CharSequence): CorrectionOutcomeSignal {
