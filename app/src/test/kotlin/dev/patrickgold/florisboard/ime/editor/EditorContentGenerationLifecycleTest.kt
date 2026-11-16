@@ -1405,6 +1405,144 @@ class EditorContentGenerationLifecycleTest {
     private fun text(vararg codePoints: Int): String = String(codePoints, 0, codePoints.size)
 
     @Test
+    fun leftInRightToLeftTextMovesForward() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9, 0x5DC),
+            textAfterSelection = text(0x5D5, 0x5DD),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // In a Hebrew paragraph every field's Left moves forward a letter, then "x".
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 3)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftAtEndOfRightToLeftTextStays() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = text(0x5E9, 0x5DC, 0x5D5, 0x5DD))
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // At the end of Hebrew text a Left has nowhere to go, so "x" goes in right there.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(4, 5)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftInRightToLeftTextTypedInBurst() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9),
+            textAfterSelection = text(0x5E9, 0x5C1, 0x5B8, 0x5DC),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // A Hebrew letter typed, then Left over a letter and its two points at once, Left over
+        // the next letter, and "x".
+        editor.expectAppInsert(1, 0x5D5)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        editor.report(2, 5)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(5, 6)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(6, 7)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftAfterRightToLeftTextTypedInEmptyField() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 0), isRestart = false)
+        scheduler.runCurrent()
+        // Two Hebrew letters typed make the paragraph right-to-left, so the Left after them stays.
+        editor.expectAppInsert(1, 0x5E9)
+        editor.expectAppInsert(1, 0x5DC)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(0, 1)
+        editor.report(1, 2)
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftCollapsesSelectionInRightToLeftTextToItsEnd() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9),
+            textAfterSelection = text(0x5DD),
+            selectedText = text(0x5DC, 0x5D5),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // Left collapses the selection to its left end, which in Hebrew is where it ends.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 3)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftAfterLatinInParagraphWithHebrewStepsBack() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = "hi " + text(0x5E9, 0x5DC, 0x5D5, 0x5DD) + " ok",
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 10), isRestart = false)
+        scheduler.runCurrent()
+        // A Hebrew word in a left-to-right paragraph doesn't turn the Left after "ok" around.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(10, 9)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(9, 10)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")

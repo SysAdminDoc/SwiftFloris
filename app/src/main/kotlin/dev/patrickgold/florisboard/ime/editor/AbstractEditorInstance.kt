@@ -173,7 +173,8 @@ abstract class AbstractEditorInstance(context: Context) {
      * Records that the app is about to step the cursor back one char itself for a plain Backspace
      * or Left arrow the keyboard passed through to it, so the keys typed after it stay tracked
      * instead of reading as jumps. A Left arrow passes [wholeCluster]: it moves over a letter and
-     * its accents at once, where a Backspace deletes the accents one at a time.
+     * its accents at once, where a Backspace deletes the accents one at a time. In a right-to-left
+     * paragraph (Hebrew, Arabic) a Left arrow moves the cursor forward through the text instead.
      */
     fun expectAppStepBack(wholeCluster: Boolean = false) {
         passThroughKeys.expectStepBack(wholeCluster, expectedContentQueue.peekNewestOrNull(), _activeContentFlow.value)
@@ -956,8 +957,10 @@ abstract class AbstractEditorInstance(context: Context) {
          * [joinedCursor] and [joinedTextBefore] are the same for a field of the joined kind (see
          * [isJoinedKind]); they differ from [cursor] and [textBefore] only after a Left over a
          * conjunct or a Backspace over a variation selector while the field's kind isn't known yet.
-         * [quietUntil] is set while a report may already cover the key: past it the key no
-         * longer holds the editor behind, but a late report still matches it.
+         * [textAfter] and [joinedTextAfter] hold the first chars after the cursor the same way,
+         * null when the keyboard doesn't know them, so a Left arrow can tell a right-to-left
+         * paragraph. [quietUntil] is set while a report may already cover the key: past it the
+         * key no longer holds the editor behind, but a late report still matches it.
          */
         private class PendingKey(
             var cursor: Int,
@@ -966,6 +969,8 @@ abstract class AbstractEditorInstance(context: Context) {
             val atMillis: Long,
             var joinedCursor: Int = cursor,
             var joinedTextBefore: String = textBefore,
+            var textAfter: String? = null,
+            var joinedTextAfter: String? = textAfter,
         ) {
             var quietUntil: Long = Long.MAX_VALUE
 
@@ -976,23 +981,31 @@ abstract class AbstractEditorInstance(context: Context) {
                 if (joined) {
                     cursor = joinedCursor
                     textBefore = joinedTextBefore
+                    textAfter = joinedTextAfter
                 } else {
                     joinedCursor = cursor
                     joinedTextBefore = textBefore
+                    joinedTextAfter = textAfter
                 }
             }
         }
 
-        /** Where the next key starts, and the text before it, in both kinds of field. */
+        /**
+         * Where the next key starts, and the text around it, in both kinds of field. [selected] is
+         * the text of a selection in [range].
+         */
         private class Base(
             val range: EditorRange,
             val text: String,
+            val after: String?,
             val joinedRange: EditorRange = range,
             val joinedText: String = text,
+            val joinedAfter: String? = after,
+            val selected: String = "",
         )
 
-        /** Where a step back leaves the cursor, and the text still before it. */
-        private class Landing(val cursor: Int, val text: String)
+        /** Where a step back leaves the cursor, and the text still before and after it. */
+        private class Landing(val cursor: Int, val text: String, val after: String?)
 
         private val lock = Any()
         private var reported = EditorRange.Unspecified
@@ -1040,6 +1053,8 @@ abstract class AbstractEditorInstance(context: Context) {
                         now,
                         joinedCursor = base.joinedRange.start + length,
                         joinedTextBefore = knownTail(base.joinedText + typed),
+                        textAfter = base.after,
+                        joinedTextAfter = base.joinedAfter,
                     )
                 )
             }
@@ -1064,6 +1079,14 @@ abstract class AbstractEditorInstance(context: Context) {
             return text.substring(from)
         }
 
+        /** The start of [text] a Left arrow can still need, never ending inside a surrogate pair. */
+        private fun knownHead(text: String): String {
+            var to = NumCharsForBackStepsBeforePassThrough
+            if (to >= text.length) return text
+            if (Character.isHighSurrogate(text[to - 1])) to--
+            return text.substring(0, to)
+        }
+
         /**
          * [wholeCluster] steps back over a letter and its accents at once, the way a Left arrow
          * moves, where a Backspace deletes the accents one at a time.
@@ -1074,18 +1097,32 @@ abstract class AbstractEditorInstance(context: Context) {
                 dropExpired(now)
                 val base = baseOf(now, keyboardPending, published) ?: return
                 val joined = isJoinedKind
-                val near = stepBack(base.range, base.text, wholeCluster, joinedKind = joined == true)
+                val near = stepBack(
+                    base.range,
+                    base.text,
+                    base.selected,
+                    base.after,
+                    wholeCluster,
+                    joinedKind = joined == true,
+                )
                 val far = if (joined != null) {
                     near
                 } else {
-                    stepBack(base.joinedRange, base.joinedText, wholeCluster, joinedKind = true)
+                    stepBack(
+                        base.joinedRange,
+                        base.joinedText,
+                        base.selected,
+                        base.joinedAfter,
+                        wholeCluster,
+                        joinedKind = true,
+                    )
                 }
                 // Nothing to step back over in either kind of field, so the app reports nothing
                 // either. Where only one kind has nothing left (a TextView's Backspace took an
                 // ideograph and its selector at once), that kind's cursor stays put.
                 if (near == null && far == null) return
-                val nearLanding = near ?: Landing(base.range.start, base.text)
-                val farLanding = far ?: Landing(base.joinedRange.start, base.joinedText)
+                val nearLanding = near ?: Landing(base.range.start, base.text, base.after)
+                val farLanding = far ?: Landing(base.joinedRange.start, base.joinedText, base.joinedAfter)
                 add(
                     PendingKey(
                         nearLanding.cursor,
@@ -1094,6 +1131,8 @@ abstract class AbstractEditorInstance(context: Context) {
                         now,
                         farLanding.cursor,
                         farLanding.text,
+                        nearLanding.after,
+                        farLanding.after,
                     )
                 )
             }
@@ -1101,11 +1140,25 @@ abstract class AbstractEditorInstance(context: Context) {
 
         /**
          * Where a step back from [range] over the end of [text] lands, or null at the start of the
-         * text, in a field of the joined kind or not (see [isJoinedKind]).
+         * text, in a field of the joined kind or not (see [isJoinedKind]). [selected] is the text
+         * of a selection, and [after] the text after it, null if unknown. A Left arrow in a
+         * right-to-left paragraph moves forward instead (see [stepForward]).
          */
-        private fun stepBack(range: EditorRange, text: String, wholeCluster: Boolean, joinedKind: Boolean): Landing? {
-            // Backspace deletes a selection and Left collapses it, both to its start.
-            if (range.isSelectionMode) return Landing(range.start, text)
+        private fun stepBack(
+            range: EditorRange,
+            text: String,
+            selected: String,
+            after: String?,
+            wholeCluster: Boolean,
+            joinedKind: Boolean,
+        ): Landing? {
+            if (wholeCluster && after != null && isPlainRightToLeft(text, selected, after)) {
+                return stepForward(range, text, selected, after)
+            }
+            if (range.isSelectionMode) {
+                // Backspace deletes a selection and Left collapses it, both to its start.
+                return Landing(range.start, text, if (wholeCluster) after?.let { knownHead(selected + it) } else after)
+            }
             if (range.start <= 0) return null
             val steps = backStepLengths(text)
             var taken = if (steps.isEmpty()) 0 else 1
@@ -1117,7 +1170,68 @@ abstract class AbstractEditorInstance(context: Context) {
             }
             // A char the keyboard doesn't know is most likely a single one.
             val step = if (taken == 0) 1 else steps.takeLast(taken).sumOf { stepLength(it) }
-            return Landing(max(0, range.start - step), text.dropLast(step))
+            // A Left arrow puts the chars it moves over after the cursor, as far as they're known.
+            val moved = text.takeLast(step)
+            val stillAfter = when {
+                !wholeCluster -> after
+                after == null || moved.length < step -> null
+                else -> knownHead(moved + after)
+            }
+            return Landing(max(0, range.start - step), text.dropLast(step), stillAfter)
+        }
+
+        /**
+         * Where a Left arrow in a right-to-left paragraph lands: at the right end of a selection,
+         * which is where it ends, or past the next char, or null at the end of the text, where
+         * it doesn't move. A TextView and Chrome move the cursor left on screen, and a Compose
+         * field moves it the paragraph's way, which there is forward through the text.
+         */
+        private fun stepForward(range: EditorRange, text: String, selected: String, after: String): Landing? {
+            if (range.isSelectionMode) return Landing(range.end, knownTail(text + selected), after)
+            if (after.isEmpty()) return null
+            val clusters = graphemes ?: BreakIterator.getCharacterInstance().also { graphemes = it }
+            clusters.setText(after)
+            val step = clusters.following(0)
+            return Landing(range.start + step, knownTail(text + after.substring(0, step)), after.substring(step))
+        }
+
+        /**
+         * True when the paragraph around the cursor, as far as the keyboard knows it, has
+         * right-to-left letters (Hebrew, Arabic) and nothing that runs left to right: no Latin
+         * letter, no digit and no explicit direction mark. A Left arrow moves forward there in
+         * every field. Where both directions mix, it moves in ways the keyboard doesn't model, so
+         * it keeps the step back.
+         */
+        private fun isPlainRightToLeft(before: String, selected: String, after: String): Boolean {
+            var from = before.length
+            while (from > 0) {
+                val codePoint = before.codePointBefore(from)
+                if (Character.getDirectionality(codePoint) == Character.DIRECTIONALITY_PARAGRAPH_SEPARATOR) break
+                from -= Character.charCount(codePoint)
+            }
+            val paragraph = before.substring(from) + selected + after
+            var rightToLeft = false
+            var at = 0
+            while (at < paragraph.length) {
+                val codePoint = paragraph.codePointAt(at)
+                at += Character.charCount(codePoint)
+                // The directional isolates, which older Android doesn't name.
+                if (codePoint in 0x2066..0x2069) return false
+                when (Character.getDirectionality(codePoint)) {
+                    Character.DIRECTIONALITY_PARAGRAPH_SEPARATOR -> break
+                    Character.DIRECTIONALITY_RIGHT_TO_LEFT,
+                    Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC -> rightToLeft = true
+                    Character.DIRECTIONALITY_LEFT_TO_RIGHT,
+                    Character.DIRECTIONALITY_EUROPEAN_NUMBER,
+                    Character.DIRECTIONALITY_ARABIC_NUMBER,
+                    Character.DIRECTIONALITY_LEFT_TO_RIGHT_EMBEDDING,
+                    Character.DIRECTIONALITY_LEFT_TO_RIGHT_OVERRIDE,
+                    Character.DIRECTIONALITY_RIGHT_TO_LEFT_EMBEDDING,
+                    Character.DIRECTIONALITY_RIGHT_TO_LEFT_OVERRIDE,
+                    Character.DIRECTIONALITY_POP_DIRECTIONAL_FORMAT -> return false
+                }
+            }
+            return rightToLeft
         }
 
         /** True when a Left arrow over [step] also moves over the char before it. */
@@ -1139,16 +1253,24 @@ abstract class AbstractEditorInstance(context: Context) {
                 return Base(
                     EditorRange.cursor(last.cursor),
                     last.textBefore,
+                    last.textAfter,
                     EditorRange.cursor(last.joinedCursor),
                     last.joinedTextBefore,
+                    last.joinedTextAfter,
                 )
             }
             val keyboard = keyboardPending?.takeIf { it.selection.isValid }
             val range = keyboard?.selection ?: reported.takeIf { it.isValid } ?: return null
             val content = keyboard ?: published.takeIf { it.selection == range }
+            val lower = min(range.start, range.end)
+            val upper = max(range.start, range.end)
+            // The text after a selection only lines up when the whole selection is known.
+            val whole = content?.takeIf { it.selectedText.length == upper - lower }
             return Base(
-                EditorRange(min(range.start, range.end), max(range.start, range.end)),
+                EditorRange(lower, upper),
                 knownTail(content?.textBeforeSelection.orEmpty()),
+                after = whole?.textAfterSelection?.let { knownHead(it) },
+                selected = whole?.selectedText.orEmpty(),
             )
         }
 
