@@ -122,10 +122,15 @@ class NlpManager(
         private set(v) {
             _activeCandidatesFlow.value = v
         }
-    private var activeCandidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap()
-    private val candidateAssembly = LatestOnlyAssembly<List<SuggestionCandidate>>(scope) { candidates ->
-        activeCandidates = candidates
-        autoExpandCollapseSmartbarActions(candidates, NlpInlineAutofill.suggestions.value)
+    // Set together with internalSuggestions, under its guard.
+    private var internalCandidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap()
+    private var internalSuggestionsRankedFor: CandidateWordKey? = null
+    // What auto-correct reads: the strip as shown, with the word it was ranked for.
+    @Volatile private var publishedCandidates = PublishedCandidates()
+    private val candidateAssembly = LatestOnlyAssembly<PublishedCandidates>(scope) { published ->
+        publishedCandidates = published
+        activeCandidates = published.candidates
+        autoExpandCollapseSmartbarActions(published.candidates, NlpInlineAutofill.suggestions.value)
     }
 
     val debugOverlaySuggestionsInfos = LruCache<Long, Pair<String, SpellingResult>>(10)
@@ -383,7 +388,8 @@ class NlpManager(
             }
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < requestId) {
-                    activeCandidateSignals = candidateSignals
+                    internalCandidateSignals = candidateSignals
+                    internalSuggestionsRankedFor = content.candidateWordKey()
                     internalSuggestions = requestId to InternalSuggestionOrder.merge(
                         wordSuggestions = wordSuggestions,
                         emojiSuggestions = emojiSuggestions,
@@ -441,7 +447,8 @@ class NlpManager(
         scope.launch {
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < requestId) {
-                    activeCandidateSignals = emptyMap()
+                    internalCandidateSignals = emptyMap()
+                    internalSuggestionsRankedFor = null
                     internalSuggestions = requestId to suggestions
                 }
             }
@@ -454,7 +461,8 @@ class NlpManager(
         scope.launch {
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < requestId) {
-                    activeCandidateSignals = emptyMap()
+                    internalCandidateSignals = emptyMap()
+                    internalSuggestionsRankedFor = null
                     internalSuggestions = requestId to emptyList()
                 }
             }
@@ -509,6 +517,7 @@ class NlpManager(
         val content = editorInstance.activeContent
         val currentWord = content.autoCommitWord()
         val currentWordStart = content.autoCommitWordStart()
+        val published = publishedCandidates.forAutoCommit(content.candidateWordKey())
         return CandidateAutoCommitPolicy.selectAutoCommitCandidate(
             autoCorrectEnabled = prefs.correction.autoCorrect.get(),
             autoCorrectCommitMode = prefs.correction.autoCorrectCommitMode.get(),
@@ -518,8 +527,8 @@ class NlpManager(
             keyVariation = keyboardManager.activeState.keyVariation,
             currentWord = currentWord,
             currentWordStart = currentWordStart,
-            candidates = activeCandidates,
-            candidateSignals = activeCandidateSignals,
+            candidates = published.candidates,
+            candidateSignals = published.signals,
             rejectionPolicy = autoCommitSuppression,
             // ROADMAP §6 N5.4 — personal-dictionary shortcuts express explicit
             // user intent and therefore stay ahead of algorithmic guesses.
@@ -535,6 +544,7 @@ class NlpManager(
         val content = editorInstance.activeContent
         val currentWord = content.autoCommitWord()
         val currentWordStart = content.autoCommitWordStart()
+        val published = publishedCandidates.forAutoCommit(content.candidateWordKey())
         return CandidateAutoCommitPolicy.selectSpacebarCandidate(
             autoCorrectEnabled = autoCorrectEnabled,
             autoCorrectCommitMode = prefs.correction.autoCorrectCommitMode.get(),
@@ -546,8 +556,8 @@ class NlpManager(
             currentWord = currentWord,
             currentWordStart = currentWordStart,
             textBeforeCursor = content.textBeforeSelection,
-            candidates = activeCandidates,
-            candidateSignals = activeCandidateSignals,
+            candidates = published.candidates,
+            candidateSignals = published.signals,
             rejectionPolicy = autoCommitSuppression,
             userDictionaryShortcutCandidate = userDictionaryShortcutAutoCommitCandidate(currentWord),
             immediatePhraseRepairCandidate = immediatePhraseRepairCandidate(currentWord),
@@ -557,12 +567,13 @@ class NlpManager(
 
     fun shouldSuppressPlainSpaceForPrediction(): Boolean {
         val content = editorInstance.activeContent
+        val published = publishedCandidates.forAutoCommit(content.candidateWordKey())
         return CandidateAutoCommitPolicy.shouldSuppressPlainSpaceForPrediction(
             quickPredictionInsertEnabled = prefs.correction.quickPredictionInsert.get(),
             currentWord = content.autoCommitWord(),
             textBeforeCursor = content.textBeforeSelection,
-            candidates = activeCandidates,
-            candidateSignals = activeCandidateSignals,
+            candidates = published.candidates,
+            candidateSignals = published.signals,
         )
     }
 
@@ -999,14 +1010,18 @@ class NlpManager(
         // Only the newest request publishes, so a slow older assembly can't bring back
         // candidates that a newer, emptier state already cleared.
         candidateAssembly.request {
-            val suggestions = internalSuggestionsGuard.withLock {
-                internalSuggestions.second
+            val (suggestions, signals, rankedFor) = internalSuggestionsGuard.withLock {
+                Triple(internalSuggestions.second, internalCandidateSignals, internalSuggestionsRankedFor)
             }
-            candidateAssembler.assemble(
-                isSuggestionOn = isSuggestionOn(),
-                internalSuggestions = suggestions,
-                autoCommitUndoCandidate = autoCommitUndoSession.activeUndoCandidate,
-                glideAlternativeCandidates = glideAlternativeSession.activeCandidates(),
+            PublishedCandidates(
+                candidates = candidateAssembler.assemble(
+                    isSuggestionOn = isSuggestionOn(),
+                    internalSuggestions = suggestions,
+                    autoCommitUndoCandidate = autoCommitUndoSession.activeUndoCandidate,
+                    glideAlternativeCandidates = glideAlternativeSession.activeCandidates(),
+                ),
+                signals = signals,
+                rankedFor = rankedFor,
             )
         }
     }
@@ -1045,6 +1060,14 @@ class NlpManager(
 
     private fun EditorContent.autoCommitWord(): String {
         return currentWordText.ifBlank { composingText }
+    }
+
+    private fun EditorContent.candidateWordKey(): CandidateWordKey {
+        return CandidateWordKey(
+            word = autoCommitWord(),
+            wordStart = autoCommitWordStart(),
+            cursor = selection.start,
+        )
     }
 
     private fun EditorContent.autoCommitWordStart(): Int? {
