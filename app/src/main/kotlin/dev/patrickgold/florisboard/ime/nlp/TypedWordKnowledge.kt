@@ -16,6 +16,8 @@
 
 package dev.patrickgold.florisboard.ime.nlp
 
+import dev.patrickgold.florisboard.ime.dictionary.LearnedWordText
+
 private val RightSingleQuote = Char(0x2019)
 
 /**
@@ -34,14 +36,27 @@ internal fun candidateSignalKeyOf(word: String): String? {
  * Whether the last suggestion pass found its typed word in the learned words or a dictionary,
  * kept for the space key, which learns a new word only on its second sighting. Written by the
  * suggestion pass and read on the input thread.
+ *
+ * Words are keyed the way [LearnedWordText.normalize] learns them, plus the language, so the
+ * answer is about the exact word the space would learn.
  */
 internal class TypedWordKnowledge {
-    private class Entry(val key: String, val known: Boolean)
+    private class Entry(val key: String, val languageTag: String, val known: Boolean)
 
     @Volatile private var last: Entry? = null
 
-    fun record(word: String, known: Boolean) {
-        last = candidateSignalKeyOf(word)?.let { Entry(it, known) }
+    /**
+     * Records what a pass in [languageTag] found for [word]. [known] is `null` when the pass
+     * didn't look (suggestions off). A pass that looked up a different form than the one learned
+     * (the dictionary key drops a hyphen at either end) records nothing either.
+     */
+    fun record(word: String, languageTag: String, known: Boolean?) {
+        val key = LearnedWordText.normalize(word)
+        last = if (known == null || key == null || key != candidateSignalKeyOf(word)) {
+            null
+        } else {
+            Entry(key, languageTag, known)
+        }
     }
 
     fun clear() {
@@ -49,11 +64,14 @@ internal class TypedWordKnowledge {
     }
 
     /**
-     * `true` only when the last pass ranked [word] and knew it. A pass for another word, or none
-     * yet, reads as unknown, so a word typed faster than its pass waits for its next sighting.
+     * What the last pass found for [word] in [languageTag], or `null` when it ranked another
+     * word or none yet (typed faster than its pass, or suggestions are off); the caller looks the
+     * word up itself then.
      */
-    fun wasKnown(word: String): Boolean {
-        val entry = last ?: return false
-        return entry.known && entry.key == candidateSignalKeyOf(word)
+    fun knownState(word: String, languageTag: String): Boolean? {
+        val entry = last ?: return null
+        if (entry.languageTag != languageTag) return null
+        if (entry.key != LearnedWordText.normalize(word)) return null
+        return entry.known
     }
 }

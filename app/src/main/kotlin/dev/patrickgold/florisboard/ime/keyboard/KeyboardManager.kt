@@ -39,6 +39,7 @@ import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.core.SubtypePreset
 import dev.patrickgold.florisboard.ime.editor.EditorInputBehaviorPolicy
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
+import dev.patrickgold.florisboard.ime.dictionary.LearnedWordText
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorCompatibilityPolicy
 import dev.patrickgold.florisboard.ime.editor.EditorRange
@@ -59,6 +60,7 @@ import dev.patrickgold.florisboard.ime.nlp.AutoCommitUndoSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.CandidateCommitSideEffectPolicy
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.GlideAlternativeSuggestionCandidate
+import dev.patrickgold.florisboard.ime.nlp.LearnedWordForgetOffer
 import dev.patrickgold.florisboard.ime.nlp.LearnedWordForgetSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.PunctuationRule
 import dev.patrickgold.florisboard.ime.nlp.SuggestionPrivacyPolicy
@@ -74,6 +76,7 @@ import dev.patrickgold.florisboard.ime.text.keyboard.BottomRowPreset
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboardCache
 import dev.patrickgold.florisboard.ime.security.AdvancedProtectionPolicy
+import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.devtools.flogWarning
@@ -256,8 +259,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 resetSuggestions(content)
             }
             // The editor flags every cursor move that isn't typing (a tap, a selection, an app edit).
+            // That ends the "Don't learn" offer too, or a tap on another word and back to the end of
+            // the text would bring its chip back.
             editorInstance.commitAdjacencyBrokenFlow.collectIn(scope) {
                 resetLearnChain()
+                nlpManager.clearForgetLearnedWordOffer()
             }
             // A field/app switch breaks word adjacency — without this reset the
             // first word typed in the new field forms a phantom bigram/trigram
@@ -266,6 +272,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             // never-typed pair "meeting tomorrow" to the personal n-gram store).
             editorInstance.activeInfoFlow.collectIn(scope) {
                 resetLearnChain()
+                nlpManager.clearForgetLearnedWordOffer()
                 nlpManager.clearGlideAlternatives()
             }
             prefs.devtools.enabled.asFlow().collectLatestIn(scope) {
@@ -667,11 +674,59 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * Trusting only the incognito flag would bleed credentials into the user's
      * suggestions; the keyVariation check is the belt to incognito's suspenders.
      *
-     * [requireRepeat] holds a new word back until its second sighting (see
-     * [DictionaryManager.learnWord]); the next-word chain learns it either way.
+     * Words the user picked or glided are learned right away. The space key's literal word goes
+     * through [learnTypedWordIfAllowed] instead.
      */
-    private fun learnIfAllowed(rawWord: String, requireRepeat: Boolean = false) {
-        if (!learnWordIfAllowed(rawWord, requireRepeat)) return
+    private fun learnIfAllowed(rawWord: String) {
+        if (!learnWordIfAllowed(rawWord, requireRepeat = false)) return
+        learnNextWordChain(rawWord)
+    }
+
+    /**
+     * Learns the word the space kept as typed: right away when a dictionary or the learned words
+     * know it, and on its second sighting when it's new (see [DictionaryManager.learnWord]).
+     * [known] is what the last suggestion pass found for it. A word typed faster than its pass, or
+     * with suggestions off, gets looked up first. The next-word chain learns it either way.
+     */
+    private fun learnTypedWordIfAllowed(rawWord: String, known: Boolean?) {
+        if (!mayLearn(rawWord)) return
+        // Too short or not word-like to learn (see LearnedWordText), so there's nothing to look up.
+        if (LearnedWordText.normalize(rawWord) == null) {
+            learnNextWordChain(rawWord)
+            return
+        }
+        val subtype = subtypeManager.activeSubtype
+        if (known != null) {
+            learnWordNow(rawWord, requireRepeat = !known, locale = subtype.primaryLocale)
+        } else {
+            scope.launch {
+                val lookedUp = nlpManager.lookUpTypedWordKnown(rawWord, subtype)
+                withContext(Dispatchers.Main) {
+                    learnLookedUpWord(rawWord, lookedUp, subtype.primaryLocale)
+                }
+            }
+        }
+        learnNextWordChain(rawWord)
+    }
+
+    /**
+     * Learns a word whose lookup finished after the space. The space's own pass may already be
+     * out, so the chip goes onto the strip as shown. It's offered only while the cursor still sits
+     * after the word, so a slow lookup can't replace a newer word's chip. If the keyboard hid
+     * meanwhile, the hide already saved the pending words, so they're saved again now.
+     */
+    private fun learnLookedUpWord(rawWord: String, known: Boolean, locale: FlorisLocale) {
+        val content = editorInstance.activeContent
+        val cursorAfterWord = LearnedWordForgetOffer.endsWithWord(content.textBeforeSelection, rawWord)
+        if (learnWordNow(rawWord, requireRepeat = !known, locale = locale, offerForget = cursorAfterWord)) {
+            nlpManager.showForgetLearnedWordChip(content)
+        }
+        if (FlorisImeService.windowControllerOrNull()?.isWindowShown?.value != true) {
+            DictionaryManager.default().flushPendingLearnedWords()
+        }
+    }
+
+    private fun learnNextWordChain(rawWord: String) {
         val locale = subtypeManager.activeSubtype.primaryLocale
         if (prefs.suggestion.nextWordPrediction.get()) {
             val tag = locale.languageTag()
@@ -694,31 +749,37 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
 
     /**
      * The word half of [learnIfAllowed], without the next-word chain. Returns `false` when the
-     * privacy gate refused the word. A word learned for the first time puts the chip that
-     * forgets it on the strip.
+     * privacy gate refused the word.
      */
     private fun learnWordIfAllowed(rawWord: String, requireRepeat: Boolean): Boolean {
-        if (!SuggestionPrivacyPolicy.shouldLearnCommittedWord(
-            rawWord = rawWord,
-            isIncognitoMode = activeState.isIncognitoMode,
-            keyVariation = activeState.keyVariation,
-        )) return false
-        val locale = subtypeManager.activeSubtype.primaryLocale
-        val wasKnown = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
-            .contains(rawWord, locale)
+        if (!mayLearn(rawWord)) return false
+        learnWordNow(rawWord, requireRepeat, subtypeManager.activeSubtype.primaryLocale)
+        return true
+    }
+
+    private fun mayLearn(rawWord: String): Boolean = SuggestionPrivacyPolicy.shouldLearnCommittedWord(
+        rawWord = rawWord,
+        isIncognitoMode = activeState.isIncognitoMode,
+        keyVariation = activeState.keyVariation,
+    )
+
+    /**
+     * Learns [rawWord] in [locale], past the privacy gate. A new word the space learned on its
+     * second sighting gets the chip that forgets it, on the passes while the cursor stays after
+     * it, unless [offerForget] is false; returns whether it got one. Dictionary words and picks
+     * don't, so the chip never pushes out a prediction for a word the user meant.
+     */
+    private fun learnWordNow(
+        rawWord: String,
+        requireRepeat: Boolean,
+        locale: FlorisLocale,
+        offerForget: Boolean = true,
+    ): Boolean {
+        val overlay = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
+        val wasLearned = overlay.contains(rawWord, locale)
         DictionaryManager.default().learnWord(rawWord, locale, requireRepeat)
-        val wasLearned = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
-            .contains(rawWord, locale)
-        if (!wasKnown && wasLearned) {
-            nlpManager.suggestDirectly(
-                listOf(
-                    LearnedWordForgetSuggestionCandidate(
-                        word = rawWord,
-                        locale = locale,
-                    ),
-                ),
-            )
-        }
+        if (!offerForget || !requireRepeat || wasLearned || !overlay.contains(rawWord, locale)) return false
+        nlpManager.offerForgetLearnedWord(LearnedWordForgetSuggestionCandidate(word = rawWord, locale = locale))
         return true
     }
 
@@ -884,9 +945,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // final; keep the chain from pairing the next commit with stale text.
         resetLearnChain()
         nlpManager.rejectAcceptedAutoCommitOnBackspace(editorInstance.activeContent)?.let { original ->
-            // Counts as the first sighting of the typed word, so the space that keeps it
-            // when it's typed again learns it.
-            learnWordIfAllowed(original, requireRepeat = true)
+            // Counts as a sighting of the typed word, so the space that keeps it when it's typed
+            // again learns it. Only notes it: backing into a word never learns it by itself.
+            if (mayLearn(original)) {
+                DictionaryManager.default()
+                    .noteTypedWordSighting(original, subtypeManager.activeSubtype.primaryLocale)
+            }
         }
         editorInstance.phantomSpace.candidateForRevert?.let { candidateForRevert ->
             candidateForRevert.sourceProvider?.let { sourceProvider ->
@@ -1033,12 +1097,15 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      */
     fun handleHardwareKeyboardSpace() {
         val typedWordBeforeCommit = editorInstance.activeContent.currentWordText
-        val typedWordKnown = nlpManager.wasTypedWordKnown(typedWordBeforeCommit)
+        val typedWordKnown = nlpManager.typedWordKnownState(
+            typedWordBeforeCommit,
+            subtypeManager.activeSubtype.primaryLocale,
+        )
         val candidate = nlpManager.getSpacebarCandidate()
         val suppressPlainSpace = candidate == null && nlpManager.shouldSuppressPlainSpaceForPrediction()
         val candidateCommitted = candidate?.let { commitAutoCommitCandidate(it) } ?: false
         SpacebarLearnPolicy.typedWordToLearn(typedWordBeforeCommit, candidateCommitted)
-            ?.let { learnIfAllowed(it, requireRepeat = !typedWordKnown) }
+            ?.let { learnTypedWordIfAllowed(it, typedWordKnown) }
         if (suppressPlainSpace) {
             return
         }
@@ -1056,14 +1123,18 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // Snapshot the word the user actually typed *before* any auto-correct candidate
         // overwrites it. A committed candidate is learned by the commit itself; otherwise
         // the space learns the literal typed word, right away when a dictionary knows it and on
-        // its second sighting when it's new.
+        // its second sighting when it's new. Whether it's known comes from the suggestion pass
+        // that ranked it, read before the commit starts the next one.
         val typedWordBeforeCommit = editorInstance.activeContent.currentWordText
-        val typedWordKnown = nlpManager.wasTypedWordKnown(typedWordBeforeCommit)
+        val typedWordKnown = nlpManager.typedWordKnownState(
+            typedWordBeforeCommit,
+            subtypeManager.activeSubtype.primaryLocale,
+        )
         val candidate = nlpManager.getSpacebarCandidate()
         val suppressPlainSpace = candidate == null && nlpManager.shouldSuppressPlainSpaceForPrediction()
         val candidateCommitted = candidate?.let { commitAutoCommitCandidate(it) } ?: false
         SpacebarLearnPolicy.typedWordToLearn(typedWordBeforeCommit, candidateCommitted)
-            ?.let { learnIfAllowed(it, requireRepeat = !typedWordKnown) }
+            ?.let { learnTypedWordIfAllowed(it, typedWordKnown) }
         if (prefs.keyboard.spaceBarSwitchesToCharacters.get()) {
             when (activeState.keyboardMode) {
                 KeyboardMode.NUMERIC_ADVANCED,

@@ -144,9 +144,44 @@ class PendingLearnedWordsTest : FunSpec({
     test("backspacing a correction, then typing the word again, learns it") {
         val pending = PendingLearnedWords(newFile())
         // The backspace that takes back "thw" -> "the" is the first sighting...
-        pending.admit("thw", "en-US", requireRepeat = true, alreadyLearned = false).learnNow.shouldBeFalse()
+        pending.addSighting("thw", "en-US").shouldBeTrue()
         // ...and the space that keeps the retyped "thw" is the second.
         pending.admit("thw", "en-US", requireRepeat = true, alreadyLearned = false).learnNow.shouldBeTrue()
+    }
+
+    test("a sighting noted for a word already pending leaves it pending") {
+        val pending = PendingLearnedWords(newFile())
+        pending.admit("thw", "en-US", requireRepeat = true, alreadyLearned = false)
+
+        // A backspace into a word seen once before must not count as the learning sighting.
+        pending.addSighting("thw", "en-US").shouldBeFalse()
+        pending.contains("thw", "en-US").shouldBeTrue()
+        pending.admit("thw", "en-US", requireRepeat = true, alreadyLearned = false).learnNow.shouldBeTrue()
+    }
+
+    test("a noted sighting keeps to the cap too") {
+        val pending = PendingLearnedWords(newFile(), maxEntries = 2)
+        pending.addSighting("one", "en-US")
+        pending.addSighting("two", "en-US")
+        pending.addSighting("three", "en-US")
+
+        pending.size() shouldBe 2
+        pending.contains("one", "en-US").shouldBeFalse()
+    }
+
+    test("deleting the file also deletes a half-written copy") {
+        val file = newFile()
+        val pending = PendingLearnedWords(file)
+        pending.addSighting("thw", "en-US")
+        pending.save().shouldBeTrue()
+        val tmp = File(file.parentFile, file.name + ".tmp")
+        tmp.writeText("en-US\tstale\n")
+
+        pending.deleteFile().shouldBeTrue()
+
+        file.exists().shouldBeFalse()
+        tmp.exists().shouldBeFalse()
+        PendingLearnedWords(file).contains("thw", "en-US").shouldBeFalse()
     }
 
     test("a sighting before a restart counts toward learning after it") {

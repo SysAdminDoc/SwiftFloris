@@ -26,6 +26,7 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
+import dev.patrickgold.florisboard.ime.dictionary.LearnedWordText
 import dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore
 import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
 import dev.patrickgold.florisboard.ime.editor.EditorCompatibilityPolicy
@@ -127,6 +128,7 @@ class NlpManager(
     private var internalSuggestionsRankedFor: CandidateWordKey? = null
     // Whether the last ranked word was in a dictionary; read by the space key's learning.
     private val typedWordKnowledge = TypedWordKnowledge()
+    private val learnedWordForgetOffer = LearnedWordForgetOffer()
     // What auto-correct reads: the strip as shown, with the word it was ranked for.
     @Volatile private var publishedCandidates = PublishedCandidates()
     private val candidateAssembly = LatestOnlyAssembly<PublishedCandidates>(scope) { published ->
@@ -392,14 +394,21 @@ class NlpManager(
                 if (internalSuggestions.first < requestId) {
                     internalCandidateSignals = candidateSignals
                     internalSuggestionsRankedFor = content.candidateWordKey()
-                    typedWordKnowledge.record(currentWord, typedWordKnown)
-                    internalSuggestions = requestId to InternalSuggestionOrder.merge(
+                    typedWordKnowledge.record(
+                        word = currentWord,
+                        languageTag = subtype.primaryLocale.languageTag(),
+                        known = typedWordKnown.takeIf { suggestionsEnabled },
+                    )
+                    val merged = InternalSuggestionOrder.merge(
                         wordSuggestions = wordSuggestions,
                         emojiSuggestions = emojiSuggestions,
                         ghostTextCandidate = ghostTextCandidate,
                         composingText = content.composingText,
                         emojiTriggerPrefix = prefs.emoji.suggestionType.get().prefix,
                     )
+                    val forgetChip = learnedWordForgetOffer.chipFor(currentWord, content.textBeforeSelection, requestId)
+                    internalSuggestions = requestId to
+                        (forgetChip?.let { LearnedWordForgetOffer.place(it, merged) } ?: merged)
                 }
             }
         }
@@ -461,6 +470,7 @@ class NlpManager(
 
     fun clearSuggestions() {
         glideAlternativeSession.clear()
+        learnedWordForgetOffer.clear()
         val requestId = suggestionsRequestCounter.incrementAndGet()
         scope.launch {
             internalSuggestionsGuard.withLock {
@@ -474,8 +484,56 @@ class NlpManager(
         }
     }
 
-    /** Whether the last suggestion pass found [word] in the learned words or a dictionary. */
-    fun wasTypedWordKnown(word: String): Boolean = typedWordKnowledge.wasKnown(word)
+    /**
+     * Whether the last suggestion pass found [word] in the learned words or a dictionary for
+     * [locale], or `null` when no pass covered it; [lookUpTypedWordKnown] answers then.
+     */
+    fun typedWordKnownState(word: String, locale: FlorisLocale): Boolean? =
+        typedWordKnowledge.knownState(word, locale.languageTag())
+
+    /**
+     * Looks [word] up the way a suggestion pass would, for a word typed faster than its pass or
+     * with suggestions off. A word whose learned form differs from the looked-up one (a hyphen at
+     * either end) counts as unknown, since that form is what would be learned.
+     */
+    suspend fun lookUpTypedWordKnown(word: String, subtype: Subtype): Boolean {
+        val learnedForm = LearnedWordText.normalize(word) ?: return false
+        if (learnedForm != candidateSignalKeyOf(word)) return false
+        return isKnownTypedWord(providerRegistry.suggestionProvider(subtype), subtype, learnedForm)
+    }
+
+    /**
+     * Shows [candidate], the chip that forgets a word the space just learned, on the next
+     * passes while the cursor stays right after that word (see [LearnedWordForgetOffer]).
+     */
+    fun offerForgetLearnedWord(candidate: LearnedWordForgetSuggestionCandidate) {
+        learnedWordForgetOffer.offer(candidate, latestRequestId = suggestionsRequestCounter.get())
+    }
+
+    /**
+     * Adds the offered chip to the strip the last pass published, if that pass was ranked for
+     * [content]'s spot. For an offer made after the space's own pass had already published (the
+     * word's lookup finished later). Running a new pass from there would race the content
+     * collectors, which own [suggest].
+     */
+    fun showForgetLearnedWordChip(content: EditorContent) {
+        val wordKey = content.candidateWordKey()
+        val textBeforeSelection = content.textBeforeSelection
+        scope.launch {
+            internalSuggestionsGuard.withLock {
+                val (requestId, suggestions) = internalSuggestions
+                if (internalSuggestionsRankedFor != wordKey) return@withLock
+                if (suggestions.any { it is LearnedWordForgetSuggestionCandidate }) return@withLock
+                val chip = learnedWordForgetOffer.chipAfter(textBeforeSelection) ?: return@withLock
+                internalSuggestions = requestId to LearnedWordForgetOffer.place(chip, suggestions)
+            }
+        }
+    }
+
+    /** Ends the "Don't learn" offer, for when the editor changes or the keyboard hides. */
+    fun clearForgetLearnedWordOffer() {
+        learnedWordForgetOffer.clear()
+    }
 
     fun rememberAcceptedGlideCommit(
         committedText: String,

@@ -59,6 +59,7 @@ import dev.patrickgold.florisboard.ime.addon.AddonEnumerator
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
 import dev.patrickgold.florisboard.ime.core.LocaleHints
 import dev.patrickgold.florisboard.ime.core.LocaleHints.toLocales
+import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore
 import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
 import dev.patrickgold.florisboard.ime.editor.EditorRange
@@ -878,6 +879,8 @@ class FlorisImeService : LifecycleInputMethodService() {
                 activeState.isActionsOverflowVisible = false
                 activeState.isActionsEditorVisible = false
             }
+            // A chip left from before the hide would come back with the restored cursor.
+            nlpManager.clearForgetLearnedWordOffer()
             savePendingLearning()
         } else {
             flogWarning(LogTopic.IMS_EVENTS) { "Ignoring (is already hidden)" }
@@ -885,14 +888,16 @@ class FlorisImeService : LifecycleInputMethodService() {
     }
 
     /**
-     * Learned word pairs and triples reach disk in batches of 20 commits. Once
-     * the keyboard is off screen the process can be killed without warning
-     * (Android 17's memory limiter gives hidden apps a smaller budget), so the
-     * unsaved rest is written now. Both calls return at once and write on IO.
+     * Learned word pairs and triples reach disk in batches of 20 commits, and
+     * words seen once wait a few seconds. Once the keyboard is off screen the
+     * process can be killed without warning (Android 17's memory limiter gives
+     * hidden apps a smaller budget), so the unsaved rest is written now. All
+     * three calls return at once and write on IO.
      */
     private fun savePendingLearning() {
         PersonalBigramStore.get(this).flushPending()
         PersonalTrigramStore.get(this).flushPending()
+        DictionaryManager.default().flushPendingLearnedWords()
     }
 
     override fun onEvaluateFullscreenMode(): Boolean {

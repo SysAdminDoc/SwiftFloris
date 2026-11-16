@@ -1100,7 +1100,7 @@
     <string name="pref__suggestion__api30_inline_suggestions_enabled__summary" comment="Preference summary">Show inline suggestions provided by autofill services</string>
     <string name="pref__suggestion__incognito_mode__label" comment="Label of Incognito mode preference in Typing">Incognito mode</string>
     <string name="smartbar__candidate_remove_confirm__message" comment="Confirmation prompt shown in the suggestion strip after long-pressing a suggestion; {word} is the suggestion being removed">Remove \"{word}\" from suggestions?</string>
-    <string name="smartbar__learned_word_forget_candidate" comment="Suggestion-strip action shown immediately after learning a word; {word} is the learned word">Don\'t learn \"{word}\"</string>
+    <string name="smartbar__learned_word_forget_candidate" comment="Small line under a just-learned word in the suggestion strip; tapping the slot forgets the word">Don\'t learn</string>
     <string name="pref__correction__title" comment="Preference group title">Corrections</string>
     <string name="pref__correction__auto_capitalization__label" comment="Preference title">Auto-capitalization</string>
     <string name="pref__correction__auto_capitalization__summary" comment="Preference summary">Capitalize words based on the current input context</string>

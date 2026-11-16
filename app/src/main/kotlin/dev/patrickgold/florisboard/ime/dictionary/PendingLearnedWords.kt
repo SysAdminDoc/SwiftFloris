@@ -46,12 +46,22 @@ internal class PendingLearnedWords(
             val set = loadedLocked()
             if (set.remove(key)) return true
             set.add(key)
-            while (set.size > maxEntries) {
-                val oldest = set.iterator()
-                oldest.next()
-                oldest.remove()
-            }
+            trimLocked(set)
             return false
+        }
+    }
+
+    /**
+     * Puts [word] on the list for [languageTag] unless it's there already, without ever taking
+     * it off. Returns whether it was added.
+     */
+    fun addSighting(word: String, languageTag: String): Boolean {
+        val key = key(word, languageTag) ?: return false
+        synchronized(lock) {
+            val set = loadedLocked()
+            if (!set.add(key)) return false
+            trimLocked(set)
+            return true
         }
     }
 
@@ -116,11 +126,16 @@ internal class PendingLearnedWords(
         }
     }
 
-    /** Empties the list and deletes [file]. Returns whether the file is gone. */
+    /**
+     * Empties the list and deletes [file], plus the temporary copy a save killed mid-write leaves
+     * behind. Returns whether both are gone.
+     */
     fun deleteFile(): Boolean {
         synchronized(writeLock) {
             clear()
-            return !file.exists() || file.delete()
+            val tmp = File(file.parentFile, file.name + ".tmp")
+            val tmpGone = !tmp.exists() || tmp.delete()
+            return (!file.exists() || file.delete()) && tmpGone
         }
     }
 
@@ -134,13 +149,17 @@ internal class PendingLearnedWords(
             if (tab <= 0 || tab == line.length - 1) continue
             key(line.substring(tab + 1), line.substring(0, tab))?.let { loaded.add(it) }
         }
-        while (loaded.size > maxEntries) {
-            val oldest = loaded.iterator()
+        trimLocked(loaded)
+        entries = loaded
+        return loaded
+    }
+
+    private fun trimLocked(set: LinkedHashSet<String>) {
+        while (set.size > maxEntries) {
+            val oldest = set.iterator()
             oldest.next()
             oldest.remove()
         }
-        entries = loaded
-        return loaded
     }
 
     private fun key(word: String, languageTag: String): String? {

@@ -34,6 +34,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.concurrent.Callable
@@ -67,11 +68,9 @@ private const val LEARN_INCREMENT = 5
 /** Cap learned-word frequency at the top tier so a much-typed word ties with
  *  SCOWL's most common words. */
 private const val LEARN_MAX_FREQUENCY = 250
-/** Minimum word length for auto-learning. Single chars and digrams are noise. */
-private const val LEARN_MIN_LENGTH = 3
-/** Maximum word length for auto-learning. Anything longer is almost certainly a URL,
- *  email, or pasted token and shouldn't be added to the personal dictionary. */
-private const val LEARN_MAX_LENGTH = 32
+/** How long a change to the words waiting to be learned sits before it's written, so a burst of
+ *  sightings costs one write. Hiding the keyboard writes it at once. */
+private const val PENDING_LEARNED_WORDS_SAVE_DELAY_MS = 3_000L
 
 /** Prefix of the broken pre-v1.9.56 learned-row locale format (`FlorisLocale.toString()`). */
 internal const val LEGACY_DEBUG_LOCALE_PREFIX = "FlorisLocale {"
@@ -272,14 +271,31 @@ class DictionaryManager private constructor(context: Context) {
         ioScope.launch { pendingLearnedWords.preload() }
     }
 
-    /** Saves the pending list off the main thread; sightings made before the save starts share it. */
+    /**
+     * Saves the pending list off the main thread after [PENDING_LEARNED_WORDS_SAVE_DELAY_MS], so the
+     * sightings made meanwhile share one write.
+     */
     private fun savePendingLearnedWordsAsync() {
         if (!pendingLearnedWordsSaveQueued.compareAndSet(false, true)) return
         ioScope.launch {
-            pendingLearnedWordsSaveQueued.set(false)
-            if (!pendingLearnedWords.save()) {
-                flogWarning(LogTopic.DICTIONARY) { "Couldn't save the words waiting to be learned" }
-            }
+            delay(PENDING_LEARNED_WORDS_SAVE_DELAY_MS)
+            savePendingLearnedWordsIfQueued()
+        }
+    }
+
+    /**
+     * Writes a waiting change to the pending list now. Called when the keyboard hides, since the
+     * process can be killed without warning after that. Returns at once and writes on IO.
+     */
+    fun flushPendingLearnedWords() {
+        if (!pendingLearnedWordsSaveQueued.get()) return
+        ioScope.launch { savePendingLearnedWordsIfQueued() }
+    }
+
+    private fun savePendingLearnedWordsIfQueued() {
+        if (!pendingLearnedWordsSaveQueued.getAndSet(false)) return
+        if (!pendingLearnedWords.save()) {
+            flogWarning(LogTopic.DICTIONARY) { "Couldn't save the words waiting to be learned" }
         }
     }
 
@@ -423,15 +439,8 @@ class DictionaryManager private constructor(context: Context) {
      */
     fun learnWord(rawWord: String, locale: FlorisLocale, requireRepeat: Boolean = false) {
         if (!prefs.dictionary.enableFlorisUserDictionary.get()) return
-        val cleaned = rawWord.trim()
-            .trim { ch -> !ch.isLetter() && ch != '\'' && ch != '-' }
-        if (cleaned.length < LEARN_MIN_LENGTH || cleaned.length > LEARN_MAX_LENGTH) return
-        // Reject anything that doesn't look like a real word: must contain at least
-        // one letter, no digits, no internal punctuation other than ' or -.
-        if (cleaned.any { it.isDigit() }) return
-        if (cleaned.none { it.isLetter() }) return
-        if (cleaned.any { ch -> !ch.isLetter() && ch != '\'' && ch != '-' }) return
-        val normalized = cleaned.lowercase()
+        // Anything that doesn't look like a real word is skipped (see LearnedWordText).
+        val normalized = LearnedWordText.normalize(rawWord) ?: return
 
         val admission = pendingLearnedWords.admit(
             word = normalized,
@@ -484,6 +493,19 @@ class DictionaryManager private constructor(context: Context) {
                 UserDictionaryOverlay.get().forget(normalized, locale)
             }
         }
+    }
+
+    /**
+     * Notes a sighting of [rawWord] without learning it: puts it on the pending list unless it's
+     * learned or already there. For a word whose correction was taken back with backspace, which
+     * isn't kept yet (the user may be about to type something else). The space that keeps it
+     * when it's typed again learns it.
+     */
+    fun noteTypedWordSighting(rawWord: String, locale: FlorisLocale) {
+        if (!prefs.dictionary.enableFlorisUserDictionary.get()) return
+        val normalized = LearnedWordText.normalize(rawWord) ?: return
+        if (UserDictionaryOverlay.get().contains(normalized, locale)) return
+        if (pendingLearnedWords.addSighting(normalized, locale.languageTag())) savePendingLearnedWordsAsync()
     }
 
     /**
@@ -642,6 +664,8 @@ class DictionaryManager private constructor(context: Context) {
         ).toMutableList()
         UserDictionaryOverlay.get().clearAll()
         florisUserDictionaryLoader.acknowledgeReset()
+        // A save still waiting would write the emptied list back as a new file.
+        pendingLearnedWordsSaveQueued.set(false)
         if (!pendingLearnedWords.deleteFile()) {
             remaining += File(applicationContext.filesDir, PendingLearnedWords.FILE_NAME)
         }

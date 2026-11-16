@@ -484,18 +484,21 @@ private fun CandidateItem(
                 elementName = "$elementName-text",
                 attributes = attributes,
                 selector = selector,
-                text = if (candidate is LearnedWordForgetSuggestionCandidate) {
-                    stringRes(R.string.smartbar__learned_word_forget_candidate, "word" to candidate.word)
-                } else {
-                    candidate.text.toString()
-                },
+                text = candidate.text.toString(),
             )
-            if (candidate.secondaryText != null) {
+            // The forget chip puts the word on top and the action under it, like the undo chip, so a
+            // third of the strip never cuts the word off.
+            val secondaryText = if (candidate is LearnedWordForgetSuggestionCandidate) {
+                stringRes(R.string.smartbar__learned_word_forget_candidate)
+            } else {
+                candidate.secondaryText?.toString()
+            }
+            if (secondaryText != null) {
                 SnyggText(
                     elementName = "$elementName-secondary-text",
                     attributes = attributes,
                     selector = selector,
-                    text = candidate.secondaryText!!.toString(),
+                    text = secondaryText,
                 )
             }
         }
