@@ -154,7 +154,7 @@ internal object ImmediateAutocorrect {
      *   ("I'm",     "im")    → "I'm"   (canonical retains the capital I)
      *   ("I'm",     "IM")    → "I'M"
      */
-    private fun applyTypedCase(canonical: String, typedWord: String): String {
+    internal fun applyTypedCase(canonical: String, typedWord: String): String {
         val typedLetters = typedWord.filter { it.isLetter() }
         if (typedLetters.isEmpty()) return canonical
         val isAllCaps = typedLetters.length > 1 && typedLetters.all { it.isUpperCase() }

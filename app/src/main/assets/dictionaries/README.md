@@ -37,6 +37,14 @@ Profanity is filtered using the
 [LDNOOBW English bad-words list](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words)
 (CC-BY 4.0).
 
+Common misspellings are kept out too. `../ime/dict/en_misspellings.tsv` is a hand-made list of about 780 of them,
+each with its fix ("teh" to "the", "recieve" to "receive"). None of them is accepted by the en_US, en_GB, en_AU, en_CA
+or en_ZA Hunspell dictionaries, and none is in SCOWL up to size 70. A few are the start of a real word ("usefull" starts
+"usefully"), but apart from names like Tehran, no word ranked 150 or higher starts with one. Both scripts below take it
+as `--misspellings` and leave those words out. That matters because SCOWL's 80 and 95 tiers list a few common
+misspellings, and a misspelling in the word list counts as a real word, so autocorrect never fixed it. The Latin
+provider reads the same file for English and fixes those words on space unless the user taught the keyboard one.
+
 ## Licenses
 
 - **SCOWL**: see `../../../../LICENSES/SCOWL-Copyright.txt`. BSD-style permissive notice; Apache-2.0 compatible.
@@ -61,6 +69,7 @@ python3 utils/build_english_supplemental_dictionary.py \
     --scowl-final /tmp/scowl-2020.12.07/final \
     --modern-terms utils/english_modern_terms.txt \
     --profanity /tmp/profanity_en.txt \
+    --misspellings app/src/main/assets/ime/dict/en_misspellings.tsv \
     --output-json app/src/main/assets/ime/dict/en_supplemental.json \
     --output-word-list app/src/main/assets/dictionaries/en.txt
 ```
@@ -83,5 +92,6 @@ cd <repo_root>
 python3 utils/expand_dictionary.py \
     --existing app/src/main/assets/ime/dict/data.json \
     --scowl /tmp/scowl_clean.txt \
+    --misspellings app/src/main/assets/ime/dict/en_misspellings.tsv \
     --output app/src/main/assets/ime/dict/data.json
 ```

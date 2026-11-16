@@ -117,6 +117,17 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         val overlay = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay
             .get()
             .viewFor(subtype.primaryLocale)
+        LatinDictionarySuggester.englishMisspellingCorrection(
+            rawWord = word,
+            dictionary = dictionary,
+            languageCode = languageCode,
+            userOverlay = overlay,
+        )?.let { correction ->
+            return SpellingResult.typo(
+                suggestions = arrayOf(correction.text),
+                isHighConfidenceResult = true,
+            )
+        }
         val corrections = LatinDictionarySuggester.corrections(
             word = normalizedWord,
             dictionary = dictionary,
@@ -588,7 +599,14 @@ internal class LatinDictionaryStore(
         // SCOWL frequencies (current behaviour).
         val zipfTsv = loadFirstText(plan.zipfPaths)
         val zipfTable = ZipfFrequencyTable.parse(languageCode, zipfTsv)
-        return merged.withZipfTable(zipfTable)
+        val withZipf = merged.withZipfTable(zipfTable)
+        return if (languageCode == DefaultLanguageCode) {
+            withZipf.withMisspellings(
+                parseMisspellings(readAsset.read(EnglishMisspellingsPath).orEmpty()),
+            )
+        } else {
+            withZipf
+        }
     }
 
     private suspend fun loadMergedDictionaries(paths: List<String>): LatinDictionarySnapshot? {
@@ -700,8 +718,24 @@ internal class LatinDictionaryStore(
         private const val DictionaryRoot = "ime/dict"
         private const val LegacyEnglishDictionaryPath = "$DictionaryRoot/data.json"
         private const val SupplementalEnglishDictionaryPath = "$DictionaryRoot/en_supplemental.json"
+        internal const val EnglishMisspellingsPath = "$DictionaryRoot/en_misspellings.tsv"
         private const val FldicExtension = ".fldic"
         private const val FldicWordsSection = "[words]"
+
+        /** Parses `misspelling<TAB>fix` lines, skipping blanks, `#` comments and malformed rows. */
+        internal fun parseMisspellings(raw: String): Map<String, String> {
+            val table = HashMap<String, String>()
+            for (line in raw.lineSequence()) {
+                if (line.isBlank() || line.startsWith("#")) continue
+                val tab = line.indexOf('\t')
+                if (tab <= 0) continue
+                val misspelling = LatinDictionarySuggester.normalizeWord(line.substring(0, tab)) ?: continue
+                val fix = line.substring(tab + 1).trim()
+                if (fix.isEmpty()) continue
+                table[misspelling] = fix
+            }
+            return table
+        }
 
         fun normalizeLanguageCode(language: String): String {
             return language
@@ -739,6 +773,8 @@ internal data class LatinDictionarySnapshot(
     val distanceTwoCorrectionWords: Collection<String> = correctionWords,
     val glideWords: List<String> = buildGlideWords(frequencies),
     val zipfTable: ZipfFrequencyTable = ZipfFrequencyTable.Empty,
+    /** Known misspelling to its fix, from `ime/dict/en_misspellings.tsv`; English only. */
+    val misspellings: Map<String, String> = emptyMap(),
 ) {
     val isLoaded: Boolean get() = frequencies.isNotEmpty()
 
@@ -761,6 +797,12 @@ internal data class LatinDictionarySnapshot(
     fun withZipfTable(table: ZipfFrequencyTable): LatinDictionarySnapshot {
         if (table === zipfTable) return this
         return copy(zipfTable = table)
+    }
+
+    /** Return a copy carrying the misspelling table (used at load time). */
+    fun withMisspellings(table: Map<String, String>): LatinDictionarySnapshot {
+        if (table.isEmpty()) return this
+        return copy(misspellings = table)
     }
 
     /**
@@ -978,6 +1020,12 @@ internal object LatinDictionarySuggester {
             rawWord = rawWord,
             dictionary = dictionary,
             languageCode = languageCode,
+        )?.let { return listOf(it) }
+        englishMisspellingCorrection(
+            rawWord = rawWord,
+            dictionary = dictionary,
+            languageCode = languageCode,
+            userOverlay = userOverlay,
         )?.let { return listOf(it) }
         // ROADMAP §7 Next-3.3a — single-letter proper-noun completion. When
         // the user types a single capital letter (e.g. "F"), surface the
@@ -1254,6 +1302,38 @@ internal object LatinDictionarySuggester {
         }
         return LatinSuggestion(
             text = correction.text,
+            confidence = 1.0,
+            isEligibleForAutoCommit = true,
+        )
+    }
+
+    /**
+     * Fixes a word from the bundled English misspelling list ("teh", "recieve", "untill")
+     * with full confidence, the way SwiftKey does on space. Edit-distance corrections can't
+     * do this reliably: "teh" sits one edit from "ten" and "tea", and distance-2 fixes need
+     * a very common target. The list only holds words no English spell-check dictionary
+     * accepts, and the build scripts keep them out of the word lists, so the dictionary
+     * check here only matters when an addon dictionary lists the word. A word the user
+     * taught the keyboard stays as typed, and ALL CAPS input is left alone like contractions.
+     */
+    fun englishMisspellingCorrection(
+        rawWord: String,
+        dictionary: LatinDictionarySnapshot,
+        languageCode: String,
+        userOverlay: Map<String, Int> = emptyMap(),
+    ): LatinSuggestion? {
+        if (dictionary.misspellings.isEmpty()) return null
+        if (LatinDictionaryStore.normalizeLanguageCode(languageCode) != LatinDictionaryStore.DefaultLanguageCode) {
+            return null
+        }
+        val normalizedWord = normalizeWord(rawWord) ?: return null
+        val fix = dictionary.misspellings[normalizedWord] ?: return null
+        if (dictionary.contains(normalizedWord) || userOverlay.containsKey(normalizedWord)) return null
+        val typedWord = rawWord.trim().trim { char -> !char.isLetter() && char != '\'' }
+        val letters = typedWord.filter { it.isLetter() }
+        if (letters.length > 1 && letters.all { it.isUpperCase() }) return null
+        return LatinSuggestion(
+            text = ImmediateAutocorrect.applyTypedCase(fix, typedWord),
             confidence = 1.0,
             isEligibleForAutoCommit = true,
         )

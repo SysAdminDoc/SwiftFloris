@@ -34,6 +34,11 @@ def main() -> int:
     parser.add_argument("--existing", required=True, type=Path, help="Existing data.json path")
     parser.add_argument("--scowl", required=True, type=Path, help="Combined SCOWL wordlist (one word per line)")
     parser.add_argument("--output", required=True, type=Path, help="Output data.json path (can be same as --existing)")
+    parser.add_argument(
+        "--misspellings",
+        type=Path,
+        help="Optional misspelling<TAB>fix list (ime/dict/en_misspellings.tsv); listed misspellings are left out",
+    )
     args = parser.parse_args()
 
     if not args.existing.is_file():
@@ -42,9 +47,20 @@ def main() -> int:
     if not args.scowl.is_file():
         print(f"error: scowl wordlist not found: {args.scowl}", file=sys.stderr)
         return 1
+    if args.misspellings and not args.misspellings.is_file():
+        print(f"error: misspellings file not found: {args.misspellings}", file=sys.stderr)
+        return 1
 
+    misspellings = load_misspellings(args.misspellings) if args.misspellings else set()
     with args.existing.open("r", encoding="utf-8") as fh:
         existing = json.load(fh)
+    # The curated corpus carries a few common misspellings ("teh", "recieve") at real-word
+    # frequencies, which made autocorrect treat them as known words.
+    removed = [w for w in existing if w in misspellings]
+    for w in removed:
+        del existing[w]
+    if removed:
+        print(f"misspellings removed from existing: {len(removed)}", file=sys.stderr)
     print(f"existing: {len(existing)} words, freq range "
           f"{min(existing.values())}–{max(existing.values())}", file=sys.stderr)
 
@@ -58,7 +74,7 @@ def main() -> int:
                 continue
             if not WORD_RE.fullmatch(w):
                 continue
-            if w in seen:
+            if w in seen or w in misspellings:
                 continue
             seen.add(w)
             scowl_words.append(w)
@@ -92,6 +108,20 @@ def main() -> int:
 
     print(f"wrote {args.output} ({args.output.stat().st_size:,} bytes)", file=sys.stderr)
     return 0
+
+
+def load_misspellings(path: Path) -> set[str]:
+    words: set[str] = set()
+    with path.open("r", encoding="utf-8") as fh:
+        for raw in fh:
+            if not raw.strip() or raw.startswith("#"):
+                continue
+            # Same rows the app's parser accepts: a word, a tab, then a fix.
+            word, tab, fix = raw.partition("\t")
+            if not tab or not word.strip() or not fix.strip():
+                continue
+            words.add(word.strip().lower())
+    return words
 
 
 if __name__ == "__main__":

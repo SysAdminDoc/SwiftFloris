@@ -44,6 +44,11 @@ def main() -> int:
     parser.add_argument("--scowl-final", required=True, type=Path, help="SCOWL final/ directory")
     parser.add_argument("--modern-terms", required=True, type=Path, help="One lowercase term per line")
     parser.add_argument("--profanity", type=Path, help="Optional one-term-per-line profanity blocklist")
+    parser.add_argument(
+        "--misspellings",
+        type=Path,
+        help="Optional misspelling<TAB>fix list (ime/dict/en_misspellings.tsv); listed misspellings are left out",
+    )
     parser.add_argument("--output-json", required=True, type=Path, help="Supplemental JSON output")
     parser.add_argument("--output-word-list", required=True, type=Path, help="Merged en.txt output")
     args = parser.parse_args()
@@ -58,8 +63,13 @@ def main() -> int:
         print(f"error: modern terms file not found: {args.modern_terms}", file=sys.stderr)
         return 1
 
+    if args.misspellings and not args.misspellings.is_file():
+        print(f"error: misspellings file not found: {args.misspellings}", file=sys.stderr)
+        return 1
+
     base = load_json_dictionary(args.base)
     profanity = load_word_set(args.profanity) if args.profanity else set()
+    misspellings = load_misspellings(args.misspellings) if args.misspellings else set()
     scowl_words = load_scowl_words(args.scowl_final, profanity)
     modern_terms = load_modern_terms(args.modern_terms, profanity)
 
@@ -75,6 +85,13 @@ def main() -> int:
     for word in modern_terms:
         if word not in base:
             supplemental[word] = max(supplemental.get(word, 0), MODERN_TERM_FREQ)
+    # Dropped after the frequencies are assigned, so leaving a misspelling out doesn't move the
+    # frequency of every SCOWL word ranked after it. SCOWL's 80 and 95 tiers carry common
+    # misspellings ("accomodate", "untill") that would otherwise count as known words and never
+    # get corrected.
+    for word in misspellings:
+        supplemental.pop(word, None)
+        base.pop(word, None)
 
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     with args.output_json.open("w", encoding="utf-8") as fh:
@@ -146,6 +163,18 @@ def load_word_set(path: Path | None) -> set[str]:
             word
             for raw in fh
             if (word := normalize_word(raw)) is not None
+        }
+
+
+def load_misspellings(path: Path) -> set[str]:
+    with path.open("r", encoding="utf-8") as fh:
+        return {
+            word
+            for raw in fh
+            if raw.strip() and not raw.startswith("#")
+            # Same rows the app's parser accepts: a word, a tab, then a fix.
+            if "\t" in raw and raw.split("\t", 1)[1].strip()
+            if (word := normalize_word(raw.split("\t", 1)[0])) is not None
         }
 
 
