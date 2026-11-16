@@ -1576,6 +1576,146 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun leftAfterLongHebrewRunInLatinParagraphStepsBack() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "Hi " + text(0x5D0).repeat(70))
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 73), isRestart = false)
+        scheduler.runCurrent()
+        // The paragraph starts with Latin far before the cursor, so a Compose field's Left steps
+        // back through the Hebrew after it.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(73, 72)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(72, 73)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftAfterHebrewWhoseParagraphStartIsUnknownStepsBack() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "Hi " + text(0x5D0).repeat(300))
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 303), isRestart = false)
+        scheduler.runCurrent()
+        // The keyboard doesn't know where this paragraph starts, so it can't tell its direction.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(303, 302)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(302, 303)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftsPastKnownTextAfterCursorInHebrew() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9),
+            textAfterSelection = text(0x5D0).repeat(300),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // More Lefts than the keyboard knows text after the cursor for, then "x". Past what it
+        // knows the text goes on, so each Left still moves forward.
+        repeat(257) { editor.expectAppStepBack(wholeCluster = true) }
+        editor.expectAppInsert(1, 'x'.code)
+        for (cursor in 1..257) editor.report(cursor, cursor + 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(258, 259)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(257, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftOverLineBreakInHebrewKeepsMovingForward() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9),
+            textAfterSelection = text(0x5DC) + "\n" + text(0x5D5, 0x5DD),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // Left over a letter, over the line break, and into the next Hebrew line, then "x".
+        repeat(3) { editor.expectAppStepBack(wholeCluster = true) }
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        editor.report(2, 3)
+        editor.report(3, 4)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(4, 5)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(3, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftCollapsesSelectionAcrossLineBreakToItsStart() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9, 0x5DC),
+            textAfterSelection = "llo",
+            selectedText = text(0x5D5, 0x5DD) + "\nhe",
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // A selection from a Hebrew line into a Latin one. Compose collapses it the way of the
+        // line it ends on, so to its start.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.handleSelectionUpdate(EditorRange(2, 7), EditorRange.cursor(2), EditorRange.Unspecified)
+        scheduler.runCurrent()
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftInHebrewAfterLatinAndParagraphSeparatorStepsBack() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = "abc" + text(0x2029, 0x5E9, 0x5DC),
+            textAfterSelection = text(0x5D5, 0x5DD),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // Android's text layout starts a paragraph only after a line feed, so this one starts
+        // with Latin and Compose's Left steps back.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(6, 5)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(5, 6)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")

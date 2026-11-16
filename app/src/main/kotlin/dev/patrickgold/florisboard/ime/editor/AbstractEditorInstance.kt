@@ -68,11 +68,13 @@ abstract class AbstractEditorInstance(context: Context) {
         private const val MaxPendingPassThroughKeys: Int = 1024
         /** Chars before the cursor one step back looks at, enough to step back over a typed word. */
         private const val NumKnownBackStepsBeforePassThrough: Int = 16
-        /**
-         * Text a pending key remembers before its cursor, enough for 16 chars unless they're long
-         * emoji sequences.
-         */
+        /** Text a step back reads its steps from, enough for 16 chars unless they're long emoji sequences. */
         private const val NumCharsForBackStepsBeforePassThrough: Int = 64
+        /**
+         * Text a pending key remembers on each side of its cursor, as much as is read before it, so a
+         * Left arrow can tell which way a paragraph that long runs.
+         */
+        private const val NumCharsKnownAroundPassThrough: Int = 256
         /** Stands in for a typed char the keyboard doesn't know: it never joins the char before it. */
         private val UnknownCharStandIn: Char = Char(0xFFFC)
         /** The same for a typed char two chars long (a private-use code point). */
@@ -969,8 +971,8 @@ abstract class AbstractEditorInstance(context: Context) {
             val atMillis: Long,
             var joinedCursor: Int = cursor,
             var joinedTextBefore: String = textBefore,
-            var textAfter: String? = null,
-            var joinedTextAfter: String? = textAfter,
+            var textAfter: After? = null,
+            var joinedTextAfter: After? = textAfter,
         ) {
             var quietUntil: Long = Long.MAX_VALUE
 
@@ -997,15 +999,26 @@ abstract class AbstractEditorInstance(context: Context) {
         private class Base(
             val range: EditorRange,
             val text: String,
-            val after: String?,
+            val after: After?,
             val joinedRange: EditorRange = range,
             val joinedText: String = text,
-            val joinedAfter: String? = after,
+            val joinedAfter: After? = after,
             val selected: String = "",
         )
 
         /** Where a step back leaves the cursor, and the text still before and after it. */
-        private class Landing(val cursor: Int, val text: String, val after: String?)
+        private class Landing(val cursor: Int, val text: String, val after: After?)
+
+        /**
+         * The text after a cursor as far as the keyboard knows it, [reachesEnd] when that's all the
+         * field's text. [rightToLeft] is set after a Left arrow moved forward through a plain
+         * right-to-left paragraph and stayed in it, so the next one moves forward too once the
+         * start of the paragraph is no longer in the text kept before the cursor.
+         */
+        private class After(val text: String, val reachesEnd: Boolean, val rightToLeft: Boolean = false) {
+            /** The same text after an edit, which can change which way the paragraph runs. */
+            fun edited(): After = if (rightToLeft) After(text, reachesEnd) else this
+        }
 
         private val lock = Any()
         private var reported = EditorRange.Unspecified
@@ -1053,8 +1066,8 @@ abstract class AbstractEditorInstance(context: Context) {
                         now,
                         joinedCursor = base.joinedRange.start + length,
                         joinedTextBefore = knownTail(base.joinedText + typed),
-                        textAfter = base.after,
-                        joinedTextAfter = base.joinedAfter,
+                        textAfter = base.after?.edited(),
+                        joinedTextAfter = base.joinedAfter?.edited(),
                     )
                 )
             }
@@ -1071,20 +1084,23 @@ abstract class AbstractEditorInstance(context: Context) {
             else -> UnknownCharStandIn.toString().repeat(length)
         }
 
-        /** The end of [text] a step back can still need, never starting inside a surrogate pair. */
+        /** The end of [text] a key can still need, never starting inside a surrogate pair. */
         private fun knownTail(text: String): String {
-            var from = text.length - NumCharsForBackStepsBeforePassThrough
+            var from = text.length - NumCharsKnownAroundPassThrough
             if (from <= 0) return text
             if (Character.isLowSurrogate(text[from])) from++
             return text.substring(from)
         }
 
-        /** The start of [text] a Left arrow can still need, never ending inside a surrogate pair. */
-        private fun knownHead(text: String): String {
-            var to = NumCharsForBackStepsBeforePassThrough
-            if (to >= text.length) return text
+        /**
+         * The start of [text] a Left arrow can still need, never ending inside a surrogate pair.
+         * [reachesEnd] is true when [text] runs to the end of the field's text.
+         */
+        private fun knownHead(text: String, reachesEnd: Boolean): After {
+            var to = NumCharsKnownAroundPassThrough
+            if (to >= text.length) return After(text, reachesEnd)
             if (Character.isHighSurrogate(text[to - 1])) to--
-            return text.substring(0, to)
+            return After(text.substring(0, to), reachesEnd = false)
         }
 
         /**
@@ -1148,16 +1164,19 @@ abstract class AbstractEditorInstance(context: Context) {
             range: EditorRange,
             text: String,
             selected: String,
-            after: String?,
+            after: After?,
             wholeCluster: Boolean,
             joinedKind: Boolean,
         ): Landing? {
-            if (wholeCluster && after != null && isPlainRightToLeft(text, selected, after)) {
+            if (wholeCluster && after != null &&
+                (after.rightToLeft || isPlainRightToLeft(text, range.start, selected, after.text))
+            ) {
                 return stepForward(range, text, selected, after)
             }
             if (range.isSelectionMode) {
                 // Backspace deletes a selection and Left collapses it, both to its start.
-                return Landing(range.start, text, if (wholeCluster) after?.let { knownHead(selected + it) } else after)
+                if (!wholeCluster) return Landing(range.start, text, after)
+                return Landing(range.start, text, after?.let { knownHead(selected + it.text, it.reachesEnd) })
             }
             if (range.start <= 0) return null
             val steps = backStepLengths(text)
@@ -1173,9 +1192,10 @@ abstract class AbstractEditorInstance(context: Context) {
             // A Left arrow puts the chars it moves over after the cursor, as far as they're known.
             val moved = text.takeLast(step)
             val stillAfter = when {
-                !wholeCluster -> after
+                // A Backspace over a line break joins two paragraphs.
+                !wholeCluster -> after?.edited()
                 after == null || moved.length < step -> null
-                else -> knownHead(moved + after)
+                else -> knownHead(moved + after.text, after.reachesEnd)
             }
             return Landing(max(0, range.start - step), text.dropLast(step), stillAfter)
         }
@@ -1186,39 +1206,52 @@ abstract class AbstractEditorInstance(context: Context) {
          * it doesn't move. A TextView and Chrome move the cursor left on screen, and a Compose
          * field moves it the paragraph's way, which there is forward through the text.
          */
-        private fun stepForward(range: EditorRange, text: String, selected: String, after: String): Landing? {
+        private fun stepForward(range: EditorRange, text: String, selected: String, after: After): Landing? {
             if (range.isSelectionMode) return Landing(range.end, knownTail(text + selected), after)
-            if (after.isEmpty()) return null
+            if (after.text.isEmpty()) {
+                if (after.reachesEnd) return null
+                // Past what the keyboard knows, the text most likely goes on with a single char.
+                val unknown = After("", reachesEnd = false, rightToLeft = true)
+                return Landing(range.start + 1, knownTail(text + UnknownCharStandIn), unknown)
+            }
             val clusters = graphemes ?: BreakIterator.getCharacterInstance().also { graphemes = it }
-            clusters.setText(after)
+            clusters.setText(after.text)
             val step = clusters.following(0)
-            return Landing(range.start + step, knownTail(text + after.substring(0, step)), after.substring(step))
+            val moved = after.text.substring(0, step)
+            // Past a line break the next Left arrow is in another paragraph, which it checks again.
+            val stillAfter = After(after.text.substring(step), after.reachesEnd, rightToLeft = '\n' !in moved)
+            return Landing(range.start + step, knownTail(text + moved), stillAfter)
         }
 
         /**
-         * True when the paragraph around the cursor, as far as the keyboard knows it, has
+         * True when the paragraph around a cursor at [start], as far as the keyboard knows it, has
          * right-to-left letters (Hebrew, Arabic) and nothing that runs left to right: no Latin
          * letter, no digit and no explicit direction mark. A Left arrow moves forward there in
          * every field. Where both directions mix, it moves in ways the keyboard doesn't model, so
-         * it keeps the step back.
+         * it keeps the step back, and so it does when [before] doesn't reach back to the start of
+         * the paragraph, since the field takes its direction from there. Only a line feed starts a
+         * paragraph, as in a text layout. A selection over a line feed collapses the way its first
+         * paragraph runs in a TextView and the way its last one runs in Compose, so both are checked.
          */
-        private fun isPlainRightToLeft(before: String, selected: String, after: String): Boolean {
-            var from = before.length
-            while (from > 0) {
-                val codePoint = before.codePointBefore(from)
-                if (Character.getDirectionality(codePoint) == Character.DIRECTIONALITY_PARAGRAPH_SEPARATOR) break
-                from -= Character.charCount(codePoint)
-            }
-            val paragraph = before.substring(from) + selected + after
+        private fun isPlainRightToLeft(before: String, start: Int, selected: String, after: String): Boolean {
+            val from = before.lastIndexOf('\n') + 1
+            if (from == 0 && before.length < start) return false
+            val lineBreak = selected.lastIndexOf('\n')
+            if (lineBreak >= 0 && !isPlainRightToLeftParagraph(selected.substring(lineBreak + 1) + after)) return false
+            return isPlainRightToLeftParagraph(before.substring(from) + selected + after)
+        }
+
+        /** The same test for the paragraph [text] starts, up to its first line feed. */
+        private fun isPlainRightToLeftParagraph(text: String): Boolean {
             var rightToLeft = false
             var at = 0
-            while (at < paragraph.length) {
-                val codePoint = paragraph.codePointAt(at)
+            while (at < text.length) {
+                val codePoint = text.codePointAt(at)
+                if (codePoint == '\n'.code) break
                 at += Character.charCount(codePoint)
                 // The directional isolates, which older Android doesn't name.
                 if (codePoint in 0x2066..0x2069) return false
                 when (Character.getDirectionality(codePoint)) {
-                    Character.DIRECTIONALITY_PARAGRAPH_SEPARATOR -> break
                     Character.DIRECTIONALITY_RIGHT_TO_LEFT,
                     Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC -> rightToLeft = true
                     Character.DIRECTIONALITY_LEFT_TO_RIGHT,
@@ -1269,7 +1302,7 @@ abstract class AbstractEditorInstance(context: Context) {
             return Base(
                 EditorRange(lower, upper),
                 knownTail(content?.textBeforeSelection.orEmpty()),
-                after = whole?.textAfterSelection?.let { knownHead(it) },
+                after = whole?.textAfterSelection?.let { knownHead(it, reachesEnd = it.length < NumCharsAfterCursor) },
                 selected = whole?.selectedText.orEmpty(),
             )
         }
