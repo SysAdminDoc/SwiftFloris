@@ -28,6 +28,7 @@ import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
+import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -45,6 +46,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowSystemClock
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -387,6 +389,29 @@ class EditorContentGenerationLifecycleTest {
         // collector of the info alone can miss. The next word isn't typed after this one.
         editor.handleFinishInputView()
         editor.handleStartInputView(editorInfo(selection = 5), isRestart = false)
+        scheduler.runCurrent()
+
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun appInsertThatNeverLandsStopsCountingAsTyping() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // A key the app took as a shortcut instead of inserting it leaves a pending cursor at 8.
+        // A tap there seconds later is a tap, not that key's insert.
+        editor.expectAppInsert(1)
+        ShadowSystemClock.advanceBy(Duration.ofSeconds(3))
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(7),
+            newSelection = EditorRange.cursor(8),
+            composing = EditorRange.Unspecified,
+        )
         scheduler.runCurrent()
 
         assertEquals(1, adjacencyBreaks.size)

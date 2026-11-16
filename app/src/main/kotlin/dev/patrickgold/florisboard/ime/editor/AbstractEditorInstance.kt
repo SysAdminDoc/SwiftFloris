@@ -59,6 +59,8 @@ abstract class AbstractEditorInstance(context: Context) {
         private const val NumCharsAfterCursor: Int = 128
         private const val NumCharsSafeMarginBeforeCursor: Int = 128
         private const val MaxPendingPassThroughInserts: Int = 32
+        /** An app reports its insert within a frame or two, so a cursor this late isn't that key's. */
+        private const val PassThroughInsertTimeoutMillis: Long = 2_000L
         //private const val NumCharsSafeMarginAfterCursor: Int = 0
 
         private const val CursorUpdateAll: Int =
@@ -851,9 +853,11 @@ abstract class AbstractEditorInstance(context: Context) {
      * not the keyboard, edits the text there, so those moves never show up in [ExpectedContentQueue].
      */
     private class PassThroughInsertTracker {
+        private class PendingInsert(val cursor: Int, val atMillis: Long)
+
         private val lock = Any()
         private var reported = EditorRange.Unspecified
-        private val pending = ArrayDeque<Int>()
+        private val pending = ArrayDeque<PendingInsert>()
 
         fun start(selection: EditorRange) {
             synchronized(lock) {
@@ -869,12 +873,14 @@ abstract class AbstractEditorInstance(context: Context) {
          */
         fun expect(length: Int, keyboardPending: EditorRange?) {
             synchronized(lock) {
+                val now = SystemClock.uptimeMillis()
+                dropExpired(now)
                 // Chain off the last pending insert so a fast burst predicts every cursor.
-                val base = pending.lastOrNull()
+                val base = pending.lastOrNull()?.cursor
                     ?: (keyboardPending?.takeIf { it.isValid } ?: reported.takeIf { it.isValid })
                         ?.let { min(it.start, it.end) }
                     ?: return
-                pending.addLast(base + length)
+                pending.addLast(PendingInsert(base + length, now))
                 while (pending.size > MaxPendingPassThroughInserts) {
                     pending.removeFirst()
                 }
@@ -885,10 +891,23 @@ abstract class AbstractEditorInstance(context: Context) {
         fun handleUpdateSelection(selection: EditorRange): Boolean {
             return synchronized(lock) {
                 reported = selection
-                val index = if (selection.isCursorMode) pending.indexOf(selection.start) else -1
+                // A key the app took as a shortcut never moves the cursor, so its entry would let a
+                // tap that lands there much later pass as typing.
+                dropExpired(SystemClock.uptimeMillis())
+                val index = if (selection.isCursorMode) {
+                    pending.indexOfFirst { it.cursor == selection.start }
+                } else {
+                    -1
+                }
                 // The app may report several inserts at once, so drop everything up to the match.
                 repeat(index + 1) { pending.removeFirst() }
                 index >= 0
+            }
+        }
+
+        private fun dropExpired(now: Long) {
+            while (pending.isNotEmpty() && now - pending.first().atMillis > PassThroughInsertTimeoutMillis) {
+                pending.removeFirst()
             }
         }
 
