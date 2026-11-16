@@ -219,6 +219,20 @@ abstract class CrashUtility private constructor() {
             return retList.toList()
         }
 
+        /**
+         * When crashes were saved, from the stack trace files not yet read plus the last crash
+         * time, which outlives the files once the crash dialog has consumed them.
+         * [ProcessExitHistory] uses these to recognize the exit [UncaughtExceptionHandler] causes
+         * by killing the process itself.
+         */
+        fun savedCrashTimestamps(context: Context): List<Long> {
+            val ustDir = context.getUstDir()
+            val fromFiles = ustDir.listFiles { pathname ->
+                pathname.name.endsWith(".$UNHANDLED_STACKTRACE_FILE_EXT")
+            }?.mapNotNull { it.name.substringBefore('.').toLongOrNull() }.orEmpty()
+            return (fromFiles + getLastCrashTimestamp(context)).filter { it > 0 }.distinct()
+        }
+
         fun hasUnhandledStacktraceFiles(context: Context): Boolean {
             val ustDir = context.getUstDir()
             return if (ustDir.isDirectory) {

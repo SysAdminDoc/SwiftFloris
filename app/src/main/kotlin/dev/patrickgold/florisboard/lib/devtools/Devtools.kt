@@ -24,6 +24,7 @@ import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.extensionManager
+import dev.patrickgold.florisboard.lib.crashutility.ProcessExitHistory
 import dev.patrickgold.florisboard.lib.titlecase
 import dev.patrickgold.florisboard.lib.util.TimeUtils
 import dev.patrickgold.florisboard.lib.util.UnitUtils
@@ -60,6 +61,8 @@ object Devtools {
             append(generateExtensionConfigLog(context))
             appendLine()
             append(generateActiveSubtypeConfigLog(context))
+            appendLine()
+            append(generateRecentExitsLog(context))
         }
     }
 
@@ -149,6 +152,16 @@ object Devtools {
                 }
             }
 
+        }
+    }
+
+    /** How the process ended the last few times, so a memory kill doesn't get read as a crash. */
+    fun generateRecentExitsLog(context: Context, withTitle: Boolean = true): String {
+        return buildString {
+            if (withTitle) appendLine("======= RECENT EXITS =======")
+            val records = ProcessExitHistory.recent(context)
+            if (records.isEmpty()) appendLine("None recorded")
+            records.forEach { appendLine(ProcessExitHistory.describe(it)) }
         }
     }
 

@@ -47,6 +47,7 @@ import dev.patrickgold.florisboard.ime.theme.ThemeManager
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.cache.StartupCachePurge
 import dev.patrickgold.florisboard.lib.crashutility.CrashUtility
+import dev.patrickgold.florisboard.lib.crashutility.ProcessExitHistory
 import dev.patrickgold.florisboard.lib.devtools.Flog
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
@@ -170,6 +171,7 @@ class FlorisApplication : Application() {
 
     fun init() {
         purgeStaleCacheAsync()
+        scope.launch(Dispatchers.IO) { ProcessExitHistory.update(this@FlorisApplication) }
         scope.launch {
             initializePreferenceStoreForStartup(
                 context = this@FlorisApplication,

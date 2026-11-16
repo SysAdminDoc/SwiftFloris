@@ -95,6 +95,10 @@ class CrashDialogActivity : ComponentActivity() {
         errorReport = if (restoredReport != null) {
             restoredReport
         } else {
+            // The crash restarted the process, so the startup call that records how the last
+            // process ended may not have run yet. Record it now, before the stack trace files that
+            // tell a crash from a plain kill are read and deleted below.
+            ProcessExitHistory.update(this)
             stacktraces = CrashUtility.getUnhandledStacktraces(this)
             if (stacktraces.isEmpty()) {
                 flogWarning(LogTopic.CRASH_UTILITY) {

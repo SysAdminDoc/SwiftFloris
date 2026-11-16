@@ -30,6 +30,8 @@ internal data class CrashReportEnvironment(
     val installSource: String,
     val deviceName: String,
     val androidVersion: String,
+    /** The newest [ProcessExitHistory] record, described, or null when none was recorded. */
+    val lastExit: String? = null,
 ) {
     companion object {
         /**
@@ -53,6 +55,7 @@ internal data class CrashReportEnvironment(
                 installSource = resolveInstallSource(context),
                 deviceName = Devtools.getDeviceName(),
                 androidVersion = Devtools.getAndroidVersion(),
+                lastExit = ProcessExitHistory.recent(context).firstOrNull()?.let(ProcessExitHistory::describe),
             )
         }
 
@@ -132,6 +135,7 @@ internal object CrashReportFormatter {
         appendLine("- Install source: ${environment.installSource}")
         appendLine("- Device: ${environment.deviceName}")
         appendLine("- Android: ${environment.androidVersion}")
+        environment.lastExit?.let { appendLine("- Last app exit: $it") }
         appendLine("- Reproducibility: _fill in: always / sometimes / once_")
         if (includeCrashLogSource) {
             appendLine("- Crash log source: _fill in: in-app crash dialog / logcat / Android crash prompt_")

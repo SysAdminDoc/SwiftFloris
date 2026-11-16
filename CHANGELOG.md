@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Tell a memory kill apart from a crash. Android 17 can close an app that goes over its memory budget even while you're typing, and that looks just like the keyboard crashing. The keyboard now notes how it last closed (memory kill, crash, not responding and so on), and the problem report in About and the debug log say which it was. Only the kind of exit, its time and memory figures are kept, never anything you typed.
 - Fix the benchmark build, which has failed its permission check since August. The check allowed the receiver permission every Android app gets under the release and debug names but not under the benchmark build's own name.
 
 ## v1.9.67 (2026-11-15)
