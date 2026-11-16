@@ -854,199 +854,55 @@ class NlpManager(
         candidates: List<SuggestionCandidate>,
     ): Map<String, SwiftKeyCandidateSignals> {
         if (candidates.isEmpty()) return emptyMap()
-        val locale = subtype.primaryLocale
-        val locales = activeLocales(subtype)
-        val localeCount = locales.size
-        val typedWordKey = currentWord.normalizedCandidateSignalKey()
-        val typedWordKnownByUserDictionary = typedWordKey?.let { key ->
-            locales.any { locale -> dictionaryManager.isKnownUserDictionaryWord(key, locale) }
-        } ?: false
-        val previousWords = TypingContextExtractor.previousWordsBeforeCurrentWord(
-            textBeforeSelection = content.textBeforeSelection,
-            currentWord = currentWord,
-        )
-        val languageContextWords = TypingContextExtractor.previousWordListBeforeCurrentWord(
-            textBeforeSelection = content.textBeforeSelection,
-            currentWord = currentWord,
-            maxDepth = MaxLanguageContextWords,
-        )
-        val contextPrefix = TypingContextExtractor.sentenceLocalPrefixBeforeCurrentWord(
-            textBeforeSelection = content.textBeforeSelection,
-            currentWord = currentWord,
-        )
         val bigramStore = PersonalBigramStore.get(appContext)
         val trigramStore = PersonalTrigramStore.get(appContext)
-        val contextFrequencyByLocale: Map<FlorisLocale, Map<String, Double>> = buildMap {
-            for (activeLocale in locales) {
-                put(activeLocale, buildMap {
-                    for (word in languageContextWords.distinct()) {
-                        put(word, frequencyForWordInLocale(suggestionProvider, subtype, activeLocale, word))
-                    }
-                })
+        val sources = object : CandidateSignalSources {
+            override suspend fun frequency(locale: FlorisLocale, word: String): Double {
+                return frequencyForWordInLocale(suggestionProvider, subtype, locale, word)
             }
-        }
-        // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B4 — same-sentence
-        // language-switch hardening. Previously this map took the
-        // MAX trailing-word frequency per locale across the 4-word
-        // window, which meant a single trailing word in any locale
-        // locked in that locale's signal and the next 3 words could
-        // not shift it. Real bilingual sentences mid-switch ("hello
-        // mi amigo cómo …") need the recent words to weigh more so
-        // the active language tracks the user's writing without
-        // flipping on the first recognised word. The geometric
-        // weighted average — recent words get full weight, older
-        // words decay per step back — is pulled out into
-        // `TrailingContextLanguageBlend` so it can be unit-tested
-        // independent of Android plumbing.
-        val contextLanguageScores = buildMap {
-            for (activeLocale in locales) {
-                val blended = TrailingContextLanguageBlend.score(
-                    contextWordsOldestFirst = languageContextWords,
-                    freqLookup = { word ->
-                        contextFrequencyByLocale[activeLocale]?.get(word) ?: 0.0
-                    },
-                    decay = TrailingContextDecay,
+
+            override fun isKnownUserDictionaryWord(word: String, locale: FlorisLocale): Boolean {
+                return dictionaryManager.isKnownUserDictionaryWord(word, locale)
+            }
+
+            override suspend fun bigramScore(previousWord: String, word: String, locale: FlorisLocale): Double {
+                return bigramStore.score(previousWord, word, locale)
+            }
+
+            override suspend fun trigramScore(
+                secondPreviousWord: String,
+                previousWord: String,
+                word: String,
+                locale: FlorisLocale,
+            ): Double {
+                return trigramStore.score(secondPreviousWord, previousWord, word, locale)
+            }
+
+            override fun outcomeSignal(originalText: CharSequence, correctedText: CharSequence): CorrectionOutcomeSignal {
+                return correctionOutcomePriors.signal(originalText = originalText, correctedText = correctedText)
+            }
+
+            override fun rejectedPairPenalty(
+                currentWord: CharSequence,
+                candidateText: CharSequence,
+                currentWordStart: Int?,
+            ): Double {
+                return autoCommitSuppression.rejectedPairPenalty(
+                    currentWord = currentWord,
+                    candidateText = candidateText,
+                    currentWordStart = currentWordStart,
                 )
-                put(activeLocale, blended)
             }
         }
-        val languageIdScores = LatinScriptLanguageIdentifier.score(
+        return CandidateSignalAssembler.assemble(
+            primaryLocale = subtype.primaryLocale,
+            locales = activeLocales(subtype),
+            textBeforeSelection = content.textBeforeSelection,
             currentWord = currentWord,
-            previousWords = languageContextWords,
-            locales = locales.map { it.language },
+            currentWordStart = currentWordStart,
+            candidates = candidates,
+            sources = sources,
         )
-        val candidateKeys = candidates.asSequence()
-            .filterIsInstance<WordSuggestionCandidate>()
-            .mapNotNull { candidate -> candidate.text.toString().normalizedCandidateSignalKey() }
-            .distinct()
-            .toList()
-        val contextLocaleHasTypedPrefixCandidate = typedWordKey
-            ?.takeIf { key -> key.length >= MinLanguageSwitchPrefixLength }
-            ?.let { prefix ->
-                var found = false
-                for (contextLocale in locales) {
-                    if ((contextLanguageScores[contextLocale] ?: 0.0) <= 0.0) {
-                        continue
-                    }
-                    for (candidateKey in candidateKeys) {
-                        if (candidateKey != prefix &&
-                            candidateKey.startsWith(prefix) &&
-                            frequencyForWordInLocale(suggestionProvider, subtype, contextLocale, candidateKey) > 0.0
-                        ) {
-                            found = true
-                            break
-                        }
-                    }
-                    if (found) break
-                }
-                found
-            } ?: false
-
-        return buildMap {
-            for (candidate in candidates) {
-                if (candidate !is WordSuggestionCandidate) continue
-                val candidateText = candidate.text.toString()
-                val key = candidateText.normalizedCandidateSignalKey() ?: continue
-                val localeEvidence = locales.map { locale ->
-                    TokenLocaleEvidence(
-                        typedFrequency = typedWordKey?.let { word ->
-                            frequencyForWordInLocale(suggestionProvider, subtype, locale, word)
-                        } ?: 0.0,
-                        candidateFrequency = frequencyForWordInLocale(
-                            suggestionProvider,
-                            subtype,
-                            locale,
-                            key,
-                        ),
-                        contextFrequency = contextLanguageScores[locale] ?: 0.0,
-                        languageIdConfidence = languageIdScores[locale.language] ?: 0.0,
-                    )
-                }
-                val languageSignal = MultilingualTokenScorer.score(
-                    localeEvidence = localeEvidence,
-                    typedWordKnownByUserDictionary = typedWordKnownByUserDictionary,
-                    candidateMatchesTypedWord = typedWordKey == key,
-                    candidateIsEligibleForAutoCommit = candidate.isEligibleForAutoCommit,
-                    candidateCompletesTypedWord = typedWordKey?.let { typedKey ->
-                        typedKey.length >= MinLanguageSwitchPrefixLength &&
-                            key != typedKey &&
-                            key.startsWith(typedKey)
-                    } ?: false,
-                    candidateConflictsWithTypedPrefix = typedWordKey?.let { typedKey ->
-                        typedKey.length >= MinLanguageSwitchPrefixLength &&
-                            key != typedKey &&
-                            !key.startsWith(typedKey)
-                    } ?: false,
-                    contextLocaleHasTypedPrefixCandidate = contextLocaleHasTypedPrefixCandidate,
-                )
-                val dictionaryFrequency = languageSignal.dictionaryFrequency
-                val bigramProbability = previousWords.prev1?.let { prev1 ->
-                    bigramStore.score(prev1, candidateText, locale)
-                } ?: 0.0
-                val trigramProbability = if (previousWords.prev2 != null && previousWords.prev1 != null) {
-                    trigramStore.score(previousWords.prev2, previousWords.prev1, candidateText, locale)
-                } else {
-                    0.0
-                }
-                val coldStartProbability = ColdStartNextWordPriors.score(
-                    textBeforeCursor = contextPrefix,
-                    languageCode = locale.language,
-                    candidateWord = candidateText,
-                    maxCandidateCount = maxOf(MaxColdStartContextCandidates, candidates.size),
-                )
-                val contextProbability = maxOf(
-                    bigramProbability * BigramContextWeight,
-                    trigramProbability,
-                    coldStartProbability,
-                ).coerceIn(0.0, 1.0)
-                val languageConfidence = if (localeCount <= 1) 1.0 else languageSignal.languageConfidence
-                val outcomeSignal = correctionOutcomePriors.signal(
-                    originalText = currentWord,
-                    correctedText = candidateText,
-                )
-                put(
-                    key,
-                    SwiftKeyCandidateSignals(
-                        dictionaryFrequency = dictionaryFrequency,
-                        contextProbability = contextProbability,
-                        languageConfidence = languageConfidence,
-                        acceptedCorrectionConfidence = outcomeSignal.acceptedConfidence,
-                        rejectionPenalty = maxOf(
-                            autoCommitSuppression.rejectedPairPenalty(
-                                currentWord = currentWord,
-                                candidateText = candidateText,
-                                currentWordStart = currentWordStart,
-                            ),
-                            outcomeSignal.rejectedConfidence,
-                        ),
-                        candidateLanguage = dominantCandidateLanguage(locales, localeEvidence),
-                    ),
-                )
-            }
-        }
-    }
-
-    private fun dominantCandidateLanguage(
-        locales: List<FlorisLocale>,
-        localeEvidence: List<TokenLocaleEvidence>,
-    ): String? {
-        var bestIndex = -1
-        var bestFrequency = 0.0
-        var secondFrequency = 0.0
-        for (index in localeEvidence.indices) {
-            val candidateFrequency = localeEvidence[index].candidateFrequency
-            if (candidateFrequency > bestFrequency) {
-                secondFrequency = bestFrequency
-                bestFrequency = candidateFrequency
-                bestIndex = index
-            } else if (candidateFrequency > secondFrequency) {
-                secondFrequency = candidateFrequency
-            }
-        }
-        if (bestFrequency <= 0.0 || bestFrequency - secondFrequency <= CandidateLanguageTieTolerance) {
-            return null
-        }
-        return locales.getOrNull(bestIndex)?.language?.takeIf { it.isNotBlank() }
     }
 
     private fun immediateAutoCommitCandidate(currentWord: String): SuggestionCandidate? {
@@ -1149,33 +1005,6 @@ class NlpManager(
     }
 
     private fun String.normalizedCandidateSignalKey(): String? = candidateSignalKeyOf(this)
-
-    private companion object {
-        const val BigramContextWeight = 0.75
-        const val MaxColdStartContextCandidates = 16
-        const val MaxLanguageContextWords = 4
-        const val MinLanguageSwitchPrefixLength = 2
-        const val CandidateLanguageTieTolerance = 0.0001
-
-        /**
-         * docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B4 — geometric decay
-         * factor for the trailing-word language-evidence blend. The
-         * most-recent word weighs 1.0 and each word further back is
-         * scaled by this factor:
-         *
-         *   weight[0] (most recent)    = 1.0
-         *   weight[1]                  = 0.7
-         *   weight[2]                  = 0.49
-         *   weight[3] (4 back, oldest) = 0.343
-         *
-         * Empirically — across the trailing-window length of 4 —
-         * 0.7 gives roughly a 3× preference for the most-recent
-         * word over the oldest one, which is enough to smoothly
-         * track a mid-sentence language switch without flipping
-         * the locale on the first recognised word.
-         */
-        const val TrailingContextDecay = 0.7
-    }
 
     inner class ClipboardSuggestionProvider internal constructor(private val context: Context) : SuggestionProvider {
         private var lastClipboardItemId: Long = -1

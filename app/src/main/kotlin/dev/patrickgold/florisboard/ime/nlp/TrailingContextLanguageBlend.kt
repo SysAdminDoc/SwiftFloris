@@ -40,7 +40,7 @@ package dev.patrickgold.florisboard.ime.nlp
  */
 internal object TrailingContextLanguageBlend {
 
-    /** Geometric-decay default. See `NlpManager.TrailingContextDecay`. */
+    /** Geometric-decay default. See `CandidateSignalAssembler.TrailingContextDecay`. */
     const val DEFAULT_DECAY: Double = 0.7
 
     fun score(

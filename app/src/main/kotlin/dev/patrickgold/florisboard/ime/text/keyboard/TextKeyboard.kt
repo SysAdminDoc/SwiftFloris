@@ -24,7 +24,6 @@ import dev.patrickgold.florisboard.ime.window.SplitKeyboardLayoutCalculator
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.sqrt
 
 internal data class NearbyTextKey(
     val key: TextKey,
@@ -128,23 +127,8 @@ class TextKeyboard(
                     return@mapNotNull null
                 }
                 val bounds = key.visibleBounds
-                val halfWidth = bounds.width * 0.5f
-                val halfHeight = bounds.height * 0.5f
-                if (halfWidth <= 0.0f || halfHeight <= 0.0f) {
-                    return@mapNotNull null
-                }
-                val centerX = bounds.left + halfWidth
-                val centerY = bounds.top + halfHeight
-                val normalizedX = (pointerX - centerX) / halfWidth
-                val normalizedY = (pointerY - centerY) / halfHeight
-                val distance = sqrt((normalizedX * normalizedX + normalizedY * normalizedY).toDouble()).toFloat()
-                if (distance > NearbyKeyDistanceLimit) {
-                    return@mapNotNull null
-                }
-                NearbyTextKey(
-                    key = key,
-                    confidence = (1.0 - (distance / NearbyKeyDistanceLimit).toDouble()).coerceIn(0.0, 1.0),
-                )
+                NearbyKeyConfidence.of(pointerX, pointerY, bounds.left, bounds.top, bounds.width, bounds.height)
+                    ?.let { confidence -> NearbyTextKey(key = key, confidence = confidence) }
             }
             .sortedByDescending { it.confidence }
             .take(maxCandidateCount)
@@ -368,7 +352,6 @@ class TextKeyboard(
 
     companion object {
         private const val GapRescueDistanceFactor = 0.32f
-        private const val NearbyKeyDistanceLimit = 1.65f
     }
 }
 

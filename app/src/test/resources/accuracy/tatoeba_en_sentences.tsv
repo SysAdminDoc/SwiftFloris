@@ -1,0 +1,407 @@
+# English sentences from Tatoeba (https://tatoeba.org), licensed CC BY 2.0 FR
+# (https://creativecommons.org/licenses/by/2.0/fr/). Each line is the Tatoeba sentence id and text,
+# so every sentence can be traced to its page: https://tatoeba.org/en/sentences/show/<id>.
+# Picked 2026-11-16 from the eng_sentences.tsv export: 4 to 10 words, ASCII letters, apostrophes and
+# . , ? ! only, no capitalized words past the first apart from I, a first word found in dictionaries/en.txt,
+# then the first 400 by sha1("swiftfloris-accuracy-v1:<id>"). Words with an apostrophe (don't, it's) are
+# typed as they are and left out of the score.
+34563	There is a car in front of the building.
+42904	I have lost interest in it.
+46414	Both the boy and the girl are clever.
+47652	The work was very difficult.
+51052	Do not be so critical.
+51686	All the clergy are against the new law.
+54497	Did you bring your family with you?
+57156	This would be better than that.
+62941	Talking of classical music, who is your favorite composer?
+63790	A cowboy is driving cattle to the pasture.
+238290	The police informed us of the accident.
+239139	Have you fed the dog yet?
+239796	Freedom of speech is restricted in some countries.
+240597	The man reading a book over there is my father.
+241525	I have a good eye for the value of antiques.
+243435	The trouble is that they only think of themselves.
+257504	I am now in an old castle.
+267964	The boy set a bird free.
+268826	Believe it or not, that is true.
+273285	The accompaniments of the war are misery and sorrow.
+273720	All big cities have traffic problems.
+283026	I often see him taking a walk in this neighborhood.
+298767	He was not conscious of his weak point.
+301573	He put her savings to good use.
+303533	He is above the ordinary type of student.
+308371	Her smile indicates that she has forgiven me.
+309795	Her name was spelled wrong.
+310765	She acted as leader of our club.
+313400	She is proud of never having been late for school.
+314223	She got me a tiny toy.
+315230	She devoted her life to helping the handicapped.
+318256	Don't waste your money by buying things you don't need.
+425410	If you find yourself in a hole, stop digging.
+462926	The small skirt is pink.
+512906	A powerful storm is headed our way.
+526275	I brush my teeth.
+533145	We must sit down.
+542928	Everyone was invited, except for me.
+569669	A squid has ten legs.
+619652	Who will do it?
+681054	Cricket is a game that takes skill.
+681951	I took a risk when I made the investment.
+687934	You have to call the doctor and make an appointment.
+719213	We don't often eat out.
+753303	He didn't say in which year he was born.
+875847	I see how dangerous it is.
+887295	She made it plain that she wanted to marry him.
+940739	Once we are dead, we are no longer dying.
+953095	Are there any bears around here?
+953148	Biting your fingernails is a bad habit.
+953752	I wonder if it really was a coincidence.
+1025898	Tom doesn't work as hard as he used to.
+1078171	The whole village knows the man well.
+1093494	Tom is a stranger in this town.
+1103078	His computer skills are undeveloped.
+1109712	That is not my fault.
+1216266	Traffic lights are used to direct traffic.
+1275975	Many mistakes could have been avoided through simple experiments.
+1779776	The suspect is a black male.
+1836184	That's not very reassuring.
+1877125	What's the minimum wager?
+1880366	I cannot send you the invitation.
+1891093	I'm old enough to drink.
+1950813	I can't believe I'm agreeing with you.
+2012994	I want to talk about it now.
+2013576	I want to go back to the lab.
+2014650	I don't want to get in your way.
+2091094	No one got hurt.
+2252861	How can you stand that fierce heat all day?
+2258200	Don't put the table so close to the wall.
+2291881	I appreciate the offer, but I can't accept.
+2317477	I don't know all the details myself.
+2325794	I expected you home an hour ago.
+2326577	I forgot you don't like carrots.
+2330017	I guess everyone's talking about me now.
+2343157	Thomas does not eat fish.
+2406183	I saw what was happening.
+2436113	I only ordered coffee, since I wasn't hungry.
+2489887	She hit me on the head and she ran away.
+2537792	I'm going to do my homework right after dinner.
+2546020	I'm getting tired of it.
+2549048	I'm on my way now.
+2573352	I have nothing to contribute to the conversation.
+2644157	All you have to do is talk.
+2646335	Tom opened his laptop.
+2646987	Tom folded the paper.
+2647676	I'm not really busy.
+2648406	Tom began to work.
+2662831	I hope the problem will take care of itself.
+2663095	Tom is dealing with the problem now.
+2667439	What do we smoke?
+2699265	What will you do in college?
+2731574	The telephone hasn't been installed yet.
+2731809	I had never thought about it.
+2732952	I'll be back in one hour without fail.
+2826540	Never accept a gift intended as a bribe!
+2897088	I wasn't quite sure about that.
+2950113	Things just haven't been the same since you left.
+2954562	You implied that you knew what you were doing.
+2957361	Tom is willing to go.
+2995483	Nobody said this would be easy.
+3124758	Look around you and tell me what you see.
+3204383	Tom told the children an interesting story.
+3209657	Tom has put the book on the desk.
+3223060	You don't have to sit with me.
+3305339	Many dances have been held in this hall.
+3312980	We made sure of it.
+3315145	Tom is the owner of a very big house.
+3331081	You got here fast.
+3348164	I'm sorry for my late response.
+3354276	I think I'm the only one awake.
+3378002	I think this is blue.
+3402279	You're not going to do it, are you?
+3422276	You don't even like chocolate.
+3422310	Tom is by far the smartest kid in our class.
+3619289	I don't know why the door was open.
+3619316	I won't be able to do it again.
+3724182	The cotton is high.
+3733874	That's the first cockroach I've seen this spring.
+3734075	You should be careful not to help too much.
+3737308	I can't understand why.
+3822508	What do you want to know about me?
+3823917	Don't you want me here?
+3912016	I've met her a few times.
+3938597	Have you taken a bath?
+4017070	It's really not that bad.
+4099328	Don't be late for the meeting tomorrow.
+4132586	Tom hasn't yet moved out of his apartment.
+4256322	Success brings money and a lot of problems too.
+4269246	I didn't go to the funeral.
+4628996	She began to blush.
+4642907	Today's meeting has been cancelled.
+4793240	We'll leave as soon as it stops raining.
+4823995	I won't tie your shoelaces for you.
+4935546	There were armed guards everywhere.
+5064857	It made no difference.
+5073962	My mom bought me a new skirt.
+5134460	It'll only make matters worse.
+5286042	Tom was a very tough opponent.
+5311086	We're lowering ourselves to his level.
+5442686	He stayed there a little while.
+5565839	Did you forget to practice?
+5726055	Why are you getting home so late?
+5729943	Let's say you're offered a job.
+5740748	It was a volunteer effort.
+5752328	Tom was still outside.
+5754382	That's not quite it.
+5771634	If anyone ever tells you you're worthless, just ignore them.
+5832664	I brought her chocolate.
+5938713	I would never hurt anyone.
+5966429	I am extremely scared of spiders.
+6018504	And now, a word from our sponsors.
+6097444	I'm gonna come get you in a second.
+6104623	I've been hungry all day.
+6118934	You can't understand how I feel.
+6124025	Tom wanted to hire us both.
+6146066	Hope is the meadow on which fools graze.
+6220162	I didn't hit anyone.
+6239474	I don't really feel like playing badminton.
+6248248	Tom thought he didn't need to do that.
+6250350	Tom will probably be able to do that.
+6252763	My daughter plays the violin well.
+6256870	Tom doesn't still do that, does he?
+6265430	Tom doesn't like to be outside.
+6266937	Your suitcases look heavy.
+6270409	Tom has registered to vote.
+6344681	Tom said he didn't have a lot of money.
+6351939	Tom seemed to be unconvinced.
+6355088	I've promised to do that.
+6412151	Mary said she didn't think we should be doing that.
+6413450	Mary said she didn't have the courage to do that.
+6416243	Mary said she needed to learn how to do that.
+6420435	Mary did what she promised to do for me.
+6421056	Mary isn't as old as I thought she was.
+6422380	Mary said she's been very happy here.
+6437939	Tom gets a haircut once a month.
+6448297	Sami is the boss right now.
+6484901	Tom isn't a minor.
+6530805	Tom didn't want to wear jeans.
+6616336	Modern medicine is a scam.
+6651312	Tom said he wished that he hadn't been late.
+6655299	Tom quickly put his trousers on.
+6665855	I have a chance of winning.
+6690613	Sami was a person who could be manipulated.
+6710525	There's no response from the moon base.
+6797076	Tom hasn't been told he needs to do that yet.
+6809890	I'll go home in three days.
+6869520	You should have done that the day before yesterday.
+6919471	It'll probably take you about three hours to do that.
+6952773	Is this what you talked about?
+7075759	The outcry would not abate.
+7130731	Tom was desperate to get out of jail.
+7174048	I thought that I didn't have to do that.
+7176100	Tom thinks that I need to do that.
+7191835	Sami is gonna finish this job.
+7198905	It isn't a bomb.
+7202624	Sami sleeps on the couch.
+7205600	Tom is ahead of schedule, isn't he?
+7231590	I don't think that this makes sense.
+7258351	Sami gave up his seat on that flight.
+7294665	Sami made an administrative assistant our boss.
+7306587	The debts were mounting.
+7376531	Mary is thinking it over, isn't she?
+7379116	Mary is able to skate, isn't she?
+7385014	She gathered her composure.
+7386771	She's still in her pajamas.
+7389431	She's worried about her health.
+7390315	She packed her things and left.
+7390417	He predeceased his father.
+7393399	He knows he ought to do that today.
+7393581	She doesn't realize how lucky she is.
+7399197	She denied she agreed to do that.
+7439960	They said that they were worn out.
+7475242	They bowed their heads and prayed.
+7475399	They need help doing their taxes.
+7475439	They knew that they had to leave.
+7542949	Tom doesn't want to go to the party.
+7732420	Tom was only here for three days.
+7732854	Sometimes I wonder what you're thinking.
+7733502	We should get there soon.
+7736219	Tom is a dedicated teacher, isn't he?
+7737141	I was really starting to worry.
+7816809	Is she still sleeping?
+7901842	Could I borrow this pair of scissors?
+8108719	Protons and neutrons reside in the nucleus of the atom.
+8230752	In a mosque, men and women are separated.
+8264632	I think that it's time to give up.
+8276492	How much money will we need?
+8288952	Is the room big enough?
+8321446	My grandmother is coming over tomorrow.
+8355749	I listened to some jazz last night.
+8367004	Tom is very grateful.
+8371570	Tom is sitting on a yoga ball.
+8371748	Since when have you lived in this house?
+8394903	Why did we ever fight about this?
+8396185	Please stop this emotional spillage.
+8420262	I want you to know that I won't be there.
+8451913	He is coming to our school tomorrow.
+8512928	Algiers is my favorite place.
+8521975	She bent down and hugged him.
+8526060	He's making himself something to eat.
+8529633	Do you think they'll arrest you?
+8535098	She'll never to see him again.
+8535841	He was able to take care of himself.
+8552468	Giraffes live in groups known as journeys.
+8555508	Tom can't be much older than you are.
+8587308	You've got to finish doing that.
+8606148	Tom was tested for the coronavirus.
+8636820	The truth isn't always somewhere in the middle.
+8732430	I will always support you.
+8775038	Did he go shopping?
+8895841	I've rewritten the sentence.
+8926716	I love each one of you.
+8970007	As people like honey, so likewise do bears.
+8976665	What makes you sad?
+8984535	She is still dyeing her hair.
+9048510	The walls of the old mosque are falling over.
+9054308	Tom wasn't wearing rubber boots.
+9119490	I wish I hadn't told them anything.
+9153967	They'll fall one after the other.
+9181476	Go away and leave me alone!
+9192600	So, you think this is funny?
+9265186	We've done the job.
+9265389	This got dark really fast.
+9330885	Tom lost the election because of that speech.
+9340426	Don't you see that they despise us?
+9360865	Tom cleaned his bedroom.
+9435277	Tom will bring your things to the hospital.
+9453403	This track is an absolute banger.
+9476760	Australia is huge, right?
+9567551	It's okay to be wrong.
+9613744	That wasn't a smart thing to do.
+9673141	A public garden lies in the middle of the city.
+9684945	No one asked me for anything.
+9730449	She really wants to talk to you.
+9768929	These figs are smelly.
+9776707	You should stay here with us for a few days.
+9828343	The dragonfly flies over the puddle.
+9936131	Can anyone tell me what's happening here?
+9983901	Tom is somewhere nearby.
+9995625	Where can I find these stones?
+9999886	Tom is doing paperwork.
+10048890	When they wear plaid, fat people often look fatter.
+10093087	I can't log in.
+10104281	Can I have all the money in the world?
+10147882	That isn't the only thing that I wanted to do.
+10161718	Some of the men were sitting on the floor.
+10179121	I can go, as long as I'm back by five.
+10192795	The color of the fabric is blue.
+10216236	Rima has a new boyfriend.
+10219011	We're here to say hello.
+10278303	I was going to phone, but I forgot.
+10361195	I can't agree to the request on those terms.
+10466899	He'll be here before long.
+10504602	You know I can't agree to that.
+10606930	The car is stuck in the snow.
+10652441	This dish contains a lot of garlic and little salt.
+10739169	Who took you to the hospital?
+10778458	I've already seen her.
+10810663	It depends on the context, as always.
+10816770	Algeria wants to achieve economic diversification as soon as possible.
+10857275	Get the dog out of here.
+10862473	What's happening in your life?
+10913298	Tom is new to the company.
+10999906	If anything happens, phone me immediately.
+11028224	Have you seen any new movies lately?
+11028514	Armenia lost the war.
+11038742	That costs too much.
+11047513	Drink your coffee while it's hot.
+11133497	I'm not a choreographer, but I'd like to be.
+11143410	Sorry, but I won't be there that weekend.
+11149158	Don't associate yourself with people that give up easily.
+11151664	That's all they talk about on the news.
+11176066	Did you buy what you wanted?
+11251611	The park is not so big.
+11275853	The chicken is cooking in the oven.
+11449262	I'm having trouble focusing on my work.
+11477196	The medlars are now all bletted.
+11501164	David was in a club, dancing to music with friends.
+11503662	David wasn't welcome there.
+11567978	A group of moose is called a herd.
+11594283	Michael knew it was dangerous.
+11594619	Michael had to move into a care center.
+11617007	That night, it was really dark.
+11617656	Elias allowed the stray cat in.
+11620350	Elias couldn't get in on time.
+11645212	The bowl of pasta was steaming hot.
+11656519	All my friends and their parents were there.
+11661344	Stefan heard another plop.
+11677473	There's no need to be snide.
+11679417	An alien entered the cockpit.
+11715962	Tom lost his life in the attack.
+11748508	Diego saved lots of money over the years.
+11751024	Diego had some time to spare.
+11776483	Rodrigo was looking for his axe.
+11795913	Turn left at the stop sign.
+11803232	I'm buying it back.
+11839871	Try this jacket on.
+11875830	Mary got the wrong bus.
+11888081	Aren't you happy that your daughter graduated?
+11894919	The exercise book isn't yours, it's his.
+11903779	I was too little.
+11904200	Are you in love with your wife?
+11956528	Yuri still lives in the orphanage.
+11956543	All the rooms had bunk beds.
+11966167	Is that not possible any more?
+11987123	Why aren't you both sleeping yet?
+12022893	We can go home at four o'clock.
+12071965	I showed my report card to my father.
+12110441	Take care of your own business.
+12132038	Are you all quitting?
+12192605	Are we heading off?
+12221078	She can say her word.
+12240113	Tom has a day off today.
+12247599	Did you really come here alone?
+12277849	I knew you'd save me.
+12305326	How beautiful is life with hope!
+12371601	Dare to do it! I believe in you.
+12400579	I don't find it easy.
+12414116	It is strange to see him.
+12448688	He's growing a beard.
+12450860	Tom fell asleep as soon as he crawled into bed.
+12464222	A detective novel has more dialog than exposition.
+12546595	One must not speak ill of the dead.
+12580399	List what hasn't happened to her.
+12591040	No, I don't know them.
+12632163	The reaction speed of cats is quite remarkable.
+12640482	Does the pilot intend to land soon?
+12663240	My views are, shall we say, quite peculiar.
+12773458	Few understood the gravity of the situation.
+12815156	They ran to at isma'il.
+12845664	Father, what did you do?
+12846891	She paused for a while.
+12878568	My happiness has no limits!
+12888127	We drew the curtains.
+12915748	He was trying to climb the corporate ladder.
+12916164	She says I'm handsome.
+12926676	He was scrubbing the floors.
+13016378	I like things that are unique.
+13028445	Conflicts can arise over a range of matters.
+13031952	The kites in the sky are green.
+13108592	Chinese characters are made up of common tropes.
+13136535	We need open borders.
+13247546	Did you clean the oven?
+13270826	Do you enjoy healthy competition?
+13374667	But this is never the case.
+13385862	You understand me better than anyone.
+13474911	What was that next to the little board?
+13542426	There are things that are untranslatable.
+13581887	This is the shortest path.
+13585073	I lied when I said I liked girls.
+13588625	He didn't buy anything for his son.
+13589069	How could we get rid of him?
+13618801	Yes, now I remember.
+13695152	The butcher's is nearby.
+13714320	We should prevent war by any means possible.
+13766754	He's recently discovered a new restaurant.
+13826951	Raise your hand to speak.
+13991315	I don't understand a word of it.
+14043757	Trials teach patience, and patience brings good fortune.
