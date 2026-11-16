@@ -151,6 +151,67 @@ class HardwareKeyboardInputPolicyTest : FunSpec({
         ) shouldBe HardwareKeyboardKeyDownAction.HandleSpace
     }
 
+    test("a space goes to the app while keys the app inserted haven't reached the keyboard's text") {
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_SPACE,
+            mappedKey = null,
+            isEditorBehindApp = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.PassThrough
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_SPACE,
+            mappedKey = mapped(" "),
+            isEditorBehindApp = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.PassThrough
+    }
+
+    test("only the space key goes to the app when the keyboard's text is behind") {
+        // The app would type "." for a space key a layout maps to ".", and its own char for any
+        // other key a layout maps to a space.
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_SPACE,
+            mappedKey = mapped("."),
+            isEditorBehindApp = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.CommitMappedText(
+            text = ".",
+            shouldFlushAutoCommitCandidate = true,
+        )
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_GRAVE,
+            mappedKey = mapped(" "),
+            isEditorBehindApp = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleSpace
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_A,
+            mappedKey = mapped("a"),
+            isMappedKeyAlphabetic = true,
+            isEditorBehindApp = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.CommitMappedText(
+            text = "a",
+            shouldFlushAutoCommitCandidate = false,
+        )
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_ENTER,
+            mappedKey = null,
+            isEditorBehindApp = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleEnter
+    }
+
+    test("a space with Ctrl, Alt or Meta held stays with the keyboard when its text is behind") {
+        // A shortcut must do the same thing however fast the keys before it came.
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_SPACE,
+            mappedKey = null,
+            isEditorBehindApp = true,
+            hasCommandModifier = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleSpace
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_SPACE,
+            mappedKey = null,
+            isEditorBehindApp = false,
+            hasCommandModifier = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleSpace
+    }
+
     test("mapped punctuation wins before built-in key handling") {
         HardwareKeyboardInputPolicy.keyDownAction(
             keyCode = KeyEvent.KEYCODE_SPACE,

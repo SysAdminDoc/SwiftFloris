@@ -1581,6 +1581,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             keyCode = keyCode,
             mappedKey = mappedKey,
             isMappedKeyAlphabetic = mappedKey?.let { UCharacter.isUAlphabetic(it.codePoint) } ?: false,
+            // Only a space looks at it, and the keyboard's own text entry has no app behind it.
+            // A call with no event has nothing the app could be handed.
+            isEditorBehindApp = event != null && keyCode == KeyEvent.KEYCODE_SPACE && !textEntry.isActive &&
+                editorInstance.isContentBehindEditor(),
+            hasCommandModifier = event != null && (event.isCtrlPressed || event.isAltPressed || event.isMetaPressed),
         )) {
             is HardwareKeyboardKeyDownAction.CommitMappedText -> {
                 if (textEntry.isActive) {
@@ -1612,8 +1617,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 true
             }
             HardwareKeyboardKeyDownAction.PassThrough -> {
-                // No layout is mapped for this keyboard, so the app inserts a printable key itself.
-                // Tell the editor where that leaves the cursor, or the move reads as a jump.
+                // The app inserts a printable key itself: no layout is mapped for this keyboard, or
+                // it's a space after keys the app hasn't reported yet. Tell the editor where that
+                // leaves the cursor, or the move reads as a jump.
                 if (event != null) {
                     val length = HardwareKeyboardInputPolicy.passThroughInsertLength(
                         unicodeChar = event.unicodeChar,
@@ -1623,6 +1629,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     )
                     if (length > 0) editorInstance.expectAppInsert(length)
                 }
+                // A space the app types ends a word the keyboard never saw whole, so it isn't
+                // learned, and the next word that is must not be learned as following the one before.
+                if (keyCode == KeyEvent.KEYCODE_SPACE) resetLearnChain()
                 false
             }
         }

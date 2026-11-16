@@ -119,6 +119,17 @@ abstract class AbstractEditorInstance(context: Context) {
         passThroughInserts.expect(length, keyboardPending = expectedContentQueue.peekNewestOrNull()?.selection)
     }
 
+    /**
+     * True while [activeContent] lags the editor's text: a key the app inserted itself (see
+     * [expectAppInsert]) isn't reported yet, or a cursor move the keyboard didn't predict (that
+     * report, a jump) was read but isn't published yet. A key burst (a macro, a text expander, a
+     * barcode scanner) gets ahead of the reports this way. The keyboard's own edits never count,
+     * since their content is predicted and published at once.
+     */
+    fun isContentBehindEditor(): Boolean {
+        return pendingContentGenerationJob != null || passThroughInserts.hasPending()
+    }
+
     protected open fun currentInputConnection() = FlorisImeService.currentInputConnection()
 
     open fun handleStartInput(editorInfo: FlorisEditorInfo) {
@@ -902,6 +913,14 @@ abstract class AbstractEditorInstance(context: Context) {
                 // The app may report several inserts at once, so drop everything up to the match.
                 repeat(index + 1) { pending.removeFirst() }
                 index >= 0
+            }
+        }
+
+        /** True when an insert the app hasn't reported yet is still expected. */
+        fun hasPending(): Boolean {
+            return synchronized(lock) {
+                dropExpired(SystemClock.uptimeMillis())
+                pending.isNotEmpty()
             }
         }
 

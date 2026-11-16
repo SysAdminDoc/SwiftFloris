@@ -19,11 +19,28 @@ package dev.patrickgold.florisboard.ime.hardware
 import android.view.KeyEvent
 
 internal object HardwareKeyboardInputPolicy {
+    /**
+     * What a hardware key does. [isEditorBehindApp] says the keyboard's copy of the text is still
+     * missing keys the app inserted itself (it hasn't reported them yet, or they haven't been read
+     * back). A space then goes to the app too, after those keys: the word the spacebar handler would
+     * correct and learn is cut short ("hedgeh" for "hedgehog"), and a fix committed over it would
+     * replace the wrong letters. [hasCommandModifier] (Ctrl, Alt or Meta held) keeps a space with
+     * the keyboard either way, so a shortcut doesn't change with how fast the keys came.
+     */
     fun keyDownAction(
         keyCode: Int,
         mappedKey: HardwareMappedKey?,
         isMappedKeyAlphabetic: Boolean = false,
+        isEditorBehindApp: Boolean = false,
+        hasCommandModifier: Boolean = false,
     ): HardwareKeyboardKeyDownAction {
+        // Only the space key itself: the app types its own char for the key, so a key a layout
+        // maps to a space would come out as that char instead.
+        if (isEditorBehindApp && !hasCommandModifier && keyCode == KeyEvent.KEYCODE_SPACE &&
+            (mappedKey == null || mappedKey.text == " ")
+        ) {
+            return HardwareKeyboardKeyDownAction.PassThrough
+        }
         if (mappedKey != null) {
             // A space ends the word, and only the spacebar handler learns it and applies autocorrect.
             if (mappedKey.text == " ") return HardwareKeyboardKeyDownAction.HandleSpace

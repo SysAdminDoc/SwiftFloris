@@ -41,6 +41,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -417,6 +418,129 @@ class EditorContentGenerationLifecycleTest {
         assertEquals(1, adjacencyBreaks.size)
     }
 
+    @Test
+    fun editorStaysBehindUntilTheAppsInsertIsReadBack() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hedgeh")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        assertFalse(editor.isContentBehindEditor())
+        // A burst from a keyboard with no mapped layout: the app inserts "o" itself, and a space
+        // that went down now would correct "hedgeh".
+        editor.expectAppInsert(1)
+        assertTrue(editor.isContentBehindEditor())
+        connection.textBeforeSelection = "hedgeho"
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(6),
+            newSelection = EditorRange.cursor(7),
+            composing = EditorRange.Unspecified,
+        )
+        // Reported, but the text read after the report isn't published yet.
+        assertTrue(editor.isContentBehindEditor())
+        assertEquals("hedgeh", editor.activeContent.text)
+        scheduler.runCurrent()
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals("hedgeho", editor.activeContent.text)
+    }
+
+    @Test
+    fun spaceHandedToTheAppBeforeItsLetterIsReportedKeepsAdjacency() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hedgeh")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // "o" goes to the app, and the space goes down before the app reports it, so the keyboard
+        // hands the space to the app too and expects its insert right after the letter's.
+        editor.expectAppInsert(1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.expectAppInsert(1)
+        connection.textBeforeSelection = "hedgeho"
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(6),
+            newSelection = EditorRange.cursor(7),
+            composing = EditorRange.Unspecified,
+        )
+        connection.textBeforeSelection = "hedgeho "
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(7),
+            newSelection = EditorRange.cursor(8),
+            composing = EditorRange.Unspecified,
+        )
+        scheduler.runCurrent()
+
+        assertEquals(0, adjacencyBreaks.size)
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals("hedgeho ", editor.activeContent.text)
+    }
+
+    @Test
+    fun appInsertThatNeverLandsStopsHoldingTheEditorBehind() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // A key the app took as a shortcut never shows up, and it mustn't keep every space after
+        // it from correcting.
+        editor.expectAppInsert(1)
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofSeconds(3))
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun cursorMoveTheKeyboardDidNotPredictHoldsTheEditorBehindUntilRead() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hedgeh")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // The app's insert lands where the keyboard didn't predict (two chars for one key, or a
+        // report after its entry expired), so it reads as a jump and drops what was pending. The
+        // keyboard's text still reads "hedgeh" until the new text is published.
+        editor.expectAppInsert(1)
+        connection.textBeforeSelection = "hedgehog"
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(6),
+            newSelection = EditorRange.cursor(8),
+            composing = EditorRange.Unspecified,
+        )
+        assertTrue(editor.isContentBehindEditor())
+        assertEquals("hedgeh", editor.activeContent.text)
+        scheduler.runCurrent()
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals("hedgehog", editor.activeContent.text)
+    }
+
+    @Test
+    fun keyboardsOwnEditsDontPutTheEditorBehind() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        editor.commitText(" ")
+        assertFalse(editor.isContentBehindEditor())
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(6),
+            newSelection = EditorRange.cursor(7),
+            composing = EditorRange.Unspecified,
+        )
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
     private fun collectAdjacencyBreaks(editor: AbstractEditorInstance): List<Unit> {
         val adjacencyBreaks = mutableListOf<Unit>()
         CoroutineScope(dispatcher).launch {
@@ -448,7 +572,7 @@ private class TestEditorInstance(context: Context) : AbstractEditorInstance(cont
 }
 
 private class LifecycleRecordingInputConnection(
-    private val textBeforeSelection: String,
+    var textBeforeSelection: String,
     private val textAfterSelection: String = "",
     private val selectedText: String = "",
 ) : InvocationHandler {
