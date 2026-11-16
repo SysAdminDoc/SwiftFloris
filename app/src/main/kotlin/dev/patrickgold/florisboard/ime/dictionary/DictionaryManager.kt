@@ -22,6 +22,7 @@ import androidx.room.Room
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
+import dev.patrickgold.florisboard.ime.nlp.latin.LatinDictionaryStore
 import dev.patrickgold.florisboard.ime.security.EncryptedDatabaseFiles
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
@@ -132,6 +133,48 @@ internal fun repairLegacyLearnedLocaleRows(dao: UserDictionaryDao): LegacyLearne
         }
     }
     return LegacyLearnedLocaleRepairResult(rewritten = rewritten, merged = merged)
+}
+
+/** File in `filesDir` listing the misspellings already cleaned out of learned words, one per line. */
+internal const val LEARNED_MISSPELLING_CLEANUP_FILE = "learned_misspelling_cleanup.txt"
+
+/**
+ * Misspellings from [table] that the learned-word cleanup has not handled yet, given the
+ * contents of [LEARNED_MISSPELLING_CLEANUP_FILE] ([processedMarker], `null` when absent).
+ * Each word is cleaned once, so a misspelling the user teaches the keyboard afterwards stays.
+ */
+internal fun pendingLearnedMisspellingCleanup(table: Set<String>, processedMarker: String?): Set<String> {
+    if (processedMarker.isNullOrBlank()) return table
+    val processed = processedMarker.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toHashSet()
+    return table.filterNotTo(HashSet()) { it in processed }
+}
+
+/**
+ * True for a row that [DictionaryManager.learnWord] wrote for an English misspelling: lowercase,
+ * no shortcut, an English locale tag and a frequency in the auto-learn band. Hand-added words
+ * default to [FREQUENCY_DEFAULT] and keep their typed case, so they don't match.
+ */
+internal fun isAutoLearnedMisspelling(entry: UserDictionaryEntry, misspellings: Set<String>): Boolean {
+    if (entry.shortcut != null) return false
+    if (entry.freq < LEARN_INITIAL_FREQUENCY) return false
+    if (entry.word != entry.word.lowercase() || entry.word !in misspellings) return false
+    val language = entry.locale?.substringBefore('_')?.substringBefore('-') ?: return false
+    return language == "en"
+}
+
+/**
+ * Deletes the rows that [isAutoLearnedMisspelling] matches and returns them. Before the bundled
+ * misspelling table, words like "teh" and "untill" were in the English word list, so typing one
+ * learned it, and a learned word blocks the fix.
+ */
+internal fun removeAutoLearnedMisspellings(
+    dao: UserDictionaryDao,
+    misspellings: Set<String>,
+): List<UserDictionaryEntry> {
+    if (misspellings.isEmpty()) return emptyList()
+    val removed = dao.queryAll().filter { isAutoLearnedMisspelling(it, misspellings) }
+    for (entry in removed) dao.delete(entry)
+    return removed
 }
 
 /**
@@ -563,6 +606,51 @@ class DictionaryManager private constructor(context: Context) {
             }.onFailure { e ->
                 flogError(LogTopic.DICTIONARY) { "Legacy learned-locale repair failed: ${e.message}" }
             }
+            // After the locale repair, so rows it rewrote to en_* are seen as English.
+            runCatching {
+                val dao = florisUserDictionaryDao() ?: return@launch
+                removeAutoLearnedMisspellingsOnce(dao)
+            }.onFailure { e ->
+                flogError(LogTopic.DICTIONARY) { "Learned misspelling cleanup failed: ${e.message}" }
+            }
+        }
+    }
+
+    /**
+     * Drops English misspellings learned before the bundled misspelling table existed (see
+     * [removeAutoLearnedMisspellings]) from the user dictionary, the overlay and the n-gram
+     * stores. The words handled are recorded in [LEARNED_MISSPELLING_CLEANUP_FILE], so this runs
+     * once per table word and later additions to the table are cleaned on the next start.
+     */
+    private fun removeAutoLearnedMisspellingsOnce(dao: UserDictionaryDao) {
+        val markerFile = File(applicationContext.filesDir, LEARNED_MISSPELLING_CLEANUP_FILE)
+        val raw = applicationContext.assets.open(LatinDictionaryStore.EnglishMisspellingsPath)
+            .bufferedReader().use { it.readText() }
+        val table = LatinDictionaryStore.parseMisspellings(raw).keys
+        if (table.isEmpty()) return
+        val processedMarker = if (markerFile.isFile) markerFile.readText() else null
+        val pending = pendingLearnedMisspellingCleanup(table, processedMarker)
+        if (pending.isEmpty()) return
+        val removed = removeAutoLearnedMisspellings(dao, pending)
+        if (removed.isNotEmpty()) {
+            val bigrams = PersonalBigramStore.get(applicationContext)
+            val trigrams = PersonalTrigramStore.get(applicationContext)
+            for (entry in removed) {
+                val locale = FlorisLocale.fromTag(entry.locale ?: continue)
+                UserDictionaryOverlay.get().forget(entry.word, locale)
+                bigrams.forget(entry.word, locale)
+                trigrams.forget(entry.word, locale)
+            }
+            flogInfo(LogTopic.DICTIONARY) { "Removed ${removed.size} learned misspellings" }
+        }
+        val written = PersonalNgramPersistence.atomicReplace(markerFile) { writer ->
+            for (word in table.sorted()) {
+                writer.write(word)
+                writer.write("\n")
+            }
+        }
+        if (!written) {
+            flogWarning(LogTopic.DICTIONARY) { "Learned misspelling cleanup marker not saved; retrying next start" }
         }
     }
 

@@ -87,6 +87,52 @@ class DictionaryManagerTest : FunSpec({
         dao.queryAll().first { it.word == "patrick" }.freq shouldBe 250
     }
 
+    test("removeAutoLearnedMisspellings drops only auto-learned English rows of listed misspellings") {
+        val dao = RepairUserDictionaryDao().apply {
+            seed(word = "teh", freq = 245, locale = "en_US")
+            seed(word = "untill", freq = 250, locale = "en_GB")
+            seed(word = "thier", freq = 250, locale = "en")
+            // Hand-added at the default frequency: kept.
+            seed(word = "alot", freq = FREQUENCY_DEFAULT, locale = "en_US")
+            // Typed case means the user added it by hand: kept.
+            seed(word = "Recieve", freq = 250, locale = "en_US")
+            // A shortcut entry is a deliberate expansion: kept.
+            seed(word = "wich", freq = 250, locale = "en_US", shortcut = "wch")
+            // Not English, or for every language: kept.
+            seed(word = "nad", freq = 250, locale = "de_DE")
+            seed(word = "taht", freq = 250, locale = null)
+            // Not a listed misspelling: kept.
+            seed(word = "swiftfloris", freq = 250, locale = "en_US")
+        }
+        val misspellings = setOf("teh", "untill", "thier", "alot", "recieve", "wich", "nad", "taht")
+
+        val removed = removeAutoLearnedMisspellings(dao, misspellings)
+
+        removed.map { it.word }.shouldContainExactlyInAnyOrder("teh", "untill", "thier")
+        dao.queryAll().map { it.word }.shouldContainExactlyInAnyOrder(
+            "alot", "Recieve", "wich", "nad", "taht", "swiftfloris",
+        )
+    }
+
+    test("removeAutoLearnedMisspellings leaves the dictionary alone when nothing is pending") {
+        val dao = RepairUserDictionaryDao().apply {
+            seed(word = "teh", freq = 250, locale = "en_US")
+        }
+
+        removeAutoLearnedMisspellings(dao, emptySet()) shouldBe emptyList()
+        dao.queryAll().map { it.word } shouldBe listOf("teh")
+    }
+
+    test("pendingLearnedMisspellingCleanup skips words the marker already lists") {
+        val table = setOf("teh", "untill", "thier")
+
+        pendingLearnedMisspellingCleanup(table, null) shouldBe table
+        pendingLearnedMisspellingCleanup(table, "") shouldBe table
+        pendingLearnedMisspellingCleanup(table, "teh\nuntill\nthier\n") shouldBe emptySet()
+        // A word added to the table after the last cleanup is still pending.
+        pendingLearnedMisspellingCleanup(table, "teh\r\n untill \n") shouldBe setOf("thier")
+    }
+
     test("DictionarySyncBridge returns fallback when a blocking Room query exceeds budget") {
         val executor = Executors.newSingleThreadExecutor()
         var timedOut = false
@@ -138,13 +184,13 @@ private class RepairUserDictionaryDao : UserDictionaryDao {
     private val rows = mutableListOf<UserDictionaryEntry>()
     private var nextId = 1L
 
-    fun seed(word: String, freq: Int, locale: String?) {
+    fun seed(word: String, freq: Int, locale: String?, shortcut: String? = null) {
         rows += UserDictionaryEntry(
             id = nextId++,
             word = word,
             freq = freq,
             locale = locale,
-            shortcut = null,
+            shortcut = shortcut,
         )
     }
 
@@ -174,5 +220,5 @@ private class RepairUserDictionaryDao : UserDictionaryDao {
     override fun deleteAll() = unused<Unit>("deleteAll")
 
     private fun <T> unused(name: String): T =
-        throw AssertionError("RepairUserDictionaryDao.$name should not be called by legacy locale repair")
+        throw AssertionError("RepairUserDictionaryDao.$name should not be called by the learned-word repairs")
 }
