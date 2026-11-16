@@ -93,6 +93,23 @@ internal object HardwareKeyboardInputPolicy {
         return Character.charCount(unicodeChar)
     }
 
+    /**
+     * True for a key that passes through and steps the app's cursor back one char: a plain
+     * Backspace or Left arrow. The editor can predict where that leaves the cursor, so the keys
+     * typed after it stay tracked. A modifier makes them go a word or a line instead, and Shift
+     * makes Left select.
+     */
+    fun passThroughStepsBack(
+        keyCode: Int,
+        isShiftPressed: Boolean,
+        isCtrlPressed: Boolean,
+        isAltPressed: Boolean,
+        isMetaPressed: Boolean,
+    ): Boolean {
+        if (isShiftPressed || isCtrlPressed || isAltPressed || isMetaPressed) return false
+        return keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_DPAD_LEFT
+    }
+
     fun keyUpAction(keyCode: Int): HardwareKeyboardKeyUpAction {
         return when (keyCode) {
             KeyEvent.KEYCODE_SHIFT_LEFT,

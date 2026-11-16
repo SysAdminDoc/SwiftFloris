@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.editor
 
 import android.content.Context
+import android.icu.text.BreakIterator
 import android.inputmethodservice.InputMethodService
 import android.os.SystemClock
 import android.text.TextUtils
@@ -58,7 +59,15 @@ abstract class AbstractEditorInstance(context: Context) {
         private const val NumCharsBeforeCursor: Int = 256
         private const val NumCharsAfterCursor: Int = 128
         private const val NumCharsSafeMarginBeforeCursor: Int = 128
-        private const val MaxPendingPassThroughInserts: Int = 32
+        /**
+         * Keys the app hasn't reported yet. A key burst (a macro, a scanner) can run well ahead of
+         * the reports, and dropping the oldest key makes every later report read as a jump.
+         */
+        private const val MaxPendingPassThroughKeys: Int = 1024
+        /** Chars before the cursor a pending key remembers, enough to step back over a typed word. */
+        private const val NumKnownBackStepsBeforePassThrough: Int = 16
+        /** Text read for those chars, enough for 16 of them unless they're long emoji sequences. */
+        private const val NumCharsForBackStepsBeforePassThrough: Int = 64
         /** An app reports its insert within a frame or two, so a cursor this late isn't that key's. */
         private const val PassThroughInsertTimeoutMillis: Long = 2_000L
         //private const val NumCharsSafeMarginAfterCursor: Int = 0
@@ -100,7 +109,7 @@ abstract class AbstractEditorInstance(context: Context) {
             _activeContentFlow.value = v
         }
     private val expectedContentQueue = ExpectedContentQueue()
-    private val passThroughInserts = PassThroughInsertTracker()
+    private val passThroughKeys = PassThroughKeyTracker()
     private val _lastCommitPosition = LastCommitPosition()
     val lastCommitPosition
         get() = LastCommitPosition(_lastCommitPosition)
@@ -116,18 +125,27 @@ abstract class AbstractEditorInstance(context: Context) {
      * to it (a hardware key with no mapped layout), so the cursor move it reports reads as typing.
      */
     fun expectAppInsert(length: Int) {
-        passThroughInserts.expect(length, keyboardPending = expectedContentQueue.peekNewestOrNull()?.selection)
+        passThroughKeys.expect(length, expectedContentQueue.peekNewestOrNull(), _activeContentFlow.value)
     }
 
     /**
-     * True while [activeContent] lags the editor's text: a key the app inserted itself (see
-     * [expectAppInsert]) isn't reported yet, or a cursor move the keyboard didn't predict (that
-     * report, a jump) was read but isn't published yet. A key burst (a macro, a text expander, a
-     * barcode scanner) gets ahead of the reports this way. The keyboard's own edits never count,
-     * since their content is predicted and published at once.
+     * Records that the app is about to step the cursor back one char itself for a plain Backspace
+     * or Left arrow the keyboard passed through to it, so the keys typed after it stay tracked
+     * instead of reading as jumps.
+     */
+    fun expectAppStepBack() {
+        passThroughKeys.expectStepBack(expectedContentQueue.peekNewestOrNull(), _activeContentFlow.value)
+    }
+
+    /**
+     * True while [activeContent] lags the editor's text: a key the app typed or deleted with itself
+     * (see [expectAppInsert] and [expectAppStepBack]) isn't reported yet, or a cursor move the
+     * keyboard didn't predict (that report, a jump) was read but isn't published yet. A key burst
+     * (a macro, a text expander, a barcode scanner) gets ahead of the reports this way. The
+     * keyboard's own edits never count, since their content is predicted and published at once.
      */
     fun isContentBehindEditor(): Boolean {
-        return pendingContentGenerationJob != null || passThroughInserts.hasPending()
+        return pendingContentGenerationJob != null || passThroughKeys.hasPending()
     }
 
     protected open fun currentInputConnection() = FlorisImeService.currentInputConnection()
@@ -137,7 +155,7 @@ abstract class AbstractEditorInstance(context: Context) {
         activeInfo = editorInfo
         activeCursorCapsMode = editorInfo.initialCapsMode
         activeContent = EditorContent.Unspecified
-        passThroughInserts.start(editorInfo.initialSelection)
+        passThroughKeys.start(editorInfo.initialSelection)
         currentInputConnection()?.requestCursorUpdates(CursorUpdateAll)
     }
 
@@ -169,7 +187,7 @@ abstract class AbstractEditorInstance(context: Context) {
                 selection = EditorRange(0, 0)
             }
         }
-        passThroughInserts.start(selection)
+        passThroughKeys.start(selection)
 
         launchContentGeneration(
             inputConnection = ic,
@@ -193,7 +211,7 @@ abstract class AbstractEditorInstance(context: Context) {
             currentInputConnection()?.setComposingRegion(EditorRange.Unspecified)
         }
         _lastCommitPosition.handleUpdateSelection(newSelection)
-        passThroughInserts.start(newSelection)
+        passThroughKeys.start(newSelection)
         // Mass selection is the user selecting text, so whatever comes next isn't typed in a row.
         notifyCommitAdjacencyBrokenIfNeeded(true)
     }
@@ -205,7 +223,7 @@ abstract class AbstractEditorInstance(context: Context) {
         if (ic == null || newSelection.isNotValid || editorInfo.isRawInputEditor) {
             activeCursorCapsMode = InputAttributes.CapsMode.NONE
             activeContent = EditorContent.Unspecified
-            passThroughInserts.start(EditorRange.Unspecified)
+            passThroughKeys.start(EditorRange.Unspecified)
             reevaluateInputShiftState()
             return
         }
@@ -213,12 +231,14 @@ abstract class AbstractEditorInstance(context: Context) {
         // A cursor the keyboard's own edit predicted is typing, not a jump, and so is the cursor after
         // a key the app inserted itself. Anything else that moves the cursor (a tap, an app rewriting
         // the text) means the next word isn't typed after the last.
-        val isAppInsert = passThroughInserts.handleUpdateSelection(newSelection)
-        val isOwnEdit = isAppInsert || expectedContentQueue.containsSelection(newSelection)
+        val appReport = passThroughKeys.handleUpdateSelection(oldSelection, newSelection)
+        val isOwnEdit = appReport == PassThroughReport.Insert || expectedContentQueue.containsSelection(newSelection)
         val leftTrackedCommit = _lastCommitPosition.handleUpdateSelection(newSelection)
         val isJump = !isOwnEdit && (leftTrackedCommit || newSelection != oldSelection)
-        if (isJump) {
-            passThroughInserts.dropPending()
+        // A Backspace or Left arrow the app handled is a jump too, but the keys typed after it are
+        // still on their way, so their cursors stay expected.
+        if (isJump && appReport == PassThroughReport.None) {
+            passThroughKeys.dropPending()
         }
         notifyCommitAdjacencyBrokenIfNeeded(isJump)
         val expected = expectedContentQueue.popUntilOrNull {
@@ -269,7 +289,7 @@ abstract class AbstractEditorInstance(context: Context) {
         activeCursorCapsMode = InputAttributes.CapsMode.NONE
         activeContent = EditorContent.Unspecified
         expectedContentQueue.clear()
-        passThroughInserts.start(EditorRange.Unspecified)
+        passThroughKeys.start(EditorRange.Unspecified)
         _lastCommitPosition.reset()
         // Leaving or restarting the field means the next word isn't typed after the last one. Say
         // so here: the info flow can go Unspecified and back to an equal value (the same chat after
@@ -859,16 +879,41 @@ abstract class AbstractEditorInstance(context: Context) {
         }
     }
 
+    /** What a reported cursor meant to [PassThroughKeyTracker]. */
+    private enum class PassThroughReport {
+        /** The app typed keys it was passed, and the cursor is where they left it. */
+        Insert,
+        /** A Backspace or Left arrow the app was passed landed. The keys typed after it are still tracked. */
+        StepBack,
+        /** Nothing the app was passed explains the cursor. */
+        None,
+    }
+
     /**
-     * Cursors the app will report after inserting keys the keyboard passed through to it. The app,
+     * Cursors the app will report after handling keys the keyboard passed through to it. The app,
      * not the keyboard, edits the text there, so those moves never show up in [ExpectedContentQueue].
      */
-    private class PassThroughInsertTracker {
-        private class PendingInsert(val cursor: Int, val atMillis: Long)
+    private class PassThroughKeyTracker {
+        /**
+         * A key the app handles itself and the cursor it should leave, a guess for a step back.
+         * [backSteps] holds how far a Backspace steps back over each char right before [cursor],
+         * nearest last, as far as the keyboard knows them, so a step back over an emoji takes all
+         * of it.
+         */
+        private class PendingKey(
+            val cursor: Int,
+            val isStepBack: Boolean,
+            val backSteps: List<Int>,
+            val atMillis: Long,
+        )
+
+        /** Where the next key starts, and the back steps before it. */
+        private class Base(val range: EditorRange, val backSteps: List<Int>)
 
         private val lock = Any()
         private var reported = EditorRange.Unspecified
-        private val pending = ArrayDeque<PendingInsert>()
+        private val pending = ArrayDeque<PendingKey>()
+        private var graphemes: BreakIterator? = null
 
         fun start(selection: EditorRange) {
             synchronized(lock) {
@@ -878,45 +923,125 @@ abstract class AbstractEditorInstance(context: Context) {
         }
 
         /**
-         * [keyboardPending] is the cursor of the keyboard's newest edit the editor hasn't reported
-         * yet (a space it just committed), which is where the app's insert lands if nothing of the
-         * app's own is pending.
+         * [keyboardPending] is the keyboard's newest edit the editor hasn't reported yet (a space it
+         * just committed), which is where the app's key lands if nothing of the app's own is
+         * pending. [published] is the content last read for a report.
          */
-        fun expect(length: Int, keyboardPending: EditorRange?) {
+        fun expect(length: Int, keyboardPending: EditorContent?, published: EditorContent) {
             synchronized(lock) {
                 val now = SystemClock.uptimeMillis()
                 dropExpired(now)
-                // Chain off the last pending insert so a fast burst predicts every cursor.
-                val base = pending.lastOrNull()?.cursor
-                    ?: (keyboardPending?.takeIf { it.isValid } ?: reported.takeIf { it.isValid })
-                        ?.let { min(it.start, it.end) }
-                    ?: return
-                pending.addLast(PendingInsert(base + length, now))
-                while (pending.size > MaxPendingPassThroughInserts) {
-                    pending.removeFirst()
-                }
+                val base = baseOf(keyboardPending, published) ?: return
+                val backSteps = (base.backSteps + length).takeLast(NumKnownBackStepsBeforePassThrough)
+                add(PendingKey(base.range.start + length, isStepBack = false, backSteps, now))
             }
         }
 
-        /** True when the app put the cursor where a pending insert said it would. */
-        fun handleUpdateSelection(selection: EditorRange): Boolean {
+        fun expectStepBack(keyboardPending: EditorContent?, published: EditorContent) {
+            synchronized(lock) {
+                val now = SystemClock.uptimeMillis()
+                dropExpired(now)
+                val base = baseOf(keyboardPending, published) ?: return
+                val range = base.range
+                val key = if (range.isSelectionMode) {
+                    // Backspace deletes a selection and Left collapses it, both to its start.
+                    PendingKey(range.start, isStepBack = true, base.backSteps, now)
+                } else if (range.start > 0) {
+                    // A char the keyboard doesn't know is most likely a single one.
+                    val step = base.backSteps.lastOrNull() ?: 1
+                    PendingKey(max(0, range.start - step), isStepBack = true, base.backSteps.dropLast(1), now)
+                } else {
+                    // Nothing to step back over, so the app reports nothing either.
+                    return
+                }
+                add(key)
+            }
+        }
+
+        /**
+         * Where the next key the app handles starts: the last key still pending, so a fast burst
+         * predicts every cursor, or else the keyboard's newest edit, or else the last report. A typed
+         * char replaces a selection, so a range is kept lower end first.
+         */
+        private fun baseOf(keyboardPending: EditorContent?, published: EditorContent): Base? {
+            val last = pending.lastOrNull()
+            if (last != null) return Base(EditorRange.cursor(last.cursor), last.backSteps)
+            val keyboard = keyboardPending?.takeIf { it.selection.isValid }
+            val range = keyboard?.selection ?: reported.takeIf { it.isValid } ?: return null
+            val content = keyboard ?: published.takeIf { it.selection == range }
+            return Base(
+                EditorRange(min(range.start, range.end), max(range.start, range.end)),
+                backStepLengths(content?.textBeforeSelection.orEmpty()),
+            )
+        }
+
+        /**
+         * How far a Backspace steps back over each of the last chars of [text], nearest last. An
+         * emoji sequence (a flag, a skin tone, a keycap, a ZWJ family, a heart with its variation
+         * selector) and a CR LF go in one step, the way a text field deletes them. The accents and
+         * vowel signs after a letter go one code point at a time, as its Backspace takes them.
+         */
+        private fun backStepLengths(text: String): List<Int> {
+            var from = max(0, text.length - NumCharsForBackStepsBeforePassThrough)
+            if (from > 0 && Character.isLowSurrogate(text[from])) from++
+            val window = text.substring(from)
+            val clusters = graphemes ?: BreakIterator.getCharacterInstance().also { graphemes = it }
+            clusters.setText(window)
+            val lengths = ArrayDeque<Int>()
+            var end = clusters.last()
+            while (end > 0 && lengths.size < NumKnownBackStepsBeforePassThrough) {
+                val start = clusters.previous()
+                if (Character.isLetter(window.codePointAt(start))) {
+                    var at = end
+                    while (at > start && lengths.size < NumKnownBackStepsBeforePassThrough) {
+                        val length = Character.charCount(window.codePointBefore(at))
+                        lengths.addFirst(length)
+                        at -= length
+                    }
+                } else {
+                    lengths.addFirst(end - start)
+                }
+                end = start
+            }
+            return lengths
+        }
+
+        private fun add(key: PendingKey) {
+            pending.addLast(key)
+            while (pending.size > MaxPendingPassThroughKeys) {
+                pending.removeFirst()
+            }
+        }
+
+        /** Matches a cursor the editor reported against the keys the app hasn't reported yet. */
+        fun handleUpdateSelection(oldSelection: EditorRange, selection: EditorRange): PassThroughReport {
             return synchronized(lock) {
                 reported = selection
                 // A key the app took as a shortcut never moves the cursor, so its entry would let a
                 // tap that lands there much later pass as typing.
                 dropExpired(SystemClock.uptimeMillis())
-                val index = if (selection.isCursorMode) {
+                // Every key the app is passed moves the cursor, so a report that leaves it in place
+                // (the app answering a new composing region) is none of them. After a step back, a
+                // later key can expect that same cursor.
+                val index = if (selection.isCursorMode && selection != oldSelection) {
                     pending.indexOfFirst { it.cursor == selection.start }
                 } else {
                     -1
                 }
-                // The app may report several inserts at once, so drop everything up to the match.
-                repeat(index + 1) { pending.removeFirst() }
-                index >= 0
+                // The app may report several keys at once, so drop everything up to the match.
+                var steppedBack = false
+                repeat(index + 1) {
+                    if (pending.removeFirst().isStepBack) steppedBack = true
+                }
+                when {
+                    index < 0 -> PassThroughReport.None
+                    steppedBack -> PassThroughReport.StepBack
+                    else -> PassThroughReport.Insert
+                }
             }
         }
 
-        /** True when an insert the app hasn't reported yet is still expected. */
+        /** True when a key the app hasn't reported yet is still expected. */
         fun hasPending(): Boolean {
             return synchronized(lock) {
                 dropExpired(SystemClock.uptimeMillis())

@@ -1588,6 +1588,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 }
             }
         }
+        val hasImportedLayout = event != null && hardwareKeyboardRuntimeMapper.layoutForDevice(event.deviceId) != null
         return when (val action = HardwareKeyboardInputPolicy.keyDownAction(
             keyCode = keyCode,
             mappedKey = mappedKey,
@@ -1598,7 +1599,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 (keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER) &&
                 !textEntry.isActive && editorInstance.isContentBehindEditor(),
             isEnterNewline = keyCode == KeyEvent.KEYCODE_ENTER && !textEntry.isActive && hardwareEnterTypesNewline(),
-            hasImportedLayout = event != null && hardwareKeyboardRuntimeMapper.layoutForDevice(event.deviceId) != null,
+            hasImportedLayout = hasImportedLayout,
             hasCommandModifier = event != null && (event.isCtrlPressed || event.isAltPressed || event.isMetaPressed),
         )) {
             is HardwareKeyboardKeyDownAction.CommitMappedText -> {
@@ -1633,7 +1634,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             HardwareKeyboardKeyDownAction.PassThrough -> {
                 // The app inserts a printable key itself: no layout is mapped for this keyboard, or
                 // it's a space or a newline Enter after keys the app hasn't reported yet. Tell the
-                // editor where that leaves the cursor, or the move reads as a jump.
+                // editor where that leaves the cursor, or the move reads as a jump. A plain Backspace
+                // or Left arrow gets noted too, so the keys the app types after it don't read as
+                // jumps. With an imported layout the keyboard types the letters itself, so there's
+                // nothing after it to keep tracked.
                 if (event != null) {
                     val length = if (keyCode == KeyEvent.KEYCODE_ENTER) {
                         // A newline is a control char, which the general rule counts as nothing.
@@ -1646,7 +1650,18 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                             isMetaPressed = event.isMetaPressed,
                         )
                     }
-                    if (length > 0) editorInstance.expectAppInsert(length)
+                    if (length > 0) {
+                        editorInstance.expectAppInsert(length)
+                    } else if (!hasImportedLayout && HardwareKeyboardInputPolicy.passThroughStepsBack(
+                            keyCode = keyCode,
+                            isShiftPressed = event.isShiftPressed,
+                            isCtrlPressed = event.isCtrlPressed,
+                            isAltPressed = event.isAltPressed,
+                            isMetaPressed = event.isMetaPressed,
+                        )
+                    ) {
+                        editorInstance.expectAppStepBack()
+                    }
                 }
                 // A space or newline the app types ends a word the keyboard never saw whole, so it
                 // isn't learned, and the next word that is must not be learned as following the one

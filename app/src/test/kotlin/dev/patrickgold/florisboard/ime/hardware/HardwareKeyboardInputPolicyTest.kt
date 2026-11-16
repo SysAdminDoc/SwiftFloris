@@ -270,6 +270,29 @@ class HardwareKeyboardInputPolicyTest : FunSpec({
             shouldFlushAutoCommitCandidate = true,
         )
     }
+
+    test("only a plain Backspace or Left steps the cursor back") {
+        fun stepsBack(
+            keyCode: Int,
+            shift: Boolean = false,
+            ctrl: Boolean = false,
+            alt: Boolean = false,
+            meta: Boolean = false,
+        ) = HardwareKeyboardInputPolicy.passThroughStepsBack(keyCode, shift, ctrl, alt, meta)
+
+        stepsBack(KeyEvent.KEYCODE_DEL) shouldBe true
+        stepsBack(KeyEvent.KEYCODE_DPAD_LEFT) shouldBe true
+        // Shift+Left selects, Ctrl+Backspace deletes a word, Alt+Backspace a line, Ctrl+Left jumps
+        // a word.
+        stepsBack(KeyEvent.KEYCODE_DPAD_LEFT, shift = true) shouldBe false
+        stepsBack(KeyEvent.KEYCODE_DEL, shift = true) shouldBe false
+        stepsBack(KeyEvent.KEYCODE_DEL, ctrl = true) shouldBe false
+        stepsBack(KeyEvent.KEYCODE_DEL, alt = true) shouldBe false
+        stepsBack(KeyEvent.KEYCODE_DPAD_LEFT, ctrl = true) shouldBe false
+        stepsBack(KeyEvent.KEYCODE_DPAD_LEFT, meta = true) shouldBe false
+        stepsBack(KeyEvent.KEYCODE_DPAD_RIGHT) shouldBe false
+        stepsBack(KeyEvent.KEYCODE_FORWARD_DEL) shouldBe false
+    }
 })
 
 private fun mapped(text: String): HardwareMappedKey {

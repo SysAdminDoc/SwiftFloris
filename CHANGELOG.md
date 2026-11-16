@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Keep up with a fast burst of keys from a physical keyboard when it includes Backspace or the Left arrow. With no keyboard layout imported, every key typed after one of those read as a cursor jump, so a space later in the same burst could be corrected against text the keyboard hadn't caught up on. A text expander that deletes its abbreviation before typing the full text does exactly this. A burst of more than 32 keys before the app caught up had the same problem.
 - Keep a line break from a physical keyboard in its place during a fast burst of keys. With no keyboard layout imported, the letters a macro, text expander or barcode scanner typed right after Enter could land in front of the line break. "hedgehog", Enter, "river" came out as "hedgehogriv" with "er" on the next line.
 - Add screenshot checks for the Languages and Language packs settings screens, laid out right to left and with text at 200 percent, so a layout that breaks there shows up before a release. The screenshot check also runs again now when only a saved screenshot changed. Before, Gradle skipped it and nothing was compared.
 - Say which language packs came with the app and which you imported. Each row on the Language packs screen now starts with "Built-in" or "Imported", so you don't have to guess from whether there's a Delete button.

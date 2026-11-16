@@ -541,6 +541,225 @@ class EditorContentGenerationLifecycleTest {
         assertFalse(editor.isContentBehindEditor())
     }
 
+    @Test
+    fun backspaceInBurstKeepsKeysTracked() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // A text expander with no mapped layout fixes "abx" to "abcd". The app types and deletes
+        // every key itself, and all six go down before it reports the first.
+        repeat(3) { editor.expectAppInsert(1) }
+        editor.expectAppStepBack()
+        repeat(2) { editor.expectAppInsert(1) }
+        editor.report(7, 8)
+        editor.report(8, 9)
+        editor.report(9, 10)
+        editor.report(10, 9)
+        // Backspace is read back, but "c" and "d" are still on their way, so a space now goes to
+        // the app after them.
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(9, 10)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(10, 11)
+
+        assertFalse(editor.isContentBehindEditor())
+        // Backspace moved the cursor back, but the letters typed after it are still typing.
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun fortyKeyBurstStaysTracked() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // A scanner types 40 keys before the app reports the first one.
+        repeat(40) { editor.expectAppInsert(1) }
+        for (cursor in 8..46) {
+            editor.report(cursor - 1, cursor)
+            assertTrue("behind after the report at $cursor", editor.isContentBehindEditor())
+        }
+        editor.report(46, 47)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun selectionBackspaceInBurst() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "abc", selectedText = "def")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 3), isRestart = false)
+        scheduler.runCurrent()
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(3),
+            newSelection = EditorRange(3, 6),
+            composing = EditorRange.Unspecified,
+        )
+        scheduler.runCurrent()
+        // Backspace deletes the selection, and "x" goes down before the app reports that.
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange(3, 6),
+            newSelection = EditorRange.cursor(3),
+            composing = EditorRange.Unspecified,
+        )
+        scheduler.runCurrent()
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        // Selecting and deleting moved the cursor, the letter typed after them didn't.
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun emojiBackspaceInBurst() {
+        val grin = String(Character.toChars(0x1F600))
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab$grin")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // Backspace takes both chars of the emoji, and the app reports it together with the "x"
+        // typed after it. Guessing one char would leave "x" waiting for a cursor that never comes.
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        editor.report(4, 3)
+        assertFalse(editor.isContentBehindEditor())
+        editor.expectAppInsert(1)
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun typedEmojiBackspaceInBurst() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // The burst types an emoji, deletes it and types "x", and the app reports all three at once.
+        editor.expectAppInsert(2)
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        editor.report(7, 8)
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun backspaceAtStartDoesNotHoldBehind() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 0), isRestart = false)
+        scheduler.runCurrent()
+        // Backspace at the start deletes nothing, so the app never reports it.
+        editor.expectAppStepBack()
+        assertFalse(editor.isContentBehindEditor())
+        editor.expectAppInsert(1)
+        editor.report(0, 1)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun heartBackspaceInBurst() {
+        val heart = String(Character.toChars(0x2764)) + String(Character.toChars(0xFE0F))
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ok $heart")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 5), isRestart = false)
+        scheduler.runCurrent()
+        // Backspace takes the heart and its variation selector together, and the app reports it
+        // with the "x" typed after it.
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        editor.report(5, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun composingReportAfterStepBack() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 0), isRestart = false)
+        scheduler.runCurrent()
+        // "abx", Backspace, "c": the "c" is expected where "x" was reported.
+        repeat(3) { editor.expectAppInsert(1) }
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        editor.report(0, 1)
+        editor.report(1, 2)
+        editor.report(2, 3)
+        // The app answers a composing region set on "abx" without moving the cursor.
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(3),
+            newSelection = EditorRange.cursor(3),
+            composing = EditorRange(0, 3),
+        )
+        scheduler.runCurrent()
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 2)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun missedStepBackDropsPending() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // The app's Backspace went further than one char, so nothing expected explains the report,
+        // and the keys after it can't be placed either.
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        editor.report(6, 0)
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    /** The editor reports the cursor moving from [from] to [to], and the content read after it lands. */
+    private fun TestEditorInstance.report(from: Int, to: Int) {
+        handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(from),
+            newSelection = EditorRange.cursor(to),
+            composing = EditorRange.Unspecified,
+        )
+        scheduler.runCurrent()
+    }
+
     private fun collectAdjacencyBreaks(editor: AbstractEditorInstance): List<Unit> {
         val adjacencyBreaks = mutableListOf<Unit>()
         CoroutineScope(dispatcher).launch {
