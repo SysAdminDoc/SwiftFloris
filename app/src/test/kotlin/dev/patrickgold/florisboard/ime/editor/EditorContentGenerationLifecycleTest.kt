@@ -1105,6 +1105,32 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    @Config(sdk = [29])
+    fun leftOverConjunctTypedInBurstOnOlderAndroid() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1), isRestart = false)
+        scheduler.runCurrent()
+        // Android 10's grapheme rules (ICU 63, before ICU's conjunct rule) end a cluster at the
+        // virama, and a Chrome field's Left still moves over the whole conjunct.
+        conjunct().codePoints().toArray().forEach { editor.expectAppInsert(1, it) }
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        editor.report(2, 3)
+        editor.report(3, 4)
+        editor.report(4, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
     fun composingReportAfterStepBack() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "")

@@ -1123,8 +1123,9 @@ abstract class AbstractEditorInstance(context: Context) {
          * selector) and a CR LF go in one step, the way a text field deletes them. The accents and
          * vowel signs after a letter go one code point at a time, as its Backspace takes them, and
          * are negative, since a Left arrow moves over them with the letter. A consonant after a
-         * virama is positive with [ConjunctConsonantStep] set: a TextView's Left arrow stops
-         * before it, though Compose and Chrome move over the whole conjunct.
+         * virama is positive with [ConjunctConsonantStep] set, whichever cluster ICU puts it in: a
+         * TextView's Left arrow stops before it, though Compose and Chrome move over the whole
+         * conjunct.
          */
         private fun backStepLengths(text: String): List<Int> {
             var from = max(0, text.length - NumCharsForBackStepsBeforePassThrough)
@@ -1142,12 +1143,12 @@ abstract class AbstractEditorInstance(context: Context) {
                         val codePoint = window.codePointBefore(at)
                         val length = Character.charCount(codePoint)
                         at -= length
-                        val afterVirama = at > start &&
-                            Character.isLetter(codePoint) && window.codePointBefore(at) in ConjunctViramas
+                        val afterVirama = at > 0 && Character.isLetter(codePoint) &&
+                            isConjunctConsonant(window.codePointBefore(at), codePoint, inCluster = at > start)
                         lengths.addFirst(
                             when {
-                                at == start -> length
                                 afterVirama -> length or ConjunctConsonantStep
+                                at == start -> length
                                 else -> -length
                             }
                         )
@@ -1158,6 +1159,19 @@ abstract class AbstractEditorInstance(context: Context) {
                 end = start
             }
             return lengths
+        }
+
+        /**
+         * True when [codePoint] after [before] is the second consonant of a conjunct. Android 10
+         * and older (ICU 63) end a cluster at the virama, though Chrome's own ICU keeps the conjunct
+         * together, so a consonant starting its own cluster counts too when it's one of the
+         * virama's script's consonants. Each of the [ConjunctViramas] sits at 0x4D in its block.
+         */
+        private fun isConjunctConsonant(before: Int, codePoint: Int, inCluster: Boolean): Boolean {
+            if (before !in ConjunctViramas) return false
+            if (inCluster) return true
+            val offset = codePoint - (before - 0x4D)
+            return offset in 0x15..0x3A || offset in 0x58..0x5F || offset in 0x70..0x71
         }
 
         private fun add(key: PendingKey) {
