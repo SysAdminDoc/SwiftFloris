@@ -69,6 +69,16 @@ class ContextModelTest : FunSpec({
         model.idOf("don't") shouldNotBe null
     }
 
+    test("an apostrophe or hyphen at either end of a word is trimmed, the way the training text was split") {
+        val quote = Char(0x2019)
+        model.idOf("'bake'") shouldBe model.idOf("bake")
+        model.idOf("${quote}bake$quote") shouldBe model.idOf("bake")
+        model.idOf("apple-") shouldBe model.idOf("apple")
+        model.score("'apple", "bake-", "cake'") shouldBe model.score("apple", "bake", "cake")
+        model.idOf("'") shouldBe null
+        model.idOf("--") shouldBe null
+    }
+
     test("context probability spreads six powers of ten of score over 0 to 1") {
         ContextModel.contextProbabilityOf(1.0) shouldBe 1.0
         ContextModel.contextProbabilityOf(0.001) shouldBe (0.5 plusOrMinus 1e-9)
@@ -93,6 +103,31 @@ class ContextModelTest : FunSpec({
             shouldThrow<IllegalArgumentException> { ContextModel.read(ByteBuffer.wrap(bytes.copyOf(length))) }
         }
         ContextModel.read(ByteBuffer.wrap(bytes)).vocabularySize shouldBe 1
+    }
+
+    test("a file whose sizes add up but whose offsets run backwards or past their section is refused") {
+        val bytes = TinyModel(
+            words = listOf("a", "b"),
+            alpha = 0.4f,
+            unigrams = mapOf("a" to 10, "b" to 20),
+            pairs = mapOf(("a" to "b") to 5),
+            triples = mapOf(Triple(null, "a", "b") to 3),
+        ).bytes()
+        ContextModel.read(ByteBuffer.wrap(bytes)).score(null, "a", "b") shouldNotBe null
+        // The 24-byte header and "a\nb" come first, then 3 word offsets, 3 unigram bytes, 4 pair offsets, the
+        // pair count, 1 pair id and score, the triple context count and 1 context, then the 2 triple offsets.
+        val secondWordStart = 24 + 3 + 4
+        val pairsOfAEnd = 24 + 3 + 3 * 4 + 3 + 2 * 4
+        val triplesEnd = 24 + 3 + 3 * 4 + 3 + 4 * 4 + 4 + 2 + 1 + 4 + 4 + 4
+        fun ByteArray.intAt(at: Int) = ByteBuffer.wrap(this).getInt(at)
+        bytes.intAt(secondWordStart) shouldBe 2
+        bytes.intAt(pairsOfAEnd) shouldBe 1
+        bytes.intAt(triplesEnd) shouldBe 1
+        val corruptions = listOf(secondWordStart to 1000, secondWordStart to -50, pairsOfAEnd to 1000, triplesEnd to 1000)
+        for ((at, offset) in corruptions) {
+            val corrupt = bytes.copyOf().also { ByteBuffer.wrap(it).putInt(at, offset) }
+            shouldThrow<IllegalArgumentException> { ContextModel.read(ByteBuffer.wrap(corrupt)) }
+        }
     }
 
     test("the bundled English model prefers the word that fits") {

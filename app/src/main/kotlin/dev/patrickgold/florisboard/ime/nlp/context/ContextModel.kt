@@ -62,7 +62,8 @@ internal class ContextModel private constructor(private val buffer: ByteBuffer) 
         require(vocabularySize in 1..MaxVocabularySize && alpha > 0.0 && quantScale > 0.0) { "bad context model header" }
         // Every section's size comes from a count stored just before it, so a count read past the end of a
         // short file or a negative one is refused here rather than turning into a wrong read during a lookup.
-        val wordOffsets = HeaderBytes + countAt(20).toLong()
+        val wordBytes = countAt(20)
+        val wordOffsets = HeaderBytes + wordBytes.toLong()
         val unigrams = wordOffsets + (vocabularySize + 1L) * Int.SIZE_BYTES
         val bigramOffsets = unigrams + vocabularySize + 1
         val bigramCountAt = bigramOffsets + (vocabularySize + 2L) * Int.SIZE_BYTES
@@ -78,6 +79,21 @@ internal class ContextModel private constructor(private val buffer: ByteBuffer) 
         val trigramNext = trigramCountAt + Int.SIZE_BYTES
         val trigramScores = trigramNext + trigramCount.toLong() * Short.SIZE_BYTES
         require(trigramScores + trigramCount == size) { "context model size mismatch" }
+        // Lookups index the word bytes and the pair and triple rows through these tables without bounds checks,
+        // so a file whose sizes add up but whose offsets run backwards or past their section is refused here too,
+        // where ContextModelStore catches it, rather than throwing on every word typed.
+        fun requireOffsets(at: Long, count: Long, end: Int, what: String) {
+            var previous = 0
+            for (index in 0 until count) {
+                val offset = buffer.getInt((at + index * Int.SIZE_BYTES).toInt())
+                require(if (index == 0L) offset == 0 else offset >= previous) { "bad context model $what offsets" }
+                previous = offset
+            }
+            require(previous == end) { "bad context model $what offsets" }
+        }
+        requireOffsets(wordOffsets, vocabularySize + 1L, end = wordBytes + 1, what = "word")
+        requireOffsets(bigramOffsets, vocabularySize + 2L, end = bigramCount, what = "word pair")
+        requireOffsets(trigramOffsets, contextCount + 1L, end = trigramCount, what = "word triple")
         wordBytesStart = HeaderBytes
         wordOffsetsStart = wordOffsets.toInt()
         unigramStart = unigrams.toInt()
@@ -110,9 +126,14 @@ internal class ContextModel private constructor(private val buffer: ByteBuffer) 
         return score(prev2, prev1, word)?.let { contextProbabilityOf(it) }
     }
 
-    /** The vocabulary id of [word], lowercased the way the training text was, or null when it isn't there. */
+    /**
+     * The vocabulary id of [word], lowercased the way the training text was, or null when it isn't there. Training
+     * words never start or end with an apostrophe or hyphen, so those are trimmed: the word before 'quoted' text
+     * or a dangling "pre-" still finds its id.
+     */
     fun idOf(word: String): Int? {
-        val key = word.lowercase(Locale.ROOT).replace(RightSingleQuote, '\'').toByteArray(Charsets.UTF_8)
+        val key = word.lowercase(Locale.ROOT).replace(RightSingleQuote, '\'').trim('\'', '-')
+            .toByteArray(Charsets.UTF_8)
         if (key.isEmpty()) return null
         var low = 1
         var high = vocabularySize
