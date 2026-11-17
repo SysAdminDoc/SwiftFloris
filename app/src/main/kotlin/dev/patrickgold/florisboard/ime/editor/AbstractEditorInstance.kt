@@ -1622,16 +1622,15 @@ abstract class AbstractEditorInstance(context: Context) {
                 }
                 // Each way's first key past the ones its reports passed that leaves the cursor here.
                 // The app may report several keys at once, so it can be a later one. A way past a
-                // key's quiet time still matches it, for an app slow to report. Keys typed after the
-                // way settled start from the last report, so they go first, and a key it settled
-                // with no report only matches failing those.
+                // key's quiet time still matches it, for an app slow to report, and so does a key it
+                // settled with no report (see [baseOf]). A key typed after the way settled can leave
+                // the cursor here too (a Backspace after a Backspace), and if the app was done, the
+                // report is that one's: it's covered then (see [coveredTo]).
                 val matchedAt = IntArray(NumWays) { -1 }
                 var explaining = 0
                 for (way in 0 until NumWays) {
                     if (!isPossible(way)) continue
-                    val settled = max(passed[way], settledTo[way])
-                    var at = firstLanding(way, selection.start, settled, pending.size)
-                    if (at < 0) at = firstLanding(way, selection.start, passed[way], settled)
+                    val at = firstLanding(way, selection.start, passed[way], pending.size)
                     if (at < 0) continue
                     matchedAt[way] = at
                     explaining = explaining or (1 shl way)
@@ -1651,8 +1650,11 @@ abstract class AbstractEditorInstance(context: Context) {
                 }
                 // The app is keeping up, so whatever overflowed is behind it.
                 overflowUntil = 0L
-                // The earliest key matched is the one the report may be for alone, and how long ago
-                // it was passed is how long the app takes.
+                // How long ago the earliest key matched was passed is how long the app may take. Ways
+                // can read the report as different keys' (a Left that moved the cursor in one and left
+                // it in place in another), and the earliest reading is the longest. It can count a
+                // pause before a later key, but a hold too long only passes a few more keys through,
+                // while one too short lets the keyboard edit text the app hasn't caught up to.
                 var earliest = pending.size
                 for (way in 0 until NumWays) {
                     if (matchedAt[way] in 0 until earliest) earliest = matchedAt[way]
@@ -1722,11 +1724,13 @@ abstract class AbstractEditorInstance(context: Context) {
         }
 
         /**
-         * True when a key the app hasn't reported yet is still expected. Where every way still
-         * possible expects one, the app is behind. Where some have caught up, the field may handle
-         * keys in one of those, and then the app is done. A way that likely isn't the field's
-         * doesn't hold then, and a likely one only until the quiet time of a way that caught up is
-         * up, since that way may have read a report for several keys as one for a single key.
+         * True when a key the app hasn't reported yet is still expected. Only the ways likely the
+         * field's count (see [likely]), so one that isn't decides nothing, whether it still expects
+         * a report or caught up by leaving the cursor in place. Where every likely way expects one,
+         * the app is behind. Where some have caught up, the field may handle keys in one of those,
+         * and then the app is done, though one that still expects a report holds until the quiet
+         * time of a way that caught up is up, since that way may have read a report for several
+         * keys as one for a single key.
          */
         fun hasPending(): Boolean {
             return synchronized(lock) {
@@ -1736,17 +1740,18 @@ abstract class AbstractEditorInstance(context: Context) {
                     now < overflowUntil -> true
                     pending.isEmpty() -> false
                     else -> {
+                        val likely = likely()
                         var awaiting = 0
                         var caughtUpInQuiet = false
                         for (way in 0 until NumWays) {
-                            if (!isPossible(way)) continue
+                            if (likely and (1 shl way) == 0) continue
                             if (awaits(way, now)) {
                                 awaiting = awaiting or (1 shl way)
                             } else if (now <= quietUntil[way]) {
                                 caughtUpInQuiet = true
                             }
                         }
-                        awaiting == possibleWays || ((awaiting and likely()) != 0 && caughtUpInQuiet)
+                        awaiting == likely || (awaiting != 0 && caughtUpInQuiet)
                     }
                 }
             }

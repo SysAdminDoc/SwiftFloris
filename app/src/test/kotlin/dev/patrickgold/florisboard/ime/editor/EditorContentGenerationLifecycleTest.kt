@@ -2390,6 +2390,57 @@ class EditorContentGenerationLifecycleTest {
         assertEquals(0, adjacencyBreaks.size)
     }
 
+    @Test
+    fun leftAtEndOfLatinTextWaitsForItsReport() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "helo")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // A Left at the end of Latin text steps back in every field likely here. Only a field
+        // whose Left runs right to left whatever the text leaves it in place, and that one isn't
+        // likely where the system runs left to right, so a slow report is still waited for.
+        editor.expectAppStepBack(wholeCluster = true)
+        ShadowSystemClock.advanceBy(Duration.ofMillis(400))
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(4, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun lateReportAfterQuietMatchesTheSettledKeyFirst() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // "ab", Backspace, "b": the app reports "a" and "b" at once, then stalls past the quiet
+        // timeout, and a Backspace typed then lands where the first one did. The late report there
+        // is the first one's, so the rest still match in order.
+        repeat(2) { editor.expectAppInsert(1) }
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        ShadowSystemClock.advanceBy(Duration.ofMillis(50))
+        connection.textBeforeSelection = "purple ab"
+        editor.report(7, 9)
+        ShadowSystemClock.advanceBy(Duration.ofMillis(350))
+        editor.expectAppStepBack()
+        ShadowSystemClock.advanceBy(Duration.ofMillis(20))
+        for ((from, to) in listOf(9 to 8, 8 to 9)) {
+            editor.report(from, to)
+            assertTrue("behind after the report at $to", editor.isContentBehindEditor())
+        }
+        editor.report(9, 8)
+
+        assertFalse(editor.isContentBehindEditor())
+        // Each Backspace breaks adjacency once, and no report reads as a jump.
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
     /** The editor reports the cursor moving from [from] to [to], and the content read after it lands. */
     private fun TestEditorInstance.report(from: Int, to: Int) {
         handleSelectionUpdate(
