@@ -52,6 +52,7 @@ import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardKeyDownAction
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardKeyUpAction
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardLayout
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardRuntimeMapper
+import dev.patrickgold.florisboard.ime.hardware.PassThroughMove
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
 import dev.patrickgold.florisboard.ime.input.InputKeyEventReceiver
@@ -1638,12 +1639,15 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             HardwareKeyboardKeyDownAction.PassThrough -> {
                 // The app inserts a printable key itself: no layout is mapped for this keyboard, or
                 // it's a space or a newline Enter after keys the app hasn't reported yet. Tell the
-                // editor where that leaves the cursor, or the move reads as a jump. A plain Backspace
-                // or Left arrow gets noted too, so the keys the app types after it don't read as
-                // jumps. With an imported layout the keyboard types the letters itself, so there's
-                // nothing after it to keep tracked.
+                // editor where that leaves the cursor, or the move reads as a jump. A key that moves
+                // the cursor (an arrow, Home, End, a Backspace) or may (Tab, a paste) gets noted too,
+                // so the keys the app types after it don't read as jumps. With an imported layout the
+                // keyboard types the letters itself, so there's nothing after it to keep tracked.
+                // A numpad Enter types a newline where the keyboard's Enter would.
+                val typesNewline = keyCode == KeyEvent.KEYCODE_ENTER ||
+                    (keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER && hardwareEnterTypesNewline())
                 if (event != null) {
-                    val length = if (keyCode == KeyEvent.KEYCODE_ENTER) {
+                    val length = if (typesNewline) {
                         // A newline is a control char, which the general rule counts as nothing.
                         1
                     } else {
@@ -1655,25 +1659,51 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                         )
                     }
                     if (length > 0) {
-                        val codePoint = if (keyCode == KeyEvent.KEYCODE_ENTER) '\n'.code else event.unicodeChar
+                        val codePoint = if (typesNewline) '\n'.code else event.unicodeChar
                         editorInstance.expectAppInsert(length, codePoint)
-                    } else if (!hasImportedLayout && HardwareKeyboardInputPolicy.passThroughStepsBack(
-                            keyCode = keyCode,
-                            isShiftPressed = event.isShiftPressed,
-                            isCtrlPressed = event.isCtrlPressed,
-                            isAltPressed = event.isAltPressed,
-                            isMetaPressed = event.isMetaPressed,
-                        )
-                    ) {
-                        editorInstance.expectAppStepBack(wholeCluster = keyCode == KeyEvent.KEYCODE_DPAD_LEFT)
+                    } else if (!hasImportedLayout) {
+                        expectAppMove(keyCode, event)
                     }
                 }
-                // A space or newline the app types ends a word the keyboard never saw whole, so it
-                // isn't learned, and the next word that is must not be learned as following the one
-                // before.
-                if (keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER) resetLearnChain()
+                // A space, newline or tab the app types ends a word the keyboard never saw whole, so
+                // it isn't learned, and the next word that is must not be learned as following the
+                // one before.
+                if (keyCode == KeyEvent.KEYCODE_SPACE || typesNewline || keyCode == KeyEvent.KEYCODE_TAB) {
+                    resetLearnChain()
+                }
                 false
             }
+        }
+    }
+
+    /** Tells the editor where a key the app handles itself and that types nothing leaves the cursor. */
+    private fun expectAppMove(keyCode: Int, event: KeyEvent) {
+        if (HardwareKeyboardInputPolicy.passThroughStepsBack(
+                keyCode = keyCode,
+                isShiftPressed = event.isShiftPressed,
+                isCtrlPressed = event.isCtrlPressed,
+                isAltPressed = event.isAltPressed,
+                isMetaPressed = event.isMetaPressed,
+            )
+        ) {
+            editorInstance.expectAppStepBack(wholeCluster = keyCode == KeyEvent.KEYCODE_DPAD_LEFT)
+            return
+        }
+        val isMultiLine = editorInstance.activeInfo.inputAttributes.flagTextMultiLine
+        when (HardwareKeyboardInputPolicy.passThroughMove(
+            keyCode = keyCode,
+            isShiftPressed = event.isShiftPressed,
+            isCtrlPressed = event.isCtrlPressed,
+            isAltPressed = event.isAltPressed,
+            isMetaPressed = event.isMetaPressed,
+            isMultiLine = isMultiLine,
+        )) {
+            PassThroughMove.None -> {}
+            PassThroughMove.Right -> editorInstance.expectAppStepForward()
+            PassThroughMove.LineStart -> editorInstance.expectAppLineEdge(toEnd = false)
+            PassThroughMove.LineEnd -> editorInstance.expectAppLineEdge(toEnd = true)
+            PassThroughMove.Tab -> editorInstance.expectAppTab(multiLine = isMultiLine)
+            PassThroughMove.Unpredictable -> editorInstance.expectAppUnpredictable()
         }
     }
 

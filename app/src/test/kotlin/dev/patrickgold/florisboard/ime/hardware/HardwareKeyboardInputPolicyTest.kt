@@ -293,6 +293,67 @@ class HardwareKeyboardInputPolicyTest : FunSpec({
         stepsBack(KeyEvent.KEYCODE_DPAD_RIGHT) shouldBe false
         stepsBack(KeyEvent.KEYCODE_FORWARD_DEL) shouldBe false
     }
+
+    test("a key that types nothing moves the cursor where the field says it does") {
+        fun move(
+            keyCode: Int,
+            shift: Boolean = false,
+            ctrl: Boolean = false,
+            alt: Boolean = false,
+            meta: Boolean = false,
+            multiLine: Boolean = false,
+        ) = HardwareKeyboardInputPolicy.passThroughMove(keyCode, shift, ctrl, alt, meta, multiLine)
+
+        move(KeyEvent.KEYCODE_DPAD_RIGHT) shouldBe PassThroughMove.Right
+        move(KeyEvent.KEYCODE_DPAD_RIGHT, multiLine = true) shouldBe PassThroughMove.Right
+        move(KeyEvent.KEYCODE_MOVE_HOME) shouldBe PassThroughMove.LineStart
+        move(KeyEvent.KEYCODE_MOVE_END) shouldBe PassThroughMove.LineEnd
+        move(KeyEvent.KEYCODE_TAB) shouldBe PassThroughMove.Tab
+        move(KeyEvent.KEYCODE_TAB, multiLine = true) shouldBe PassThroughMove.Tab
+        // Home and End go to the start and end of the line on screen, which in a multi-line field
+        // the keyboard can't tell.
+        move(KeyEvent.KEYCODE_MOVE_HOME, multiLine = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_MOVE_END, multiLine = true) shouldBe PassThroughMove.Unpredictable
+        // Shift selects, Ctrl jumps a word or to the end of the text.
+        move(KeyEvent.KEYCODE_DPAD_RIGHT, shift = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_DPAD_RIGHT, ctrl = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_MOVE_HOME, ctrl = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_MOVE_END, shift = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_DPAD_LEFT, shift = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_DEL, ctrl = true) shouldBe PassThroughMove.Unpredictable
+        // A plain Backspace or Left steps back (see passThroughStepsBack).
+        move(KeyEvent.KEYCODE_DPAD_LEFT) shouldBe PassThroughMove.None
+        move(KeyEvent.KEYCODE_DEL) shouldBe PassThroughMove.None
+        // Shift+Tab moves the focus back, and so does a Tab with any other modifier.
+        move(KeyEvent.KEYCODE_TAB, shift = true) shouldBe PassThroughMove.None
+        move(KeyEvent.KEYCODE_TAB, ctrl = true) shouldBe PassThroughMove.None
+        move(KeyEvent.KEYCODE_DPAD_UP) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_DPAD_DOWN, multiLine = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_PAGE_UP) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_PAGE_DOWN) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_FORWARD_DEL) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_PASTE) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_CUT) shouldBe PassThroughMove.Unpredictable
+        // Paste, cut, undo, redo and select all.
+        move(KeyEvent.KEYCODE_V, ctrl = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_X, ctrl = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_Z, ctrl = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_Z, ctrl = true, shift = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_Y, ctrl = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_A, ctrl = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_INSERT, shift = true) shouldBe PassThroughMove.Unpredictable
+        // Copy changes nothing, and Ctrl with Alt is AltGr, which types a char.
+        move(KeyEvent.KEYCODE_C, ctrl = true) shouldBe PassThroughMove.None
+        move(KeyEvent.KEYCODE_INSERT, ctrl = true) shouldBe PassThroughMove.None
+        move(KeyEvent.KEYCODE_V, ctrl = true, alt = true) shouldBe PassThroughMove.None
+        move(KeyEvent.KEYCODE_V) shouldBe PassThroughMove.None
+        // A numpad Enter that doesn't type a newline runs the field's action, which in a
+        // multi-line field may still be a newline.
+        move(KeyEvent.KEYCODE_NUMPAD_ENTER) shouldBe PassThroughMove.None
+        move(KeyEvent.KEYCODE_NUMPAD_ENTER, multiLine = true) shouldBe PassThroughMove.Unpredictable
+        move(KeyEvent.KEYCODE_CTRL_LEFT, ctrl = true) shouldBe PassThroughMove.None
+        move(KeyEvent.KEYCODE_ESCAPE) shouldBe PassThroughMove.None
+    }
 })
 
 private fun mapped(text: String): HardwareMappedKey {

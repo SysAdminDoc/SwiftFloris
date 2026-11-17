@@ -2441,6 +2441,363 @@ class EditorContentGenerationLifecycleTest {
         assertEquals(2, adjacencyBreaks.size)
     }
 
+    @Test
+    fun rightMovesForwardInBurst() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // Left, "x", Right back past the "b", and "y".
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.expectAppStepForward()
+        editor.expectAppInsert(1, 'y'.code)
+        for ((from, to) in listOf(2 to 1, 1 to 2, 2 to 3)) {
+            editor.report(from, to)
+            assertTrue("behind after the report at $to", editor.isContentBehindEditor())
+        }
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        // The Left and the Right each break the run of typing.
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun rightAtEndOfTextStays() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // At the end of the text a Right has nowhere to go, so "x" goes in right there.
+        editor.expectAppStepForward()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun rightInRightToLeftTextStepsBack() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9, 0x5DC),
+            textAfterSelection = text(0x5D5, 0x5DD),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // In a Hebrew paragraph a Right moves back a letter, then "x".
+        editor.expectAppStepForward()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 1)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun rightCollapsesSelectionToItsEnd() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = "a",
+            textAfterSelection = "d",
+            selectedText = "bc",
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 1, selectionEnd = 3), isRestart = false)
+        scheduler.runCurrent()
+        editor.expectAppStepForward()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.handleSelectionUpdate(EditorRange(1, 3), EditorRange.cursor(3), EditorRange.Unspecified)
+        scheduler.runCurrent()
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun homeAndEndInBurstInSingleLineField() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // Home, "x", End and "y" leave "xaby".
+        editor.expectAppLineEdge(toEnd = false)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.expectAppLineEdge(toEnd = true)
+        editor.expectAppInsert(1, 'y'.code)
+        for ((from, to) in listOf(2 to 0, 0 to 1, 1 to 3)) {
+            editor.report(from, to)
+            assertTrue("behind after the report at $to", editor.isContentBehindEditor())
+        }
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(2, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun endPastKnownTextHoldsUntilTheAppGoesQuiet() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab", textAfterSelection = "c".repeat(200))
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // The keyboard read only part of the text after the cursor, so it can't tell where End
+        // lands, nor where the "x" after it goes.
+        editor.expectAppLineEdge(toEnd = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 202)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(202, 203)
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(400))
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun homeInRightToLeftTextViewGoesToTheLineEnd() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9, 0x5DC),
+            textAfterSelection = text(0x5D5, 0x5DD),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // A TextView's Home goes to the right edge of a Hebrew line, which is its end, then "x".
+        editor.expectAppLineEdge(toEnd = false)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 4)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(4, 5)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun lineEdgeNoWayPredictedResumesFromItsReport() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5E9, 0x5DC),
+            textAfterSelection = text(0x5D5, 0x5DD),
+        )
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // A web field set right to left may take Home somewhere else again. Its report comes
+        // before the next key, so that key starts from it.
+        editor.expectAppLineEdge(toEnd = false)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 1)
+        assertFalse(editor.isContentBehindEditor())
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun tabTypesATabInMultiLineCompose() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // A multi-line Compose field types a tab, where a TextView leaves the cursor in place.
+        editor.expectAppTab(multiLine = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 3)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun tabLeavesTheCursorInMultiLineTextView() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // The report for "x" could be a Compose field's tab, so the "x" it would still owe is
+        // waited for until the quiet time is up.
+        editor.expectAppTab(multiLine = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 3)
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(350))
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun tabInSingleLineFieldMovesNothing() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // A Tab there moves the focus or nothing. The report reads as the "x"'s, though it's held
+        // until the quiet time is up, in case the Tab did move the cursor.
+        editor.expectAppTab(multiLine = false)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 3)
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(350))
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun pasteThenKeysHoldUntilTheAppGoesQuiet() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // Ctrl+V, then "x" and "y" before the paste is reported: where they go can't be told.
+        editor.expectAppUnpredictable()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 7)
+        assertTrue(editor.isContentBehindEditor())
+        editor.expectAppInsert(1, 'y'.code)
+        editor.report(7, 8)
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(200))
+        editor.report(8, 9)
+        ShadowSystemClock.advanceBy(Duration.ofMillis(200))
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(200))
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun pasteAloneResumesFromItsReport() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // The paste's report comes before the next key, so that key starts from it.
+        editor.expectAppUnpredictable()
+        assertTrue(editor.isContentBehindEditor())
+        connection.textBeforeSelection = "ab12345"
+        editor.report(2, 7)
+        assertFalse(editor.isContentBehindEditor())
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(7, 8)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun unpredictableKeyThatMovesNothingKeepsTheBurstTracked() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // An Up arrow at the start of a single-line field, then "x" right after it. A paste of one
+        // char would be reported at the same cursor, so the next report is waited for a while.
+        editor.expectAppUnpredictable()
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(2, 3)
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(350))
+        assertFalse(editor.isContentBehindEditor())
+        editor.expectAppInsert(1, 'y'.code)
+        editor.report(3, 4)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun selectAllThenTypingStartsFromTheSelection() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // Ctrl+A, reported before the next key, which types over the selection.
+        editor.expectAppUnpredictable()
+        connection.textBeforeSelection = ""
+        connection.selectedText = "ab"
+        editor.handleSelectionUpdate(EditorRange.cursor(2), EditorRange(0, 2), EditorRange.Unspecified)
+        scheduler.runCurrent()
+        assertFalse(editor.isContentBehindEditor())
+        editor.expectAppInsert(1, 'x'.code)
+        editor.handleSelectionUpdate(EditorRange(0, 2), EditorRange.cursor(1), EditorRange.Unspecified)
+        scheduler.runCurrent()
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun unpredictableKeyWithNoReportHoldsBriefly() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 2), isRestart = false)
+        scheduler.runCurrent()
+        // A paste with nothing to paste: no report comes, so the hold ends with the quiet time.
+        editor.expectAppUnpredictable()
+        ShadowSystemClock.advanceBy(Duration.ofMillis(250))
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(100))
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
     /** The editor reports the cursor moving from [from] to [to], and the content read after it lands. */
     private fun TestEditorInstance.report(from: Int, to: Int) {
         handleSelectionUpdate(

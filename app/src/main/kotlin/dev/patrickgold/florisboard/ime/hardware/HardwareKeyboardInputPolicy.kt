@@ -110,6 +110,61 @@ internal object HardwareKeyboardInputPolicy {
         return keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_DPAD_LEFT
     }
 
+    /**
+     * How a key that passes through and types nothing moves the app's cursor, as far as the editor
+     * can tell before the app reports it (a plain Backspace or Left is [passThroughStepsBack]'s).
+     * Home and End go to the ends of the line on screen, which in a multi-line field the keyboard
+     * can't tell. A numpad Enter only gets here when it doesn't type a newline the keyboard's Enter
+     * would, and in a multi-line field the app may still type one.
+     */
+    fun passThroughMove(
+        keyCode: Int,
+        isShiftPressed: Boolean,
+        isCtrlPressed: Boolean,
+        isAltPressed: Boolean,
+        isMetaPressed: Boolean,
+        isMultiLine: Boolean,
+    ): PassThroughMove {
+        val isModified = isShiftPressed || isCtrlPressed || isAltPressed || isMetaPressed
+        // Ctrl with Alt is AltGr, which types a char rather than running a shortcut.
+        val isShortcut = isCtrlPressed && !isAltPressed
+        return when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_RIGHT -> if (isModified) PassThroughMove.Unpredictable else PassThroughMove.Right
+            KeyEvent.KEYCODE_MOVE_HOME -> when {
+                isModified || isMultiLine -> PassThroughMove.Unpredictable
+                else -> PassThroughMove.LineStart
+            }
+            KeyEvent.KEYCODE_MOVE_END -> when {
+                isModified || isMultiLine -> PassThroughMove.Unpredictable
+                else -> PassThroughMove.LineEnd
+            }
+            // With a modifier, a Tab moves the focus back or switches tabs.
+            KeyEvent.KEYCODE_TAB -> if (isModified) PassThroughMove.None else PassThroughMove.Tab
+            KeyEvent.KEYCODE_DPAD_LEFT,
+            KeyEvent.KEYCODE_DEL,
+            -> if (isModified) PassThroughMove.Unpredictable else PassThroughMove.None
+            KeyEvent.KEYCODE_DPAD_UP,
+            KeyEvent.KEYCODE_DPAD_DOWN,
+            KeyEvent.KEYCODE_PAGE_UP,
+            KeyEvent.KEYCODE_PAGE_DOWN,
+            KeyEvent.KEYCODE_FORWARD_DEL,
+            KeyEvent.KEYCODE_PASTE,
+            KeyEvent.KEYCODE_CUT,
+            -> PassThroughMove.Unpredictable
+            // Shift+Insert pastes.
+            KeyEvent.KEYCODE_INSERT -> if (isShiftPressed && !isCtrlPressed) PassThroughMove.Unpredictable else PassThroughMove.None
+            // Paste, cut, undo, redo and select all.
+            KeyEvent.KEYCODE_V,
+            KeyEvent.KEYCODE_X,
+            KeyEvent.KEYCODE_Z,
+            KeyEvent.KEYCODE_Y,
+            KeyEvent.KEYCODE_A,
+            -> if (isShortcut) PassThroughMove.Unpredictable else PassThroughMove.None
+            KeyEvent.KEYCODE_NUMPAD_ENTER -> if (isMultiLine) PassThroughMove.Unpredictable else PassThroughMove.None
+            else -> PassThroughMove.None
+        }
+    }
+
     fun keyUpAction(keyCode: Int): HardwareKeyboardKeyUpAction {
         return when (keyCode) {
             KeyEvent.KEYCODE_SHIFT_LEFT,
@@ -130,6 +185,22 @@ internal sealed interface HardwareKeyboardKeyDownAction {
         val text: String,
         val shouldFlushAutoCommitCandidate: Boolean,
     ) : HardwareKeyboardKeyDownAction
+}
+
+/** How a key that passes through moves the app's cursor (see [HardwareKeyboardInputPolicy.passThroughMove]). */
+internal enum class PassThroughMove {
+    /** Moves nothing the keyboard tracks, or moves the focus away. */
+    None,
+    /** A plain Right arrow, which moves a char the way the paragraph runs. */
+    Right,
+    /** A plain Home in a single-line field. */
+    LineStart,
+    /** A plain End in a single-line field. */
+    LineEnd,
+    /** A plain Tab, which types a tab in some multi-line fields and moves the focus in others. */
+    Tab,
+    /** Moves the cursor or changes the text in a way only the app's report tells (a paste, Up, Ctrl+Z). */
+    Unpredictable,
 }
 
 internal enum class HardwareKeyboardKeyUpAction {
