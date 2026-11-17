@@ -35,6 +35,9 @@ import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
 import dev.patrickgold.florisboard.ime.nlp.context.ContextModelStore
 import dev.patrickgold.florisboard.ime.nlp.latin.ColdStartNextWordPriors
+import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfilePolicy
+import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
+import dev.patrickgold.florisboard.ime.profile.PerAppSuggestionAggressiveness
 import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
 import dev.patrickgold.florisboard.ime.smartcompose.SmartComposeContext
 import dev.patrickgold.florisboard.ime.smartcompose.NlpAddonHub
@@ -148,6 +151,9 @@ class NlpManager(
         prefs.suggestion.enabled.asFlow().collectLatestIn(scope) {
             assembleCandidates()
         }
+        prefs.privacy.perAppKeyboardProfiles.asFlow().collectLatestIn(scope) {
+            assembleCandidates()
+        }
         prefs.clipboard.suggestionEnabled.asFlow().collectLatestIn(scope) {
             assembleCandidates()
         }
@@ -240,10 +246,38 @@ class NlpManager(
     }
 
     fun isSuggestionOn(): Boolean =
-        prefs.suggestion.enabled.get()
+        wordSuggestionsEnabled()
             || prefs.emoji.suggestionEnabled.get()
             || prefs.clipboard.suggestionEnabled.get()
             || providerForcesSuggestionOn(subtypeManager.activeSubtype)
+
+    /**
+     * The global "Display suggestions" switch as it applies to the focused app.
+     * A per-app profile set to "Off for this app" turns word suggestions and
+     * corrections off there. It used to turn only composing off, so the strip
+     * kept suggesting and a space still corrected the word.
+     */
+    private fun wordSuggestionsEnabled(): Boolean {
+        val globalEnabled = prefs.suggestion.enabled.get()
+        if (!globalEnabled) return false
+        val rawJson = prefs.privacy.perAppKeyboardProfiles.get()
+        val packageName = editorInstance.activeInfo.packageName
+        val cached = perAppWordSuggestions
+        if (cached != null && cached.rawJson == rawJson && cached.packageName == packageName) {
+            return cached.enabled
+        }
+        val enabled = PerAppKeyboardProfilePolicy.shouldOfferWordSuggestions(
+            globalEnabled = true,
+            suggestions = PerAppKeyboardProfiles.resolve(rawJson, packageName)?.suggestions
+                ?: PerAppSuggestionAggressiveness.FOLLOW_GLOBAL,
+        )
+        perAppWordSuggestions = PerAppWordSuggestions(rawJson, packageName, enabled)
+        return enabled
+    }
+
+    /** The last app's answer, so typing doesn't parse the profiles on every key. */
+    private class PerAppWordSuggestions(val rawJson: String, val packageName: String?, val enabled: Boolean)
+    @Volatile private var perAppWordSuggestions: PerAppWordSuggestions? = null
 
     /**
      * Whether the active editor is a password field or declares itself
@@ -276,7 +310,7 @@ class NlpManager(
         val requestPrivacy = SuggestionPrivacyPolicy.snapshotSuggestionRequest(
             emojiSuggestionEnabled = prefs.emoji.suggestionEnabled.get(),
             emojiMaxCandidateCount = prefs.emoji.suggestionCandidateMaxCount.get(),
-            wordSuggestionEnabled = prefs.suggestion.enabled.get(),
+            wordSuggestionEnabled = wordSuggestionsEnabled(),
             blockPossiblyOffensive = prefs.suggestion.blockPossiblyOffensive.get(),
             blockSlursOnly = prefs.suggestion.blockSlursOnly.get(),
             isPrivateSession = keyboardManager.activeState.isIncognitoMode,
@@ -917,7 +951,7 @@ class NlpManager(
     }
 
     private fun immediateAutoCommitCandidate(currentWord: String): SuggestionCandidate? {
-        if (!prefs.suggestion.enabled.get()) {
+        if (!wordSuggestionsEnabled()) {
             return null
         }
         return ImmediateAutocorrect.englishContractionCandidate(
@@ -927,7 +961,7 @@ class NlpManager(
     }
 
     private fun immediatePhraseRepairCandidate(currentWord: String): SuggestionCandidate? {
-        if (!prefs.suggestion.enabled.get()) {
+        if (!wordSuggestionsEnabled()) {
             return null
         }
         return ImmediateAutocorrect.englishPhraseRepairCandidate(

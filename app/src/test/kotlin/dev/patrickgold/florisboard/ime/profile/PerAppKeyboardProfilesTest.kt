@@ -131,6 +131,17 @@ class PerAppKeyboardProfilesTest : FunSpec({
         ) shouldBe false
     }
 
+    test("suggestion off profile turns word suggestions off and every other choice follows the global switch") {
+        PerAppKeyboardProfilePolicy.shouldOfferWordSuggestions(
+            globalEnabled = true,
+            suggestions = PerAppSuggestionAggressiveness.OFF,
+        ) shouldBe false
+        PerAppSuggestionAggressiveness.entries.filter { it != PerAppSuggestionAggressiveness.OFF }.forEach { choice ->
+            PerAppKeyboardProfilePolicy.shouldOfferWordSuggestions(globalEnabled = true, suggestions = choice) shouldBe true
+            PerAppKeyboardProfilePolicy.shouldOfferWordSuggestions(globalEnabled = false, suggestions = choice) shouldBe false
+        }
+    }
+
     test("clipboard force-off suppresses clipboard history retention") {
         PerAppKeyboardProfilePolicy.shouldSuppressClipboardHistory(PerAppBooleanOverride.FORCE_OFF) shouldBe true
         PerAppKeyboardProfilePolicy.shouldSuppressClipboardHistory(PerAppBooleanOverride.FOLLOW_GLOBAL) shouldBe false

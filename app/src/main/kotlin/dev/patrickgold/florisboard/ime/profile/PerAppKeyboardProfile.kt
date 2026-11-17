@@ -185,6 +185,18 @@ object PerAppKeyboardProfilePolicy {
         return baseEnabled && suggestions != PerAppSuggestionAggressiveness.OFF
     }
 
+    /**
+     * Whether word suggestions and corrections run in an app. "Off for this
+     * app" works like turning the global "Display suggestions" switch off
+     * while that app is focused; every other choice follows the switch.
+     */
+    fun shouldOfferWordSuggestions(
+        globalEnabled: Boolean,
+        suggestions: PerAppSuggestionAggressiveness,
+    ): Boolean {
+        return globalEnabled && suggestions != PerAppSuggestionAggressiveness.OFF
+    }
+
     fun shouldSuppressClipboardHistory(override: PerAppBooleanOverride): Boolean {
         return override == PerAppBooleanOverride.FORCE_OFF
     }
