@@ -112,6 +112,9 @@ internal object EditorInputConnectionBatch {
      * Refuses an out-of-range span rather than clamping it: a host that has
      * already dropped text can hand back a stale range, and clamping would
      * delete whatever now occupies those offsets.
+     *
+     * @return False when the span was refused or the host refused the
+     * selection, so nothing was committed.
      */
     fun replaceRangeBySelection(
         ic: InputConnection,
@@ -119,14 +122,20 @@ internal object EditorInputConnectionBatch {
         replaceEnd: Int,
         text: String,
         composing: EditorRange,
-    ) {
-        if (replaceStart < 0 || replaceEnd < replaceStart) return
+        selectedTextSuggestion: Boolean = false,
+        sdkInt: Int = Build.VERSION.SDK_INT,
+        textSuggestionAttributeWriter: TextSuggestionAttributeWriter = Api37TextAttributes,
+    ): Boolean {
+        if (replaceStart < 0 || replaceEnd < replaceStart) return false
+        var replaced = false
         runWithBatchEdit(ic) {
             if (!setSelection(replaceStart, replaceEnd)) return@runWithBatchEdit
             finishComposingText()
-            commitText(text, 1)
+            commitTextWithAttributes(text, 1, selectedTextSuggestion, sdkInt, textSuggestionAttributeWriter)
             setComposingRegion(composing)
+            replaced = true
         }
+        return replaced
     }
 
     fun commitText(

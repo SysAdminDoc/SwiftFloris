@@ -735,6 +735,64 @@ abstract class AbstractEditorInstance(context: Context) {
         return true
     }
 
+    /**
+     * True when there's a word for [replaceCurrentWord] to replace: a non-empty
+     * current word that ends at a collapsed cursor in a rich editor.
+     */
+    protected fun canReplaceCurrentWord(): Boolean {
+        if (activeInfo.isRawInputEditor) return false
+        val content = activeContent
+        val word = content.currentWord
+        val selection = content.selection
+        return word.isValid && word.length > 0 && selection.isCursorMode && word.end == selection.start &&
+            content.textBeforeSelection.endsWith(content.currentWordText)
+    }
+
+    /**
+     * Replaces the current word (the word right before the cursor) with [text]
+     * by selecting it and committing over it. This is how a candidate for that
+     * word lands when the field has no composing region (composing turned off
+     * for it), where committing at the cursor would append the candidate to
+     * the word instead.
+     *
+     * @return False, leaving the editor untouched, when [canReplaceCurrentWord]
+     * says there's no word or the editor refused the selection.
+     */
+    protected fun replaceCurrentWord(
+        text: String,
+        selectedTextSuggestion: Boolean = false,
+    ): Boolean {
+        if (!canReplaceCurrentWord()) return false
+        val ic = currentInputConnection() ?: return false
+        val content = activeContent
+        val word = content.currentWord
+        val newContent = runBlocking {
+            content.generateCopy(
+                selection = EditorRange.cursor(word.start + text.length),
+                textBeforeSelection = buildString {
+                    append(content.textBeforeSelection, 0, content.textBeforeSelection.length - word.length)
+                    append(text)
+                },
+                selectedText = "",
+            )
+        }
+        val replaced = EditorInputConnectionBatch.replaceRangeBySelection(
+            ic = ic,
+            replaceStart = word.start,
+            replaceEnd = word.end,
+            text = text,
+            composing = newContent.composing,
+            selectedTextSuggestion = selectedTextSuggestion,
+        )
+        if (!replaced) return false
+        // Pushed only once the editor took the edit, so a refused selection
+        // leaves no expected content claiming text that isn't there. The
+        // editor's report can't arrive before this: it's posted to this thread.
+        expectedContentQueue.push(newContent)
+        _lastCommitPosition.handleCommit(newContent.selection)
+        return true
+    }
+
     protected suspend fun deleteAroundCursor(unit: OperationUnit, scope: OperationScope, n: Int = 0): Boolean {
         val ic = currentInputConnection()
         if (ic == null || n < 1) return false

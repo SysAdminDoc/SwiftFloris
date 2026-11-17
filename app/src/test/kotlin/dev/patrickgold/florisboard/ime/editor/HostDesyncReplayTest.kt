@@ -188,6 +188,38 @@ class HostDesyncReplayTest : FunSpec({
         host.text shouldBe "hi"
     }
 
+    test("selection-based replacement says whether it replaced anything") {
+        val cooperative = FakeHostEditor(text = "hello wor", selectionStart = 9)
+        val refusing = FakeHostEditor(text = "hello wor", selectionStart = 9, refusesEdits = true)
+        val short = FakeHostEditor(text = "hi", selectionStart = 2)
+
+        EditorInputConnectionBatch.replaceRangeBySelection(
+            ic = cooperative.connection,
+            replaceStart = 6,
+            replaceEnd = 9,
+            text = "world",
+            composing = EditorRange.Unspecified,
+        ) shouldBe true
+        EditorInputConnectionBatch.replaceRangeBySelection(
+            ic = refusing.connection,
+            replaceStart = 6,
+            replaceEnd = 9,
+            text = "world",
+            composing = EditorRange.Unspecified,
+        ) shouldBe false
+        EditorInputConnectionBatch.replaceRangeBySelection(
+            ic = short.connection,
+            replaceStart = 4,
+            replaceEnd = 9,
+            text = "world",
+            composing = EditorRange.Unspecified,
+        ) shouldBe false
+
+        cooperative.text shouldBe "hello world"
+        refusing.text shouldBe "hello wor"
+        short.text shouldBe "hi"
+    }
+
     test("batch depth is balanced even when the host refuses every operation") {
         val host = FakeHostEditor(
             text = "hello wor",

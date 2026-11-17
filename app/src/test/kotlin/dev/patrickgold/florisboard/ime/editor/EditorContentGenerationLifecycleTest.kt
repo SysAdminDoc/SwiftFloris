@@ -125,6 +125,80 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun aCandidateReplacesTheWordBeforeTheCursorWhenComposingIsOff() {
+        // Composing off with the word still found is a field whose composing was turned off. The
+        // candidate is still for that word, and committing it at the cursor wrote "thiertheir".
+        val editor = TestEditorInstance(context).apply { findsWords = true }
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "I typed thier", acceptsSelection = true)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 13), isRestart = false)
+        scheduler.runCurrent()
+        assertEquals("thier", editor.activeContent.currentWordText)
+        assertFalse(editor.activeContent.composing.isValid)
+        assertTrue(editor.canReplaceWord())
+
+        assertTrue(editor.replaceWord("their"))
+
+        assertEquals(listOf("setSelection(8,13)"), connection.selectionCalls)
+        assertEquals(listOf("their"), connection.committedTexts)
+        assertEquals("I typed their", editor.activeContent.textBeforeSelection)
+        assertEquals(EditorRange.cursor(13), editor.activeContent.selection)
+    }
+
+    @Test
+    fun aShorterCandidateLeavesTheCursorAtTheEndOfTheReplacement() {
+        val editor = TestEditorInstance(context).apply { findsWords = true }
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "ab untill", acceptsSelection = true)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 9), isRestart = false)
+        scheduler.runCurrent()
+
+        assertTrue(editor.replaceWord("until"))
+
+        assertEquals(listOf("setSelection(3,9)"), connection.selectionCalls)
+        assertEquals(listOf("until"), connection.committedTexts)
+        assertEquals("ab until", editor.activeContent.textBeforeSelection)
+        assertEquals(EditorRange.cursor(8), editor.activeContent.selection)
+    }
+
+    @Test
+    fun noWordBeforeTheCursorMeansNothingIsReplaced() {
+        val editor = TestEditorInstance(context).apply { findsWords = true }
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "I typed thier ", acceptsSelection = true)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 14), isRestart = false)
+        scheduler.runCurrent()
+        assertEquals("", editor.activeContent.currentWordText)
+
+        assertFalse(editor.canReplaceWord())
+        assertFalse(editor.replaceWord("their"))
+
+        assertTrue(connection.selectionCalls.isEmpty())
+        assertTrue(connection.committedTexts.isEmpty())
+        assertEquals("I typed thier ", editor.activeContent.textBeforeSelection)
+    }
+
+    @Test
+    fun aRefusedSelectionLeavesTheWordAndTheContentAsTheyWere() {
+        val editor = TestEditorInstance(context).apply { findsWords = true }
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "I typed thier", acceptsSelection = false)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 13), isRestart = false)
+        scheduler.runCurrent()
+
+        assertFalse(editor.replaceWord("their"))
+
+        assertEquals(listOf("setSelection(8,13)"), connection.selectionCalls)
+        assertTrue(connection.committedTexts.isEmpty())
+        assertEquals("I typed thier", editor.activeContent.textBeforeSelection)
+        assertEquals(null, editor.expectedContent())
+    }
+
+    @Test
     fun finishInputCancelsPendingSelectionUpdateContentJob() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hello")
@@ -2823,6 +2897,12 @@ class EditorContentGenerationLifecycleTest {
 private class TestEditorInstance(context: Context) : AbstractEditorInstance(context) {
     var inputConnection: InputConnection? = null
     var runsRightToLeft = false
+    /** Finds the word before the cursor, with composing still off (a field whose composing was turned off). */
+    var findsWords = false
+
+    fun canReplaceWord(): Boolean = canReplaceCurrentWord()
+
+    fun replaceWord(text: String): Boolean = replaceCurrentWord(text)
 
     fun massSelectionUpdate(newSelection: EditorRange, isAnchorFirst: Boolean = true) {
         handleMassSelectionUpdate(newSelection, EditorRange.Unspecified, isAnchorFirst)
@@ -2840,7 +2920,7 @@ private class TestEditorInstance(context: Context) : AbstractEditorInstance(cont
 
     override fun determineComposer(composerName: ExtensionComponentName): Composer = Appender
 
-    override fun shouldDetermineComposingRegion(editorInfo: FlorisEditorInfo): Boolean = false
+    override fun shouldDetermineComposingRegion(editorInfo: FlorisEditorInfo): Boolean = findsWords
 
     override fun reevaluateInputShiftState() = Unit
 }
@@ -2851,6 +2931,8 @@ private class LifecycleRecordingInputConnection(
     var selectedText: String = "",
     /** Like an app that ignores how many chars a read asks for. */
     private val returnsAllText: Boolean = false,
+    /** Whether setSelection succeeds; false like an unset proxy call so older cases keep their behavior. */
+    private val acceptsSelection: Boolean = false,
 ) : InvocationHandler {
     private val calls = mutableListOf<String>()
     val composingCalls: List<String>
@@ -2859,6 +2941,9 @@ private class LifecycleRecordingInputConnection(
         }
     val editAndReadCalls: List<String>
         get() = calls.filter { call -> call == "commitText" || call.startsWith("getTextBeforeCursor") }
+    val selectionCalls: List<String>
+        get() = calls.filter { call -> call.startsWith("setSelection") }
+    val committedTexts = mutableListOf<String>()
 
     val connection: InputConnection = Proxy.newProxyInstance(
         InputConnection::class.java.classLoader,
@@ -2874,7 +2959,12 @@ private class LifecycleRecordingInputConnection(
             }
             "commitText" -> {
                 calls += "commitText"
+                committedTexts += args?.get(0).toString()
                 true
+            }
+            "setSelection" -> {
+                calls += "setSelection(${args?.get(0)},${args?.get(1)})"
+                acceptsSelection
             }
             "getTextAfterCursor" ->
                 if (returnsAllText) textAfterSelection else textAfterSelection.take(args?.get(0) as Int)

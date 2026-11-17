@@ -72,37 +72,28 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
 
     protected override fun currentInputConnection() = FlorisImeService.currentInputConnection()
 
-    override fun handleStartInputView(editorInfo: FlorisEditorInfo, isRestart: Boolean) {
-        keyboardManager.prepareForEditor(
-            preserveClipboard = activeState.imeUiMode == ImeUiMode.CLIPBOARD &&
-                !prefs.clipboard.historyHideOnNextTextField.get(),
-        )
-        if (!prefs.correction.rememberCapsLockState.get()) {
-            // Enable auto-capitalization for the first letter of the text field
-            activeState.inputShiftState = InputShiftState.SHIFTED_AUTOMATIC
+    override fun handleStartInput(editorInfo: FlorisEditorInfo) {
+        // A physical keyboard types into fields whose input view never starts
+        // (a Chrome page focused with the on-screen keyboard hidden), so the
+        // field's own contract is applied here as well. Without it the
+        // composing, key-variation and incognito decisions of the previous
+        // field stayed in force for the new one.
+        val editorContract = applyFieldContract(editorInfo)
+        super.handleStartInput(editorInfo)
+        if (!editorContract.allowsImeSuggestions) {
+            nlpManager.clearSuggestions()
         }
-        activeState.isActionsOverflowVisible = false
-        activeState.isActionsEditorVisible = false
+    }
+
+    /**
+     * Sets the per-field state decided by the editor's own metadata and the
+     * app's keyboard profile: key variation, composing and incognito. Runs
+     * before the superclass starts content generation so the first composing
+     * decision matches this field, even on a dispatcher that runs immediately.
+     */
+    private fun applyFieldContract(editorInfo: FlorisEditorInfo): EditorCompatibilityPolicy.Snapshot {
         val editorContract = EditorCompatibilityPolicy.snapshot(editorInfo)
-        val keyboardMode = when (editorInfo.inputAttributes.type) {
-            InputAttributes.Type.NUMBER -> {
-                KeyboardMode.NUMERIC
-            }
-            InputAttributes.Type.PHONE -> {
-                KeyboardMode.PHONE
-            }
-            InputAttributes.Type.TEXT -> {
-                KeyboardMode.CHARACTERS
-            }
-            else -> {
-                KeyboardMode.CHARACTERS
-            }
-        }
-        // Set the contract before the superclass starts asynchronous content
-        // generation. This keeps the first composing decision consistent with
-        // the editor metadata even on a dispatcher that runs immediately.
         activeState.keyVariation = editorContract.keyVariation
-        keyboardManager.setKeyboardModeForEditor(keyboardMode)
         val profile = activePerAppProfile(editorInfo.packageName)
         val baseComposingEnabled = editorContract.allowsComposing && prefs.suggestion.enabled.get()
         activeState.isComposingEnabled = PerAppKeyboardProfilePolicy.shouldEnableComposing(
@@ -123,6 +114,38 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         // FORCE_ON power-user setting). It just cannot turn the
         // app-declared flag *off*.
         activeState.isIncognitoMode = resolveIncognitoFor(editorInfo, profile)
+        return editorContract
+    }
+
+    override fun handleStartInputView(editorInfo: FlorisEditorInfo, isRestart: Boolean) {
+        keyboardManager.prepareForEditor(
+            preserveClipboard = activeState.imeUiMode == ImeUiMode.CLIPBOARD &&
+                !prefs.clipboard.historyHideOnNextTextField.get(),
+        )
+        if (!prefs.correction.rememberCapsLockState.get()) {
+            // Enable auto-capitalization for the first letter of the text field
+            activeState.inputShiftState = InputShiftState.SHIFTED_AUTOMATIC
+        }
+        activeState.isActionsOverflowVisible = false
+        activeState.isActionsEditorVisible = false
+        val keyboardMode = when (editorInfo.inputAttributes.type) {
+            InputAttributes.Type.NUMBER -> {
+                KeyboardMode.NUMERIC
+            }
+            InputAttributes.Type.PHONE -> {
+                KeyboardMode.PHONE
+            }
+            InputAttributes.Type.TEXT -> {
+                KeyboardMode.CHARACTERS
+            }
+            else -> {
+                KeyboardMode.CHARACTERS
+            }
+        }
+        // Set the contract before the superclass starts asynchronous content
+        // generation (see applyFieldContract).
+        val editorContract = applyFieldContract(editorInfo)
+        keyboardManager.setKeyboardModeForEditor(keyboardMode)
         super.handleStartInputView(editorInfo, isRestart)
         keyboardManager.configureNumericPasswordScramble(
             NumericPasswordScramblePolicy.shouldApply(
@@ -349,6 +372,16 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
                 text = text,
                 selectedTextSuggestion = selectedTextSuggestion,
             )
+        } else if (canReplaceCurrentWord()) {
+            // Composing is off for this field (its own flags, the app's profile)
+            // but the candidate was still ranked for the word before the cursor,
+            // so it replaces that word the way the composing branch does.
+            // Committing it at the cursor wrote "thier" as "thiertheir".
+            phantomSpace.setActive(showComposingRegion = false, candidate = candidate)
+            replaceCurrentWord(
+                text = text,
+                selectedTextSuggestion = selectedTextSuggestion,
+            ).also { replaced -> if (!replaced) phantomSpace.setInactive() }
         } else {
             val isPhantomSpaceActive = phantomSpace.determine(text)
             phantomSpace.setActive(showComposingRegion = false, candidate = candidate)
