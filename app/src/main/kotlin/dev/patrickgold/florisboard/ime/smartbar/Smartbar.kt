@@ -225,7 +225,11 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     @Composable
     fun SuggestionsContent(modifier: Modifier = Modifier) {
         when (SmartbarSuggestionsSlot.pick(shouldShowInlineSuggestionsUi, shouldShowPerAppAccentHint)) {
-            SmartbarSuggestionsSlot.INLINE_AUTOFILL -> InlineSuggestionsUi(inlineSuggestions, modifier)
+            SmartbarSuggestionsSlot.INLINE_AUTOFILL -> if (AndroidVersion.ATLEAST_API30_R) {
+                InlineSuggestionsUi(inlineSuggestions, modifier)
+            } else {
+                CandidatesRow(modifier)
+            }
             SmartbarSuggestionsSlot.PER_APP_ACCENT_HINT -> PerAppAccentDiscoveryHint(modifier)
             SmartbarSuggestionsSlot.CANDIDATES -> CandidatesRow(modifier)
         }
