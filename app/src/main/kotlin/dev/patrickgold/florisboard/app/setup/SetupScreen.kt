@@ -52,6 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -465,9 +466,11 @@ private fun FlorisStepLayoutScope.ChooseLanguageStep(
     val notice = remember(presets, systemLocales) {
         FirstRunLanguagePolicy.notice(systemLocales.ifEmpty { listOf(Locale.getDefault()) }, presets)
     }
+    // The language is named in the same language as the sentence around it, and renamed if that changes.
+    val displayLocale = LocalConfiguration.current.locales[0]
     when (notice) {
         is FirstRunLanguagePolicy.Notice.UncommonOnly -> {
-            val language = FirstRunLanguagePolicy.missingLanguageName(notice.systemLocale, presets, Locale.getDefault())
+            val language = FirstRunLanguagePolicy.missingLanguageName(notice.systemLocale, presets, displayLocale)
             val method = FirstRunLanguagePolicy.uncommonMethodName(notice.preset)
             // "Pick English" only fits when English is the one keyboard shown.
             val text = if (notice.othersSuggested) {
@@ -478,7 +481,7 @@ private fun FlorisStepLayoutScope.ChooseLanguageStep(
             StepText(stringRes(text, "language" to language, "method" to method))
         }
         is FirstRunLanguagePolicy.Notice.NoMatch -> {
-            val language = FirstRunLanguagePolicy.missingLanguageName(notice.systemLocale, presets, Locale.getDefault())
+            val language = FirstRunLanguagePolicy.missingLanguageName(notice.systemLocale, presets, displayLocale)
             StepText(stringRes(R.string.setup__choose_language__no_match, "language" to language))
         }
         FirstRunLanguagePolicy.Notice.Suggested -> StepText(stringRes(R.string.setup__choose_language__description))
