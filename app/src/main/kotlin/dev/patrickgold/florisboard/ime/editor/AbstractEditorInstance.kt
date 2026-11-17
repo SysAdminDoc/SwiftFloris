@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.editor
 
 import android.content.Context
+import android.content.res.Resources
 import android.icu.lang.UCharacter
 import android.icu.text.BreakIterator
 import android.inputmethodservice.InputMethodService
@@ -25,6 +26,7 @@ import android.text.TextUtils
 import android.view.InputDevice
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
+import android.view.View
 import android.view.inputmethod.InputConnection
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.ime.nlp.BreakIteratorGroup
@@ -149,8 +151,8 @@ abstract class AbstractEditorInstance(context: Context) {
         private set(v) {
             _activeContentFlow.value = v
         }
-    private val expectedContentQueue = ExpectedContentQueue()
-    private val passThroughKeys = PassThroughKeyTracker()
+    private val expectedContentQueue = ExpectedContentQueue { passThroughKeys.keysSoFar() }
+    private val passThroughKeys = PassThroughKeyTracker { systemRunsRightToLeft() }
     private val _lastCommitPosition = LastCommitPosition()
     val lastCommitPosition
         get() = LastCommitPosition(_lastCommitPosition)
@@ -207,12 +209,20 @@ abstract class AbstractEditorInstance(context: Context) {
 
     protected open fun currentInputConnection() = FlorisImeService.currentInputConnection()
 
+    /**
+     * True when the system's layout runs right to left, as most apps' do then. An app's Compose
+     * field runs its Left arrow that way, so one that runs right to left is likely only then.
+     */
+    protected open fun systemRunsRightToLeft(): Boolean {
+        return Resources.getSystem().configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+    }
+
     open fun handleStartInput(editorInfo: FlorisEditorInfo) {
         cancelPendingContentGeneration()
         activeInfo = editorInfo
         activeCursorCapsMode = editorInfo.initialCapsMode
         activeContent = EditorContent.Unspecified
-        passThroughKeys.start(editorInfo.initialSelection)
+        passThroughKeys.start(editorInfo.initialSelection, editorInfo.isInitialAnchorFirst)
         currentInputConnection()?.requestCursorUpdates(CursorUpdateAll)
     }
 
@@ -244,7 +254,8 @@ abstract class AbstractEditorInstance(context: Context) {
                 selection = EditorRange(0, 0)
             }
         }
-        passThroughKeys.start(selection)
+        // A selection rebuilt from the text read back runs from its lower end.
+        passThroughKeys.start(selection, selection != editorInfo.initialSelection || editorInfo.isInitialAnchorFirst)
 
         launchContentGeneration(
             inputConnection = ic,
@@ -260,7 +271,7 @@ abstract class AbstractEditorInstance(context: Context) {
         )
     }
 
-    protected fun handleMassSelectionUpdate(newSelection: EditorRange, composing: EditorRange) {
+    protected fun handleMassSelectionUpdate(newSelection: EditorRange, composing: EditorRange, isAnchorFirst: Boolean = true) {
         cancelPendingContentGeneration()
         activeCursorCapsMode = InputAttributes.CapsMode.NONE
         activeContent = EditorContent.selectionOnly(newSelection)
@@ -268,12 +279,28 @@ abstract class AbstractEditorInstance(context: Context) {
             currentInputConnection()?.setComposingRegion(EditorRange.Unspecified)
         }
         _lastCommitPosition.handleUpdateSelection(newSelection)
-        passThroughKeys.start(newSelection)
+        passThroughKeys.start(newSelection, isAnchorFirst)
         // Mass selection is the user selecting text, so whatever comes next isn't typed in a row.
         notifyCommitAdjacencyBrokenIfNeeded(true)
     }
 
-    open fun handleSelectionUpdate(oldSelection: EditorRange, newSelection: EditorRange, composing: EditorRange) {
+    /** Reads the field again once a mass selection ends. */
+    protected fun handleMassSelectionEnd() {
+        handleSelectionUpdate(
+            EditorRange.Unspecified,
+            activeContent.selection,
+            EditorRange.Unspecified,
+            passThroughKeys.isAnchorFirst(),
+        )
+    }
+
+    /** [isAnchorFirst] says whether the anchor of [newSelection] is its lower end, which it no longer says itself. */
+    open fun handleSelectionUpdate(
+        oldSelection: EditorRange,
+        newSelection: EditorRange,
+        composing: EditorRange,
+        isAnchorFirst: Boolean = true,
+    ) {
         cancelPendingContentGeneration()
         val ic = currentInputConnection()
         val editorInfo = activeInfo
@@ -288,8 +315,10 @@ abstract class AbstractEditorInstance(context: Context) {
         // A cursor the keyboard's own edit predicted is typing, not a jump, and so is the cursor after
         // a key the app inserted itself. Anything else that moves the cursor (a tap, an app rewriting
         // the text) means the next word isn't typed after the last.
-        val appReport = passThroughKeys.handleUpdateSelection(oldSelection, newSelection)
-        val isOwnEdit = appReport == PassThroughReport.Insert || expectedContentQueue.containsSelection(newSelection)
+        val keyboardEdit = expectedContentQueue.editLeaving(newSelection)
+        val isKeyboardEdit = keyboardEdit != null
+        val appReport = passThroughKeys.handleUpdateSelection(oldSelection, newSelection, isAnchorFirst, keyboardEdit)
+        val isOwnEdit = appReport == PassThroughReport.Insert || isKeyboardEdit
         val leftTrackedCommit = _lastCommitPosition.handleUpdateSelection(newSelection)
         val isJump = !isOwnEdit && (leftTrackedCommit || newSelection != oldSelection)
         // A Backspace or Left arrow the app handled is a jump too, but the keys typed after it are
@@ -897,35 +926,41 @@ abstract class AbstractEditorInstance(context: Context) {
         return true
     }
 
-    private class ExpectedContentQueue {
+    /**
+     * The keyboard's own edits the editor hasn't reported yet. [keysSoFar] counts the keys the app
+     * has been passed, so a report for an edit knows which of them came after it.
+     */
+    private class ExpectedContentQueue(private val keysSoFar: () -> Long) {
         private val lock = Any()
-        private val list = mutableListOf<EditorContent>()
+        private val list = mutableListOf<KeyboardEdit>()
 
         fun popUntilOrNull(predicate: (EditorContent) -> Boolean): EditorContent? {
             return synchronized(lock) {
                 while (list.isNotEmpty()) {
                     val item = list.removeAt(0)
-                    if (predicate(item)) return@synchronized item
+                    if (predicate(item.content)) return@synchronized item.content
                 }
                 return@synchronized null
             }
         }
 
         fun push(item: EditorContent) {
+            val edit = KeyboardEdit(item, keysSoFar(), SystemClock.uptimeMillis())
             synchronized(lock) {
-                list.add(item)
+                list.add(edit)
             }
         }
 
-        fun containsSelection(selection: EditorRange): Boolean {
+        /** The oldest edit that leaves [selection], null if none does. */
+        fun editLeaving(selection: EditorRange): KeyboardEdit? {
             return synchronized(lock) {
-                list.any { it.selection == selection }
+                list.firstOrNull { it.content.selection == selection }
             }
         }
 
         fun peekNewestOrNull(): EditorContent? {
             return synchronized(lock) {
-                list.lastOrNull()
+                list.lastOrNull()?.content
             }
         }
 
@@ -935,6 +970,12 @@ abstract class AbstractEditorInstance(context: Context) {
             }
         }
     }
+
+    /**
+     * An edit the keyboard made itself, leaving [content], after the app had been passed
+     * [keysBefore] keys in all, at [atMillis].
+     */
+    private class KeyboardEdit(val content: EditorContent, val keysBefore: Long, val atMillis: Long)
 
     /** What a reported cursor meant to [PassThroughKeyTracker]. */
     private enum class PassThroughReport {
@@ -952,7 +993,9 @@ abstract class AbstractEditorInstance(context: Context) {
      *
      * Fields handle some keys differently, and EditorInfo doesn't say which way this one does, so
      * the tracker follows every way still possible (a [Track] each) until a report only some of
-     * them explain rules the others out. Two things differ:
+     * them explain rules the others out. Each way keeps its own count of the keys the app's
+     * reports have got past, since a key one way moves the cursor for another may leave in place.
+     * Two things differ:
      * - The kind of field. A Compose field's Left arrow moves over a whole conjunct and its
      *   Backspace deletes a variation selector alone (the joined kind). A TextView's Left stops
      *   before the consonant after the virama and its Backspace deletes a selector with the char
@@ -966,7 +1009,7 @@ abstract class AbstractEditorInstance(context: Context) {
      *   layout direction, and any other web field the page's, whatever the text: left to right in
      *   an English app or page, right to left in a Hebrew one. A password field runs left to right.
      */
-    private class PassThroughKeyTracker {
+    private class PassThroughKeyTracker(private val systemRunsRightToLeft: () -> Boolean) {
         /**
          * Where the cursor is after the keys so far in one way of handling them, a guess for a
          * step back. [text] holds the last chars right before the cursor, as far as the keyboard
@@ -986,12 +1029,9 @@ abstract class AbstractEditorInstance(context: Context) {
 
         /**
          * A key the app handles itself, with its [tracks] indexed by way (see [kindOf]), null for a
-         * way already ruled out. [quietUntil] is set while a report may already cover the key: past
-         * it the key no longer holds the editor behind, but a late report still matches it.
+         * way already ruled out.
          */
         private class PendingKey(val tracks: Array<Track?>, val isStepBack: Boolean, val atMillis: Long) {
-            var quietUntil: Long = Long.MAX_VALUE
-
             fun isExpired(now: Long): Boolean = now - atMillis > PassThroughInsertTimeoutMillis
         }
 
@@ -1021,6 +1061,7 @@ abstract class AbstractEditorInstance(context: Context) {
             const val NumDirections = 3
             const val NumWays = 2 * NumDirections
             const val AllWays = (1 shl NumWays) - 1
+            const val RightToLeftWays = (1 shl RightToLeft) or (1 shl (NumDirections + RightToLeft))
 
             /** A way is the kind of field times [NumDirections] plus the direction of a Left arrow. */
             fun kindOf(way: Int): Int = way / NumDirections
@@ -1028,21 +1069,83 @@ abstract class AbstractEditorInstance(context: Context) {
         }
 
         private val lock = Any()
+        /** How many keys the app has been passed in all, the last of them at the end of [pending]. */
+        private var keysAdded = 0L
         private var reported = EditorRange.Unspecified
+        /** True when the anchor of the [reported] selection is its lower end. */
+        private var reportedAnchorFirst = true
         private val pending = ArrayDeque<PendingKey>()
+        /**
+         * For each way, how many keys at the front of [pending] its reports have passed. A way that
+         * explains a report at a key has the app done with the keys up to it, though another way
+         * may still expect a report for them.
+         */
+        private val passed = IntArray(NumWays)
+        /**
+         * For each way, where the keys its last report may cover end. A step back and the char
+         * again leave the cursor in the same place a second time, and the text reads the same
+         * either way, so the report may be for those keys too. Past [quietUntil] with no report,
+         * the app is done with them, but a late report still matches them.
+         */
+        private val coveredTo = IntArray(NumWays)
+        private val quietUntil = LongArray(NumWays)
+        /**
+         * For each way, how many keys at the front of [pending] it settled with no report for them,
+         * the app having gone quiet. The next key starts from the last report then, but a late
+         * report still matches these keys.
+         */
+        private val settledTo = IntArray(NumWays)
+        /**
+         * How long the app took to report the last key or keyboard edit it reported, so a slow app
+         * gets longer to report the next one.
+         */
+        private var latencyMillis = 0L
+        /**
+         * The ways this field likely handles keys in. A Left arrow that runs right to left whatever
+         * the text is unlikely where the system's layout runs left to right, since apps follow it.
+         */
+        private var likelyWays = AllWays
         /** Until when a burst too long to track holds the editor behind. */
         private var overflowUntil = 0L
         private var graphemes: BreakIterator? = null
         /** The ways this field may handle keys, one bit per way (see [kindOf]). */
         private var possibleWays = AllWays
 
-        fun start(selection: EditorRange) {
+        /** [anchorFirst] is true when the anchor of [selection] is its lower end. */
+        fun start(selection: EditorRange, anchorFirst: Boolean = true) {
             synchronized(lock) {
                 reported = selection
-                pending.clear()
+                reportedAnchorFirst = anchorFirst
+                clearPending()
                 overflowUntil = 0L
+                latencyMillis = 0L
                 possibleWays = AllWays
+                likelyWays = if (systemRunsRightToLeft()) AllWays else AllWays and RightToLeftWays.inv()
             }
+        }
+
+        fun keysSoFar(): Long = synchronized(lock) { keysAdded }
+
+        /** True when the anchor of the last selection reported is its lower end. */
+        fun isAnchorFirst(): Boolean = synchronized(lock) { reportedAnchorFirst }
+
+        private fun isPossible(way: Int): Boolean = possibleWays and (1 shl way) != 0
+
+        /** The ways still possible that are likely the field's, or all of them if none is. */
+        private fun likely(): Int = (possibleWays and likelyWays).takeIf { it != 0 } ?: possibleWays
+
+        /** How many keys at the front of [pending] the app is done with in this way. */
+        private fun doneTo(way: Int, now: Long): Int {
+            val done = max(passed[way], settledTo[way])
+            return if (now > quietUntil[way]) max(done, coveredTo[way]) else done
+        }
+
+        /**
+         * How long a report the app may still send is waited for: twice the time its last one
+         * took, at least [PassThroughQuietTimeoutMillis], and never longer than a key is kept.
+         */
+        private fun holdMillis(): Long {
+            return min(PassThroughInsertTimeoutMillis, max(PassThroughQuietTimeoutMillis, 2 * latencyMillis))
         }
 
         /**
@@ -1141,8 +1244,9 @@ abstract class AbstractEditorInstance(context: Context) {
             val range = from.range
             val text = from.text
             val after = from.after
-            val selected = base.selected
-            if (wholeCluster && goesForward(from, base, joinedKind, direction)) {
+            // Only the track of a selection the keyboard knows starts on one.
+            val selected = if (range.isSelectionMode) base.selected else ""
+            if (wholeCluster && goesForward(from, selected, base.anchorFirst, joinedKind, direction)) {
                 return stepForward(range, text, selected, after)
             }
             if (range.isSelectionMode) {
@@ -1196,13 +1300,22 @@ abstract class AbstractEditorInstance(context: Context) {
             return Track(EditorRange.cursor(range.start + step), knownTail(text + moved), stillAfter)
         }
 
-        /** True when a Left arrow from a [from] track moves forward through the text. */
-        private fun goesForward(from: Track, base: Base, joinedKind: Boolean, direction: Int): Boolean {
+        /**
+         * True when a Left arrow from a [from] track moves forward through the text. [selected] is
+         * the text of its selection, whose anchor is its lower end when [anchorFirst].
+         */
+        private fun goesForward(
+            from: Track,
+            selected: String,
+            anchorFirst: Boolean,
+            joinedKind: Boolean,
+            direction: Int,
+        ): Boolean {
             return when (direction) {
                 LeftToRight -> false
                 RightToLeft -> true
                 else -> from.after != null &&
-                    runsRightToLeft(from.text, from.range.start, base.selected, from.after, base.anchorFirst, joinedKind)
+                    runsRightToLeft(from.text, from.range.start, selected, from.after, anchorFirst, joinedKind)
             }
         }
 
@@ -1268,14 +1381,24 @@ abstract class AbstractEditorInstance(context: Context) {
         private fun stepLength(step: Int): Int = abs(step) and (ConjunctConsonantStep - 1)
 
         /**
-         * Where the next key the app handles starts: the last key still pending, so a fast burst
-         * predicts every cursor, or else the keyboard's newest edit, or else the last report. A typed
-         * char replaces a selection, so a range is kept lower end first. A key past its quiet
-         * timeout left the cursor where the last report did, and the keyboard may have typed since.
+         * Where the next key the app handles starts in each way: the last key still pending, so a
+         * fast burst predicts every cursor, or else the keyboard's newest edit, or else the last
+         * report. A way the app is done with (see [doneTo]) left the cursor where the last report
+         * did, and the keyboard may have typed since. A typed char replaces a selection, so a range
+         * is kept lower end first.
          */
         private fun baseOf(now: Long, keyboardPending: EditorContent?, published: EditorContent): Base? {
-            val last = pending.lastOrNull()?.takeIf { now <= it.quietUntil }
-            if (last != null) return Base(last.tracks)
+            val tracks = arrayOfNulls<Track>(NumWays)
+            var settled = 0
+            for (way in 0 until NumWays) {
+                if (!isPossible(way)) continue
+                if (pending.lastIndex >= doneTo(way, now)) {
+                    tracks[way] = pending.last().tracks[way]
+                } else {
+                    settled = settled or (1 shl way)
+                }
+            }
+            if (settled == 0) return Base(tracks)
             val keyboard = keyboardPending?.takeIf { it.selection.isValid }
             val range = keyboard?.selection ?: reported.takeIf { it.isValid } ?: return null
             val content = keyboard ?: published.takeIf { it.selection == range }
@@ -1290,11 +1413,17 @@ abstract class AbstractEditorInstance(context: Context) {
                 // from an app that gives all of it whatever is asked.
                 whole?.textAfterSelection?.let { knownHead(it, reachesEnd = it.length != NumCharsAfterCursor) },
             )
-            val ways = possibleWays
+            for (way in 0 until NumWays) {
+                if (settled and (1 shl way) == 0) continue
+                tracks[way] = track
+                // The keys this way is done with need no report any more, but a late one still
+                // matches them, and a step back among them still breaks the run of typing then.
+                settledTo[way] = pending.size
+            }
             return Base(
-                Array(NumWays) { way -> track.takeIf { ways and (1 shl way) != 0 } },
+                tracks,
                 whole?.selectedText.orEmpty(),
-                anchorFirst = range.start <= range.end,
+                anchorFirst = if (keyboard != null) range.start <= range.end else reportedAnchorFirst,
             )
         }
 
@@ -1423,21 +1552,60 @@ abstract class AbstractEditorInstance(context: Context) {
 
         private fun add(key: PendingKey) {
             pending.addLast(key)
+            keysAdded++
             // The dropped key's report won't match, so it reads as a jump and drops the rest. The
             // app is still that far behind, so hold until the burst has been quiet for a while or
             // a report matches again.
             if (pending.size > MaxPendingPassThroughKeys || key.atMillis < overflowUntil) {
                 overflowUntil = key.atMillis + PassThroughInsertTimeoutMillis
             }
-            while (pending.size > MaxPendingPassThroughKeys) {
-                pending.removeFirst()
+            removeFirst(pending.size - MaxPendingPassThroughKeys)
+        }
+
+        /** Drops [count] keys from the front of [pending]. */
+        private fun removeFirst(count: Int) {
+            if (count <= 0) return
+            repeat(count) { pending.removeFirst() }
+            for (way in 0 until NumWays) {
+                passed[way] = max(0, passed[way] - count)
+                coveredTo[way] = max(0, coveredTo[way] - count)
+                settledTo[way] = max(0, settledTo[way] - count)
             }
         }
 
-        /** Matches a cursor the editor reported against the keys the app hasn't reported yet. */
-        fun handleUpdateSelection(oldSelection: EditorRange, selection: EditorRange): PassThroughReport {
+        /** Drops the keys the reports of every way still possible have passed. */
+        private fun trim() {
+            var done = pending.size
+            for (way in 0 until NumWays) {
+                if (isPossible(way)) done = min(done, passed[way])
+            }
+            removeFirst(done)
+        }
+
+        private fun clearPending() {
+            pending.clear()
+            passed.fill(0)
+            coveredTo.fill(0)
+            quietUntil.fill(0L)
+            settledTo.fill(0)
+        }
+
+        /**
+         * Matches a cursor the editor reported against the keys the app hasn't reported yet.
+         * [anchorFirst] is true when the anchor of [selection] is its lower end. A [keyboardEdit]
+         * report is the keyboard's own edit (a space it committed), which can land where a way
+         * that's behind expects a key the app was passed, so it passes none of them (see
+         * [coverKeysAfter]).
+         */
+        fun handleUpdateSelection(
+            oldSelection: EditorRange,
+            selection: EditorRange,
+            anchorFirst: Boolean,
+            keyboardEdit: KeyboardEdit?,
+        ): PassThroughReport {
             return synchronized(lock) {
                 reported = selection
+                reportedAnchorFirst = anchorFirst
                 // A key the app took as a shortcut never moves the cursor, so its entry would let a
                 // tap that lands there much later pass as typing.
                 val now = SystemClock.uptimeMillis()
@@ -1445,86 +1613,174 @@ abstract class AbstractEditorInstance(context: Context) {
                 // Every key the app is passed moves the cursor, so a report that leaves it in place
                 // (the app answering a new composing region) is none of them. After a step back, a
                 // later key can expect that same cursor.
-                val moved = selection.isCursorMode && selection != oldSelection
-                var index = -1
-                // The ways that explain the report at any key.
-                var explaining = 0
-                if (moved) {
-                    pending.forEachIndexed { i, key ->
-                        key.tracks.forEachIndexed { way, track ->
-                            if (track != null && track.reports && track.range.start == selection.start) {
-                                if (index < 0) index = i
-                                explaining = explaining or (1 shl way)
-                            }
-                        }
-                    }
+                if (!selection.isCursorMode || selection == oldSelection) {
+                    return@synchronized PassThroughReport.None
                 }
+                if (keyboardEdit != null) {
+                    coverKeysAfter(keyboardEdit, selection, now)
+                    return@synchronized PassThroughReport.None
+                }
+                // Each way's first key past the ones its reports passed that leaves the cursor here.
+                // The app may report several keys at once, so it can be a later one. A way past a
+                // key's quiet time still matches it, for an app slow to report. Keys typed after the
+                // way settled start from the last report, so they go first, and a key it settled
+                // with no report only matches failing those.
+                val matchedAt = IntArray(NumWays) { -1 }
+                var explaining = 0
+                for (way in 0 until NumWays) {
+                    if (!isPossible(way)) continue
+                    val settled = max(passed[way], settledTo[way])
+                    var at = firstLanding(way, selection.start, settled, pending.size)
+                    if (at < 0) at = firstLanding(way, selection.start, passed[way], settled)
+                    if (at < 0) continue
+                    matchedAt[way] = at
+                    explaining = explaining or (1 shl way)
+                }
+                if (explaining == 0) return@synchronized PassThroughReport.None
                 // Only some ways explain the report, so the key it matched is one they leave in
                 // different places (a Left over a conjunct or through Hebrew, a Backspace over a
                 // variation selector), and this field handles keys in one of those. When others do
                 // at a later key (a coalesced report), the next report may tell.
-                if (index >= 0 && explaining != possibleWays) {
-                    possibleWays = possibleWays and explaining
+                if (explaining != possibleWays) {
+                    possibleWays = explaining
                     pending.forEach { key ->
                         for (way in 0 until NumWays) {
                             if (explaining and (1 shl way) == 0) key.tracks[way] = null
                         }
                     }
                 }
-                // The app may report several keys at once, so drop everything up to the match.
-                var steppedBack = false
-                var matchedAt = now
-                repeat(index + 1) {
-                    val key = pending.removeFirst()
-                    // A Left the field's ways all leave in place (at the end of Hebrew text) moved
-                    // nothing, so the text around the cursor still runs on.
-                    if (key.isStepBack && key.tracks.any { it != null && it.reports }) steppedBack = true
-                    matchedAt = key.atMillis
+                // The app is keeping up, so whatever overflowed is behind it.
+                overflowUntil = 0L
+                // The earliest key matched is the one the report may be for alone, and how long ago
+                // it was passed is how long the app takes.
+                var earliest = pending.size
+                for (way in 0 until NumWays) {
+                    if (matchedAt[way] in 0 until earliest) earliest = matchedAt[way]
                 }
-                if (index >= 0) {
-                    // The app is keeping up, so whatever overflowed is behind it.
-                    overflowUntil = 0L
-                    // A step back and the char again leave this cursor a second time, and the text
-                    // reads the same either way, so this report may cover the keys up to there too.
-                    // If no report follows soon, the app is done with them. A slow app reports
-                    // later, so it gets longer.
-                    val quietFor = max(PassThroughQuietTimeoutMillis, 2 * (now - matchedAt))
-                    val lastSameCursor = pending.indexOfLast { key ->
-                        key.tracks.any { it != null && it.range.start == selection.start }
+                latencyMillis = now - pending[earliest].atMillis
+                val hold = holdMillis()
+                var steppedBack = true
+                for (way in 0 until NumWays) {
+                    val at = matchedAt[way]
+                    if (at < 0) continue
+                    // A Left this way leaves in place (at the end of Hebrew text) moved nothing, so
+                    // the text around the cursor still runs on. Where the ways disagree, the run
+                    // only breaks when every way that explains the report stepped back. A step back
+                    // among keys the way settled counts too.
+                    val stepped = (passed[way]..at).any { i ->
+                        pending[i].isStepBack && pending[i].tracks[way]?.reports == true
                     }
-                    pending.forEachIndexed { i, key ->
-                        key.quietUntil = if (i <= lastSameCursor) now + quietFor else Long.MAX_VALUE
+                    if (!stepped) steppedBack = false
+                    passed[way] = at + 1
+                    // The app reports late, so it may still report keys this way settled past.
+                    settledTo[way] = 0
+                    // If no report follows soon, the app is done with the keys this one may cover
+                    // too. A slow app reports later, so it gets longer.
+                    var lastSameCursor = at
+                    for (i in at + 1 until pending.size) {
+                        if (pending[i].tracks[way]?.range?.start == selection.start) lastSameCursor = i
                     }
+                    coveredTo[way] = lastSameCursor + 1
+                    quietUntil[way] = now + hold
                 }
-                when {
-                    index < 0 -> PassThroughReport.None
-                    steppedBack -> PassThroughReport.StepBack
-                    else -> PassThroughReport.Insert
-                }
+                trim()
+                if (steppedBack) PassThroughReport.StepBack else PassThroughReport.Insert
             }
         }
 
-        /** True when a key the app hasn't reported yet is still expected. */
+        /** The first key from [from] until [to] that this way gets a report for at [cursor], or -1. */
+        private fun firstLanding(way: Int, cursor: Int, from: Int, to: Int): Int {
+            for (i in from until to) {
+                val track = pending[i].tracks[way] ?: continue
+                if (track.reports && track.range.start == cursor) return i
+            }
+            return -1
+        }
+
+        /**
+         * A report for the keyboard's own [edit] can come with the keys the app was passed after
+         * it, from an app that reports a burst once. Each way that leaves the cursor at [selection]
+         * after one of those keys may be done with them, so it is if no report follows soon. The
+         * time the report took is how long the app takes.
+         */
+        private fun coverKeysAfter(edit: KeyboardEdit, selection: EditorRange, now: Long) {
+            latencyMillis = now - edit.atMillis
+            val keysAfter = keysAdded - edit.keysBefore
+            val from = if (keysAfter >= pending.size) 0 else pending.size - keysAfter.toInt()
+            for (way in 0 until NumWays) {
+                if (!isPossible(way)) continue
+                var last = -1
+                for (i in from until pending.size) {
+                    if (pending[i].tracks[way]?.range?.start == selection.start) last = i
+                }
+                if (last < 0) continue
+                // What an earlier report covered and the app went quiet after stays done.
+                if (now > quietUntil[way]) settledTo[way] = max(settledTo[way], coveredTo[way])
+                coveredTo[way] = max(coveredTo[way], last + 1)
+                quietUntil[way] = max(quietUntil[way], now + holdMillis())
+            }
+        }
+
+        /**
+         * True when a key the app hasn't reported yet is still expected. Where every way still
+         * possible expects one, the app is behind. Where some have caught up, the field may handle
+         * keys in one of those, and then the app is done. A way that likely isn't the field's
+         * doesn't hold then, and a likely one only until the quiet time of a way that caught up is
+         * up, since that way may have read a report for several keys as one for a single key.
+         */
         fun hasPending(): Boolean {
             return synchronized(lock) {
                 val now = SystemClock.uptimeMillis()
                 dropExpired(now)
-                // The quiet keys are the oldest ones and share one deadline, so the newest key
-                // tells whether any key is still expected.
-                val newest = pending.lastOrNull()
-                (newest != null && now <= newest.quietUntil) || now < overflowUntil
+                when {
+                    now < overflowUntil -> true
+                    pending.isEmpty() -> false
+                    else -> {
+                        var awaiting = 0
+                        var caughtUpInQuiet = false
+                        for (way in 0 until NumWays) {
+                            if (!isPossible(way)) continue
+                            if (awaits(way, now)) {
+                                awaiting = awaiting or (1 shl way)
+                            } else if (now <= quietUntil[way]) {
+                                caughtUpInQuiet = true
+                            }
+                        }
+                        awaiting == possibleWays || ((awaiting and likely()) != 0 && caughtUpInQuiet)
+                    }
+                }
             }
         }
 
-        private fun dropExpired(now: Long) {
-            while (pending.isNotEmpty() && pending.first().isExpired(now)) {
-                pending.removeFirst()
+        /**
+         * True when this way still expects a report for a key. A key it leaves in place where a
+         * likely way moves the cursor (a Left at the end of Hebrew text) gets no report if this is
+         * the field's way, so it holds only until the other way's report would have come.
+         */
+        private fun awaits(way: Int, now: Long): Boolean {
+            val likely = likely()
+            for (i in doneTo(way, now) until pending.size) {
+                val key = pending[i]
+                val track = key.tracks[way] ?: continue
+                if (track.reports) return true
+                if (now <= key.atMillis + holdMillis() &&
+                    (0 until NumWays).any { other -> likely and (1 shl other) != 0 && key.tracks[other]?.reports == true }
+                ) {
+                    return true
+                }
             }
+            return false
+        }
+
+        private fun dropExpired(now: Long) {
+            var expired = 0
+            while (expired < pending.size && pending[expired].isExpired(now)) expired++
+            removeFirst(expired)
         }
 
         fun dropPending() {
             synchronized(lock) {
-                pending.clear()
+                clearPending()
                 // The field's way may have been read off a report another key caused (one that
                 // expired first), so a report nothing explains lets the next key learn it again.
                 possibleWays = AllWays

@@ -847,6 +847,7 @@ class FlorisImeService : LifecycleInputMethodService() {
                 oldSelection = EditorRange.normalized(oldSelStart, oldSelEnd),
                 newSelection = EditorRange.normalized(newSelStart, newSelEnd),
                 composing = EditorRange.normalized(candidatesStart, candidatesEnd),
+                isAnchorFirst = newSelStart <= newSelEnd,
             )
         }
     }

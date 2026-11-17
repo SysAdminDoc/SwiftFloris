@@ -42,6 +42,13 @@ class FlorisEditorInfo private constructor(val base: EditorInfo) {
             EditorRange.Unspecified
         }
 
+    /**
+     * True when the anchor of the initial selection is its lower end, which [initialSelection]
+     * no longer says. A selection made backward (from its end) has it at the upper end.
+     */
+    val isInitialAnchorFirst: Boolean
+        get() = base.initialSelStart <= base.initialSelEnd
+
     val initialCapsMode: InputAttributes.CapsMode
         get() = InputAttributes.CapsMode.fromFlags(base.initialCapsMode)
 

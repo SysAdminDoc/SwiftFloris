@@ -170,13 +170,18 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         activeState.isIncognitoMode = resolveIncognitoFor(editorInfo, profile)
     }
 
-    override fun handleSelectionUpdate(oldSelection: EditorRange, newSelection: EditorRange, composing: EditorRange) {
+    override fun handleSelectionUpdate(
+        oldSelection: EditorRange,
+        newSelection: EditorRange,
+        composing: EditorRange,
+        isAnchorFirst: Boolean,
+    ) {
         autoSpace.setInactiveFromUpdate()
         phantomSpace.setInactiveFromUpdate()
         if (massSelection.isActive) {
-            super.handleMassSelectionUpdate(newSelection, composing)
+            super.handleMassSelectionUpdate(newSelection, composing, isAnchorFirst)
         } else {
-            super.handleSelectionUpdate(oldSelection, newSelection, composing)
+            super.handleSelectionUpdate(oldSelection, newSelection, composing, isAnchorFirst)
         }
     }
 
@@ -941,7 +946,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         fun end() {
             val newValue = state.updateAndGet { maxOf(it - 1, 0) }
             if (newValue == 0) {
-                handleSelectionUpdate(EditorRange.Unspecified, activeContent.selection, EditorRange.Unspecified)
+                handleMassSelectionEnd()
             }
         }
 

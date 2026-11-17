@@ -1257,6 +1257,29 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun backspaceOverIdeographAndSelectorInSlowCompose() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "a" + ideographWith(0xFE00))
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 3), isRestart = false)
+        scheduler.runCurrent()
+        // As in backspaceOverIdeographAndSelectorInCompose, in an app that takes 450 ms a key, with
+        // "x" typed 300 ms after the Backspace. A TextView would have reported both keys at once,
+        // but the Backspace's report came that late, so the "x" can take as long again.
+        editor.expectAppStepBack()
+        ShadowSystemClock.advanceBy(Duration.ofMillis(300))
+        editor.expectAppInsert(1, 'x'.code)
+        ShadowSystemClock.advanceBy(Duration.ofMillis(150))
+        editor.report(3, 2)
+        ShadowSystemClock.advanceBy(Duration.ofMillis(400))
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
     fun backspaceOverSelectorAfterAccent() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(
@@ -1606,7 +1629,9 @@ class EditorContentGenerationLifecycleTest {
         editor.inputConnection = connection.connection
         editor.handleStartInputView(editorInfo(selection = 303), isRestart = false)
         scheduler.runCurrent()
-        // The keyboard doesn't know where this paragraph starts, so it can't tell its direction.
+        // The keyboard sees only the Hebrew, not the Latin this paragraph starts with, so by the
+        // text the Left goes nowhere. The field's report shows it steps back, as one that runs
+        // left to right does.
         editor.expectAppStepBack(wholeCluster = true)
         editor.expectAppInsert(1, 'x'.code)
         editor.report(303, 302)
@@ -1743,6 +1768,74 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun leftCollapsesBackwardSelectionByItsAnchorsLine() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5D0, 0x5D1, 0xFE00),
+            textAfterSelection = "c",
+            selectedText = "\nab",
+        )
+
+        editor.inputConnection = connection.connection
+        // Selected from the end back over the line break, so the anchor is on the Latin line.
+        editor.handleStartInputView(editorInfo(selection = 6, selectionEnd = 3), isRestart = false)
+        scheduler.runCurrent()
+        // A TextView collapses it the way the anchor's line runs, to its left end at 3. Then a
+        // TextView's Backspace takes the letter with its selector, and its Left moves forward over
+        // the line break, since the Hebrew line runs right to left.
+        editor.expectAppStepBack(wholeCluster = true)
+        connection.textAfterSelection = "\nabc"
+        connection.selectedText = ""
+        editor.handleSelectionUpdate(EditorRange(3, 6), EditorRange.cursor(3), EditorRange.Unspecified)
+        scheduler.runCurrent()
+        editor.expectAppStepBack()
+        connection.textBeforeSelection = text(0x5D0)
+        editor.report(3, 1)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun massSelectionKeepsTheAnchorOfABackwardSelection() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = text(0x5D0, 0x5D1, 0xFE00) + "\nab",
+            textAfterSelection = "c",
+        )
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // A swipe selects back from the end over the line break, as the selection in
+        // leftCollapsesBackwardSelectionByItsAnchorsLine was, and the field is read once it ends.
+        editor.massSelectionUpdate(EditorRange(3, 6), isAnchorFirst = false)
+        connection.textBeforeSelection = text(0x5D0, 0x5D1, 0xFE00)
+        connection.selectedText = "\nab"
+        editor.massSelectionEnd()
+        scheduler.runCurrent()
+        editor.expectAppStepBack(wholeCluster = true)
+        connection.textAfterSelection = "\nabc"
+        connection.selectedText = ""
+        editor.handleSelectionUpdate(EditorRange(3, 6), EditorRange.cursor(3), EditorRange.Unspecified)
+        scheduler.runCurrent()
+        editor.expectAppStepBack()
+        connection.textBeforeSelection = text(0x5D0)
+        editor.report(3, 1)
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.report(1, 2)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
     fun leftInHebrewInLeftToRightFieldStepsBack() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(
@@ -1860,6 +1953,137 @@ class EditorContentGenerationLifecycleTest {
         editor.report(130, 131)
 
         assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun leftAtFieldStartDoesNotHoldTheNextSpace() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "", textAfterSelection = "abc")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 0), isRestart = false)
+        scheduler.runCurrent()
+        // Left at the start of Latin text goes nowhere, then "h" and "i", each reported. A field
+        // whose Left moves forward would explain each report one key early, but the field that
+        // left the cursor in place has caught up, so a space typed now isn't held back.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'h'.code)
+        editor.report(0, 1)
+        editor.expectAppInsert(1, 'i'.code)
+        editor.report(1, 2)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun leftAtFieldStartHoldsBrieflyWhereLayoutsRunRightToLeft() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "", textAfterSelection = "abc")
+
+        editor.runsRightToLeft = true
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 0), isRestart = false)
+        scheduler.runCurrent()
+        // As in leftAtFieldStartDoesNotHoldTheNextSpace, but the system runs right to left, so a
+        // field whose Left moves forward is likely too, and it still owes its "i".
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'h'.code)
+        editor.report(0, 1)
+        editor.expectAppInsert(1, 'i'.code)
+        editor.report(1, 2)
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(400))
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun leftBeforeHebrewAtFieldStartWaitsForTheFieldsLastKey() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(
+            textBeforeSelection = "",
+            textAfterSelection = text(0x5E9, 0x5DC, 0x5D5, 0x5DD),
+        )
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 0), isRestart = false)
+        scheduler.runCurrent()
+        // A TextView's Left moves forward into the Hebrew, where a field that runs left to right
+        // goes nowhere and so explains each report one key late. That one has caught up after the
+        // second report, but the TextView still owes its second letter.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 0x5D0)
+        editor.expectAppInsert(1, 0x5D1)
+        editor.report(0, 1)
+        editor.report(1, 2)
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(2, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun leftAtEndOfRightToLeftTextWaitsForASlowApp() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = text(0x5E9, 0x5DC, 0x5D5))
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 3), isRestart = false)
+        scheduler.runCurrent()
+        // The keyboard types the last letter, and the app takes 350 ms to report it. A Left after
+        // it, in a field that runs left to right, gets its report as late.
+        editor.commitText(text(0x5DD))
+        ShadowSystemClock.advanceBy(Duration.ofMillis(350))
+        connection.textBeforeSelection = text(0x5E9, 0x5DC, 0x5D5, 0x5DD)
+        editor.report(3, 4)
+        editor.expectAppStepBack(wholeCluster = true)
+        ShadowSystemClock.advanceBy(Duration.ofMillis(310))
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(40))
+        editor.report(4, 3)
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun leftAtEndOfRightToLeftTextHoldsOnlyBriefly() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = text(0x5E9, 0x5DC, 0x5D5, 0x5DD))
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // A Left at the end of Hebrew text goes nowhere in a TextView, which then reports nothing,
+        // and steps back in a field that runs left to right. No report soon means it went nowhere.
+        editor.expectAppStepBack(wholeCluster = true)
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(400))
+
+        assertFalse(editor.isContentBehindEditor())
+    }
+
+    @Test
+    fun leftThatStaysThenTypingBreaksNoAdjacency() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = text(0x5E9, 0x5DC, 0x5D5, 0x5DD))
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 4), isRestart = false)
+        scheduler.runCurrent()
+        // Left at the end of Hebrew text, then "x" and "y" before the first report. A field that
+        // runs left to right would report its "y" at 5 too, but the report at 6 rules it out, so
+        // the Left moved nothing and the typing still runs on.
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1, 'x'.code)
+        editor.expectAppInsert(1, 'y'.code)
+        editor.report(4, 5)
+        editor.report(5, 6)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
     }
 
     @Test
@@ -2008,6 +2232,37 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun keyboardsOwnSpaceAfterQuietLeftIsNotTheApps() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ", textAfterSelection = "end")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // "ab", Left, "b" before "end", reported at once. A field whose Left moved forward would
+        // still owe its Left at 10, which is where the keyboard's own space lands, and that report
+        // is the keyboard's, so it doesn't tell which way this field moves a Left.
+        repeat(2) { editor.expectAppInsert(1) }
+        editor.expectAppStepBack(wholeCluster = true)
+        editor.expectAppInsert(1)
+        connection.textBeforeSelection = "purple ab"
+        editor.report(7, 9)
+        ShadowSystemClock.advanceBy(Duration.ofMillis(400))
+        editor.commitText(" ")
+        editor.expectAppInsert(1)
+        connection.textBeforeSelection = "purple ab "
+        editor.report(9, 10)
+        assertTrue(editor.isContentBehindEditor())
+        connection.textBeforeSelection = "purple ab c"
+        editor.report(10, 11)
+
+        assertFalse(editor.isContentBehindEditor())
+        // The Left in the burst breaks adjacency once, as the Backspace in quietLoopYieldsToSpace.
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
     fun overflowEndsOnMatch() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
@@ -2078,6 +2333,63 @@ class EditorContentGenerationLifecycleTest {
         assertEquals(1, adjacencyBreaks.size)
     }
 
+    @Test
+    fun stalledLoopMatchesLateReportsAfterQuiet() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple ")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 7), isRestart = false)
+        scheduler.runCurrent()
+        // "ab", Backspace, "b": the app reports "a" and "b" right away, then stalls past the quiet
+        // timeout, so "c" is typed after it as if the app were done. Then the rest comes.
+        repeat(2) { editor.expectAppInsert(1) }
+        editor.expectAppStepBack()
+        editor.expectAppInsert(1)
+        editor.report(7, 8)
+        editor.report(8, 9)
+        ShadowSystemClock.advanceBy(Duration.ofMillis(400))
+        editor.expectAppInsert(1)
+        for ((from, to) in listOf(9 to 8, 8 to 9)) {
+            assertTrue("behind before the report at $to", editor.isContentBehindEditor())
+            editor.report(from, to)
+        }
+        assertTrue(editor.isContentBehindEditor())
+        editor.report(9, 10)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(1, adjacencyBreaks.size)
+    }
+
+    @Test
+    fun keyboardsOwnSpaceReportedWithTheAppsKeys() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "purple")
+        val adjacencyBreaks = collectAdjacencyBreaks(editor)
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 6), isRestart = false)
+        scheduler.runCurrent()
+        // The keyboard types a space, then "s" and Backspace go to the app, which reports all of
+        // it at once. That report reads as the space alone at first, with the keys still to come.
+        editor.commitText(" ")
+        editor.expectAppInsert(1, 's'.code)
+        editor.expectAppStepBack()
+        connection.textBeforeSelection = "purple "
+        editor.report(6, 7)
+        assertTrue(editor.isContentBehindEditor())
+        ShadowSystemClock.advanceBy(Duration.ofMillis(400))
+        // No report followed, so it covered them, and the next word is the keyboard's again.
+        assertFalse(editor.isContentBehindEditor())
+        editor.commitText("dog")
+        connection.textBeforeSelection = "purple dog"
+        editor.report(7, 10)
+
+        assertFalse(editor.isContentBehindEditor())
+        assertEquals(0, adjacencyBreaks.size)
+    }
+
     /** The editor reports the cursor moving from [from] to [to], and the content read after it lands. */
     private fun TestEditorInstance.report(from: Int, to: Int) {
         handleSelectionUpdate(
@@ -2102,12 +2414,19 @@ class EditorContentGenerationLifecycleTest {
 
 private class TestEditorInstance(context: Context) : AbstractEditorInstance(context) {
     var inputConnection: InputConnection? = null
+    var runsRightToLeft = false
 
-    fun massSelectionUpdate(newSelection: EditorRange) {
-        handleMassSelectionUpdate(newSelection, EditorRange.Unspecified)
+    fun massSelectionUpdate(newSelection: EditorRange, isAnchorFirst: Boolean = true) {
+        handleMassSelectionUpdate(newSelection, EditorRange.Unspecified, isAnchorFirst)
+    }
+
+    fun massSelectionEnd() {
+        handleMassSelectionEnd()
     }
 
     override fun currentInputConnection(): InputConnection? = inputConnection
+
+    override fun systemRunsRightToLeft(): Boolean = runsRightToLeft
 
     override fun determineComposingEnabled(): Boolean = false
 
@@ -2120,8 +2439,8 @@ private class TestEditorInstance(context: Context) : AbstractEditorInstance(cont
 
 private class LifecycleRecordingInputConnection(
     var textBeforeSelection: String,
-    private val textAfterSelection: String = "",
-    private val selectedText: String = "",
+    var textAfterSelection: String = "",
+    var selectedText: String = "",
     /** Like an app that ignores how many chars a read asks for. */
     private val returnsAllText: Boolean = false,
 ) : InvocationHandler {
