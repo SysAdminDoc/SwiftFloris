@@ -124,7 +124,14 @@ interface PreferenceData<V : Any> {
     suspend fun init(value: V?, handler: ValuePersistHandler<V>)
 
     fun interface ValuePersistHandler<V> {
-        suspend fun onValueChanged(newValue: V?): Result<Unit>
+        /**
+         * Queues the save of [newValue] and returns a function that waits for its result.
+         *
+         * This is called while the value's write guard is held, so it must only queue the save and
+         * never wait for it: a store load sets every value under that same guard from the store's
+         * one worker, and waiting on the worker while holding the guard would deadlock both.
+         */
+        fun onValueChanged(newValue: V?): suspend () -> Result<Unit>
     }
 }
 
@@ -150,16 +157,24 @@ private class PreferenceDataImpl<V : Any>(
 
     override fun asFlow() = cachedValueFlow.asStateFlow()
 
-    override suspend fun set(value: V) = cachedValueWriteGuard.withLock {
-        cachedValue.set(value)
-        cachedValueFlow.value = value
-        valuePersistHandler?.onValueChanged(value) ?: Result.success(Unit)
+    // The value changes and its save is queued under the guard, so saves keep call order. The
+    // wait for the save happens after the guard is released (see ValuePersistHandler).
+    override suspend fun set(value: V): Result<Unit> {
+        val awaitSaved = cachedValueWriteGuard.withLock {
+            cachedValue.set(value)
+            cachedValueFlow.value = value
+            valuePersistHandler?.onValueChanged(value)
+        }
+        return awaitSaved?.invoke() ?: Result.success(Unit)
     }
 
-    override suspend fun reset() = cachedValueWriteGuard.withLock {
-        cachedValue.set(null)
-        cachedValueFlow.value = default
-        valuePersistHandler?.onValueChanged(null) ?: Result.success(Unit)
+    override suspend fun reset(): Result<Unit> {
+        val awaitSaved = cachedValueWriteGuard.withLock {
+            cachedValue.set(null)
+            cachedValueFlow.value = default
+            valuePersistHandler?.onValueChanged(null)
+        }
+        return awaitSaved?.invoke() ?: Result.success(Unit)
     }
 
     override suspend fun init(

@@ -289,8 +289,10 @@ class DataStore<T : PreferenceModel> internal constructor(
                 typedKey = PreferenceModel.TypedKey(type, key),
                 rawEncodedValue = rawEncodedValue,
             )
-            eventQueue.send(event)
-            event.done.consumeFirst()
+            // The queue is unlimited, so this never waits while the caller holds the value's guard.
+            eventQueue.trySend(event).getOrThrow()
+            val awaitSaved: suspend () -> Result<Unit> = { event.done.consumeFirst() }
+            awaitSaved
         }
     }
 
