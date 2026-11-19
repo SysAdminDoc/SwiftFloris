@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.dictionary
 
+import android.util.Log
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -109,6 +110,33 @@ class PersonalDictionaryRoomSqlCipherRuntimeTest {
             "Encrypted personal dictionary database was created with a plaintext SQLite header.",
             FlorisUserDictionaryEncryption.looksLikePlaintextSqliteHeader(header),
         )
+    }
+
+    @Test
+    fun encryptedStoresRunSqliteWithThe2026WalAndAuthorizerFixes() {
+        // CVE-2026-119375 (WAL page-cache read) and CVE-2026-119377 (authorizer bypass) are
+        // fixed in SQLite 3.54.0, and SQLCipher bundles its own SQLite.
+        val databaseName = "floris_user_dictionary_sqlcipher_version_${UUID.randomUUID()}"
+        databaseNames += databaseName
+        val database = buildStore(databaseName)
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            val version = executor.submit<String> {
+                database.openHelper.writableDatabase.query("select sqlite_version()").use { cursor ->
+                    assertTrue("sqlite_version() returned no row.", cursor.moveToFirst())
+                    cursor.getString(0)
+                }
+            }.get(30, TimeUnit.SECONDS)
+            Log.i(LOG_TAG, "SQLCipher runs SQLite $version")
+            val (major, minor) = version.split('.').map(String::toInt)
+            assertTrue(
+                "SQLCipher runs SQLite $version, older than 3.54.0.",
+                major > 3 || (major == 3 && minor >= 54),
+            )
+        } finally {
+            database.close()
+            executor.shutdownNow()
+        }
     }
 
     @Test
@@ -242,6 +270,7 @@ class PersonalDictionaryRoomSqlCipherRuntimeTest {
     )
 
     private companion object {
+        private const val LOG_TAG = "SqlCipherRuntimeTest"
         private const val SQLITE_HEADER_BYTES = 16
         private const val SQLCIPHER_PAGE_BYTES = 4096L
         private const val DAMAGE_BYTE: Byte = 0x5A

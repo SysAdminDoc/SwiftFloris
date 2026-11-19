@@ -44,7 +44,7 @@
     "clipboardHistory": "encrypted_or_unknown",
     "clipboardMedia": "plaintext_app_private_files",
     "personalDictionary": "sqlcipher_room",
-    "sqlcipherVersion": "4.18.0"
+    "sqlcipherVersion": "4.20.0"
   },
   "mcp": {
     "appRole": "aidl_client",

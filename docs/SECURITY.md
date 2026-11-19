@@ -71,9 +71,11 @@ recoverable. The normal runtime dependency is now `com.google.crypto.tink:tink-a
 ## SQLCipher crypto provider watch
 
 SwiftFloris currently uses the stock SQLCipher Android Community AAR. As of
-SQLCipher 4.18.0, Zetetic's Android Community provider matrix still lists
-LibTomCrypt for that artifact, while OpenSSL is the supported build path for
-commercial / enterprise non-FIPS packages and custom source builds. The
+SQLCipher 4.20.0, Zetetic's Android Community build still compiles with
+LibTomCrypt (`-DSQLCIPHER_CRYPTO_LIBTOMCRYPT` in the v4.20.0
+`sqlcipher/src/main/jni/sqlcipher/Android.mk`), while OpenSSL is the supported
+build path for commercial and enterprise non-FIPS packages and custom source
+builds. The
 provider-removal risk is tracked, but there is no immediate dependency swap in
 `:app`; migration experiments and rollback notes stay in maintainer-local
 planning docs until they are ready for public review.
