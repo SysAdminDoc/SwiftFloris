@@ -46,3 +46,17 @@ object FlorisSurfaceTokens {
     /** Opacity applied to `outlineVariant` for dividers and container borders. */
     const val HairlineAlpha = 0.56f
 }
+
+/**
+ * The spacing steps settings screens lay out with: the 8/16 of `defaultFlorisOutlinedBox` and
+ * `FlorisCardDefaults`, and the 4, 12, 24 and 32 between them. Padding and gaps come from here so a card
+ * on one screen lines up with the one on the next.
+ */
+object FlorisSpacing {
+    val XSmall = 4.dp
+    val Small = 8.dp
+    val Medium = 12.dp
+    val Large = 16.dp
+    val XLarge = 24.dp
+    val XXLarge = 32.dp
+}

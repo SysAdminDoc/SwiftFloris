@@ -106,6 +106,7 @@ import dev.patrickgold.florisboard.lib.compose.LocalFlorisScreenEmbedded
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import kotlinx.coroutines.delay
 import org.florisboard.lib.compose.FlorisButton
+import org.florisboard.lib.compose.FlorisSpacing
 import org.florisboard.lib.compose.FlorisSurfaceTokens
 import org.florisboard.lib.compose.stringRes
 
@@ -329,6 +330,8 @@ private fun settingsHomeEntries(): List<SettingsHomeEntry> {
     )
 }
 
+private val HomeRowIconSize = 24.dp
+
 @Composable
 private fun SettingsHomeList(entries: List<SettingsHomeEntry>) {
     // One row open at a time keeps the page short.
@@ -337,7 +340,7 @@ private fun SettingsHomeList(entries: List<SettingsHomeEntry>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp)
+            .padding(top = FlorisSpacing.Small)
             .testTag(SettingsHomeListTag),
     ) {
         entries.forEachIndexed { index, entry ->
@@ -365,13 +368,13 @@ private fun SettingsHomeList(entries: List<SettingsHomeEntry>) {
                     is SettingsHomeEntry.Page -> Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 12.dp),
+                            .padding(bottom = FlorisSpacing.Medium),
                     ) {
                         CompositionLocalProvider(LocalFlorisScreenEmbedded provides true) {
                             entry.page()
                         }
                     }
-                    is SettingsHomeEntry.Group -> Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                    is SettingsHomeEntry.Group -> Column(modifier = Modifier.padding(bottom = FlorisSpacing.Small)) {
                         entry.links.forEach { link -> SettingsHomeLinkRow(link) }
                     }
                     is SettingsHomeEntry.Link -> Unit
@@ -407,16 +410,16 @@ private fun SettingsHomeRow(
             .semantics(mergeDescendants = true) {
                 if (expandable) stateDescription = stateText
             }
-            .padding(horizontal = 8.dp, vertical = 12.dp),
+            .padding(horizontal = FlorisSpacing.Small, vertical = FlorisSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(HomeRowIconSize),
             imageVector = entry.icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(FlorisSpacing.Large))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = entry.title,
@@ -448,7 +451,8 @@ private fun SettingsHomeLinkRow(link: SettingsHomeLink) {
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
             .clickable(role = Role.Button, onClick = link.onClick)
-            .padding(start = 48.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+            // The start lines the link up with the row titles above it: the row's padding, icon and gap.
+            .padding(start = FlorisSpacing.Small + HomeRowIconSize + FlorisSpacing.Large, end = FlorisSpacing.Small, top = FlorisSpacing.Medium, bottom = FlorisSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -471,22 +475,22 @@ private fun SettingsHomeSearchField(onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = FlorisSpacing.XSmall)
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), shape)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = FlorisSurfaceTokens.HairlineAlpha), shape)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { }
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(horizontal = FlorisSpacing.Medium, vertical = FlorisSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(HomeRowIconSize),
             imageVector = Icons.Default.Search,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(FlorisSpacing.Medium))
         Text(
             text = stringRes(R.string.settings__search__placeholder),
             style = MaterialTheme.typography.bodyLarge,
@@ -508,21 +512,21 @@ private fun SettingsHomeSetupCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = FlorisSpacing.XSmall)
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(1.dp, tone.copy(alpha = 0.4f), shape)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(FlorisSpacing.Large),
+        verticalArrangement = Arrangement.spacedBy(FlorisSpacing.Medium),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(HomeRowIconSize),
                 imageVector = icon,
                 contentDescription = null,
                 tint = tone,
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(FlorisSpacing.Medium))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = title, style = MaterialTheme.typography.titleSmall)
                 Text(
@@ -545,9 +549,9 @@ private fun SettingsHomeSetupCard(
 @Composable
 private fun SettingsHomeActiveBadge() {
     Row(
-        modifier = Modifier.padding(end = 16.dp),
+        modifier = Modifier.padding(end = FlorisSpacing.Large),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(FlorisSpacing.Small),
     ) {
         Box(
             modifier = Modifier
