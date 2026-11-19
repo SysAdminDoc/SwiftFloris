@@ -19,7 +19,7 @@ package dev.patrickgold.florisboard.app.setup
 import dev.patrickgold.florisboard.ime.core.SubtypePreset
 import dev.patrickgold.florisboard.ime.nlp.latin.LatinDictionarySuggester
 import dev.patrickgold.florisboard.lib.FlorisLocale
-import java.text.Normalizer
+import dev.patrickgold.florisboard.lib.util.foldForSearch
 import java.util.Locale
 
 /**
@@ -62,14 +62,6 @@ internal object FirstRunLanguagePolicy {
      * Zhengma, typed by the shapes of the characters, while most people type Chinese by its sound (Pinyin).
      */
     private val UncommonVariants = setOf("zhengma")
-
-    private val CombiningMarks = Regex("\\p{Mn}+")
-
-    /** Letters that don't break down into a base letter and an accent, spelled the way someone without them would. */
-    private val PlainLetters = mapOf(
-        'ø' to "o", 'đ' to "d", 'ð' to "d", 'ł' to "l", 'æ' to "ae", 'œ' to "oe", 'ß' to "ss", 'ı' to "i",
-        'þ' to "th", 'ħ' to "h",
-    )
 
     /** One preset per phone language that has one, best fit first within each language, without repeats. */
     fun suggestions(systemLocales: List<Locale>, presets: List<SubtypePreset>): List<SubtypePreset> {
@@ -229,10 +221,6 @@ internal object FirstRunLanguagePolicy {
         return traditional == (presetLocale.country in TraditionalChinese)
     }
 
-    private fun fold(text: String): String {
-        val folded = CombiningMarks.replace(Normalizer.normalize(text, Normalizer.Form.NFD), "").lowercase(Locale.ROOT)
-        return buildString(folded.length) {
-            for (char in folded) append(PlainLetters[char] ?: char.toString())
-        }
-    }
+    /** The settings searches' fold, so setup finds a language by the same spellings they do. */
+    private fun fold(text: String): String = foldForSearch(text)
 }

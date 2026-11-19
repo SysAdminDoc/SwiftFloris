@@ -85,6 +85,9 @@ class SelectLocaleSearchTest {
         foldForSearch("FØROYSKT") shouldBe "foroyskt"
         foldForSearch("Straße") shouldBe "strasse"
         foldForSearch("İzmir") shouldBe "izmir"
+        foldForSearch("Azərbaycan") shouldBe "azerbaycan"
+        foldForSearch("Eʋegbe") shouldBe "evegbe"
+        foldForSearch("Ɛʋɛ Ɔɖɔ ƒe") shouldBe "eve odo fe"
 
         val index = index()
         val faroese = tags(index.filter("foroyskt"))

@@ -21,6 +21,8 @@ import dev.patrickgold.florisboard.ime.keyboard.KeyboardExtension
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.ext.ExtensionJsonConfig
 import dev.patrickgold.florisboard.lib.io.loadJsonAsset
+import dev.patrickgold.florisboard.lib.util.foldForSearch
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
@@ -212,6 +214,20 @@ class FirstRunLanguagePolicyTest : FunSpec({
         found("strasse") shouldBe true
         found("aero") shouldBe true
         found("strabe") shouldBe false
+    }
+
+    test("setup spells letters out the same way the settings searches do") {
+        // "Ŀ", "Ŧ" and "Ə": a middle-dot L, a barred T and a schwa, which setup used to leave alone.
+        val names = listOf("${Char(0x013F)}ela", "${Char(0x0166)}ana", "${Char(0x018F)}li")
+        val namesOf = { preset: SubtypePreset -> listOf(names[presets.indexOf(preset) % names.size]) }
+        fun found(query: String) = FirstRunLanguagePolicy.search(query, presets, namesOf).isNotEmpty()
+
+        found("lela") shouldBe true
+        found("tana") shouldBe true
+        found("eli") shouldBe true
+        for (name in names) {
+            withClue(name) { found(foldForSearch(name)) shouldBe true }
+        }
     }
 
     test("the picker finds a language by its own name and its English one, whatever language the phone shows") {
