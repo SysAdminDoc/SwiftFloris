@@ -202,6 +202,23 @@ class ClipboardManager(
     }
 
     /**
+     * Makes [item] or [directPasteText] what the keyboard pastes, then hands it to the system clipboard with
+     * [toSystem]. When the system clipboard throws, the keyboard's previous clip goes back before the failure
+     * reaches the caller, so the keyboard never offers to paste what the caller reports as not copied.
+     */
+    private inline fun publishLocally(item: ClipboardItem?, directPasteText: CharSequence?, toSystem: () -> Unit) {
+        val previousItem = primaryClip
+        val previousText = directPastePrimaryText
+        clipRevisions.local { replacePrimaryState(item, directPasteText) }
+        try {
+            toSystem()
+        } catch (e: Exception) {
+            clipRevisions.local { replacePrimaryState(previousItem, previousText) }
+            throw e
+        }
+    }
+
+    /**
      * Sets the current primary clip without updating the internal clipboard history.
      */
     fun updatePrimaryClip(item: ClipboardItem?) {
@@ -210,17 +227,18 @@ class ClipboardManager(
             setPlaintextWithoutHistory(text, item.isSensitive)
             return
         }
-        clipRevisions.local { replacePrimaryState(item, directPasteText = null) }
-        if (prefs.clipboard.useInternalClipboard.get()) {
-            val syncBehavior = prefs.clipboard.syncToSystem.get()
-            val clipData = item?.toClipData(appContext)
-            if (clipData != null && syncBehavior.shouldSyncSet) {
-                systemClipboardManager.setPrimaryClip(clipData)
-            } else if (clipData == null && syncBehavior.shouldSyncClear) {
-                systemClipboardManager.clearPrimaryClipAnyApi()
+        publishLocally(item, directPasteText = null) {
+            if (prefs.clipboard.useInternalClipboard.get()) {
+                val syncBehavior = prefs.clipboard.syncToSystem.get()
+                val clipData = item?.toClipData(appContext)
+                if (clipData != null && syncBehavior.shouldSyncSet) {
+                    systemClipboardManager.setPrimaryClip(clipData)
+                } else if (clipData == null && syncBehavior.shouldSyncClear) {
+                    systemClipboardManager.clearPrimaryClipAnyApi()
+                }
+            } else {
+                systemClipboardManager.setOrClearPrimaryClip(item?.toClipData(appContext))
             }
-        } else {
-            systemClipboardManager.setOrClearPrimaryClip(item?.toClipData(appContext))
         }
     }
 
@@ -443,11 +461,12 @@ class ClipboardManager(
     }
 
     /**
-     * Change the current text on clipboard, update history (if enabled).
+     * Change the current text on clipboard, update history (if enabled). History is written only once the
+     * clipboard took the clip, so a copy the system refuses leaves no row to paste it from.
      */
     private fun addNewClip(item: ClipboardItem) {
-        insertOrMoveBeginning(item)
         updatePrimaryClip(item)
+        insertOrMoveBeginning(item)
     }
 
     /**
@@ -476,19 +495,20 @@ class ClipboardManager(
             return
         }
 
-        clipRevisions.local { replacePrimaryState(item = null, directPasteText = newText) }
         val clipData = ClipData.newPlainText(ClipboardItem.FLORIS_CLIP_LABEL, newText)
         if (isSensitive && AndroidVersion.ATLEAST_API33_T) {
             clipData.description.extras = PersistableBundle().apply {
                 putBoolean(EXTRA_IS_SENSITIVE, true)
             }
         }
-        if (prefs.clipboard.useInternalClipboard.get()) {
-            if (prefs.clipboard.syncToSystem.get().shouldSyncSet) {
+        publishLocally(item = null, directPasteText = newText) {
+            if (prefs.clipboard.useInternalClipboard.get()) {
+                if (prefs.clipboard.syncToSystem.get().shouldSyncSet) {
+                    systemClipboardManager.setPrimaryClip(clipData)
+                }
+            } else {
                 systemClipboardManager.setPrimaryClip(clipData)
             }
-        } else {
-            systemClipboardManager.setPrimaryClip(clipData)
         }
     }
 

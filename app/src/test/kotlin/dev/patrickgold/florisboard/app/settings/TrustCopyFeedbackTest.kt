@@ -16,7 +16,6 @@
 
 package dev.patrickgold.florisboard.app.settings
 
-import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.pm.Signature
 import android.content.pm.SigningInfo
@@ -36,6 +35,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.AppTheme
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -43,14 +43,18 @@ import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.settings.about.AboutScreen
 import dev.patrickgold.florisboard.app.settings.privacy.PrivacyAuditScreen
 import dev.patrickgold.florisboard.app.settings.sync.SyncQrPayloadCard
+import dev.patrickgold.florisboard.ime.clipboard.SwitchableClipboardShadow
 import dev.patrickgold.florisboard.ime.smartcompose.AddonAuditExport
 import dev.patrickgold.florisboard.ime.smartcompose.AddonInvocationAudit
+import dev.patrickgold.florisboard.lib.crashutility.CrashReportEnvironment
+import dev.patrickgold.florisboard.lib.crashutility.CrashReportFormatter
 import dev.patrickgold.florisboard.screenshot.RoborazziHostActivity
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import java.security.MessageDigest
+import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.compose.stringRes
 import org.junit.After
@@ -60,10 +64,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-import org.robolectric.annotation.Implementation
-import org.robolectric.annotation.Implements
 import org.robolectric.shadow.api.Shadow
-import org.robolectric.shadows.ShadowClipboardManager
 import org.robolectric.shadows.ShadowSigningInfo
 import org.robolectric.shadows.ShadowToast
 
@@ -133,6 +134,27 @@ class TrustCopyFeedbackTest {
             payload = fingerprint,
             copied = context.getString(R.string.about__signing_fingerprint__copied),
             failed = context.getString(R.string.about__signing_fingerprint__copy_failed),
+        )
+    }
+
+    @Test
+    fun theProblemReportCopySaysWhetherItCopied() {
+        val report = CrashReportFormatter.formatProblemReport(
+            CrashReportEnvironment.current(
+                context = context,
+                versionNameMarkdown = context.stringRes(
+                    R.string.florisboard__changelog_url,
+                    "version" to BuildConfig.VERSION_NAME,
+                ).let { url -> "[${BuildConfig.VERSION_NAME}]($url)" },
+            ),
+        )
+        show { AboutScreen() }
+
+        checkCopy(
+            button = context.getString(R.string.about__report_problem__title),
+            payload = report,
+            copied = context.getString(R.string.about__report_problem__copied),
+            failed = context.getString(R.string.about__report_problem__copy_failed),
         )
     }
 
@@ -222,20 +244,5 @@ class TrustCopyFeedbackTest {
 
     private companion object {
         val ExportedAt = Regex(""""exportedAtIso":"[^"]*"""")
-    }
-}
-
-/** The system clipboard, made to throw on a write while [failure] is set, the way a dead clipboard service does. */
-@Implements(ClipboardManager::class)
-class SwitchableClipboardShadow : ShadowClipboardManager() {
-    @Implementation
-    override fun setPrimaryClip(clip: ClipData) {
-        failure?.let { throw it }
-        super.setPrimaryClip(clip)
-    }
-
-    companion object {
-        @JvmStatic
-        var failure: RuntimeException? = null
     }
 }

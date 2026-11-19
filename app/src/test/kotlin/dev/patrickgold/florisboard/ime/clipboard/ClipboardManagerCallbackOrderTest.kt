@@ -67,7 +67,7 @@ import org.robolectric.annotation.Config
  * turns it on, so most cases check the primary clip and the media files, not history rows.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [35])
+@Config(sdk = [35], shadows = [SwitchableClipboardShadow::class])
 class ClipboardManagerCallbackOrderTest {
     private val prefs by FlorisPreferenceStore
     private lateinit var media: HoldingMediaProvider
@@ -86,6 +86,7 @@ class ClipboardManagerCallbackOrderTest {
 
     @After
     fun tearDown() {
+        SwitchableClipboardShadow.failure = null
         media.releaseEverything()
         if (changedPrefs) {
             // The preference model outlives this test's app, so the defaults go back. The internal
@@ -810,6 +811,33 @@ class ClipboardManagerCallbackOrderTest {
         waitUntil { manager.clipboardCallbacksInFlight == 0 }
 
         historyRows().map { it.text } shouldContainExactly listOf("again")
+    }
+
+    @Test
+    fun aCopyTheSystemRefusesLeavesThePasteTargetAndHistoryAlone() {
+        setHistoryEnabled(true)
+        historyRows()
+        manager.addNewPlaintext("kept")
+        waitUntil { manager.clipboardCallbacksInFlight == 0 && historyRows().isNotEmpty() }
+
+        SwitchableClipboardShadow.failure = IllegalStateException("clipboard service is gone")
+        val refused = try {
+            manager.addNewPlaintext("refused")
+            null
+        } catch (e: IllegalStateException) {
+            e
+        } finally {
+            SwitchableClipboardShadow.failure = null
+        }
+        // History deletes queue behind the writes asked for before them, so anything the refused copy queued
+        // has landed once this returns.
+        runBlocking { manager.clearExactHistory(emptyList(), onlyIfUnpinned = false) }
+
+        withClue("the copy screens still hear that it failed") { (refused != null) shouldBe true }
+        withClue("the keyboard still pastes the clip from before") { manager.primaryClip?.text shouldBe "kept" }
+        withClue("the refused text never reaches history") {
+            historyRows().map { it.text } shouldContainExactly listOf("kept")
+        }
     }
 
     /** The history rows as stored. The first call also waits for the history database to open. */
