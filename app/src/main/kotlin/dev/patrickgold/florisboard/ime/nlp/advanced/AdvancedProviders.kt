@@ -192,7 +192,11 @@ private fun loadAdvancedRuntimeDictionary(context: Context, assetName: String): 
  * and edit distance algorithms for robust error detection and correction.
  */
 class AdvancedSpellingProvider(private val context: Context) : SpellingProvider {
-    override val providerId = "org.swiftfloris.nlp.providers.advanced_spelling"
+    companion object {
+        const val ProviderId = "org.swiftfloris.nlp.providers.advanced_spelling"
+    }
+
+    override val providerId = ProviderId
 
     private val dictionaryCache = mutableMapOf<String, Set<String>>()
     private val frequencyCache = LruCache<String, Double>(5000)
@@ -262,7 +266,11 @@ class AdvancedSpellingProvider(private val context: Context) : SpellingProvider 
  * Provides context-aware word suggestions similar to SwiftKey.
  */
 class AdvancedPredictionProvider(private val context: Context) : SuggestionProvider {
-    override val providerId = "org.swiftfloris.nlp.providers.advanced_prediction"
+    companion object {
+        const val ProviderId = "org.swiftfloris.nlp.providers.advanced_prediction"
+    }
+
+    override val providerId = ProviderId
 
     private val bigramCache = mutableMapOf<String, Map<String, List<Pair<String, Double>>>>()
     private val unigramFrequency = LruCache<String, Double>(10000)

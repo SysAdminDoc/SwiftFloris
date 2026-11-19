@@ -74,8 +74,6 @@ import dev.patrickgold.florisboard.ime.core.SubtypePreset
 import dev.patrickgold.florisboard.ime.keyboard.LayoutArrangementComponent
 import dev.patrickgold.florisboard.ime.keyboard.LayoutType
 import dev.patrickgold.florisboard.ime.keyboard.extCorePopupMapping
-import dev.patrickgold.florisboard.ime.nlp.han.HanShapeBasedLanguageProvider
-import dev.patrickgold.florisboard.ime.nlp.latin.LatinLanguageProvider
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -88,6 +86,7 @@ import dev.patrickgold.jetpref.material.ui.JetPrefDropdownMenuDefaults
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisDropdownLikeButton
+import org.florisboard.lib.compose.FlorisSpacing
 import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.stringRes
 
@@ -402,32 +401,54 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
             SubtypeGroupSpacer()
 
             SubtypeProperty(stringRes(R.string.settings__localization__subtype_suggestion_provider)) {
-                // TODO: Put this map somewhere more formal (another KeyboardExtension field?)
-                //  optionally use a string resource below
-                val nlpProviderMappings = mapOf(
-                    LatinLanguageProvider.ProviderId to "Latin",
-                    HanShapeBasedLanguageProvider.ProviderId to "Chinese shape-based"
-                )
-
-                val nlpProviderMappingIds = remember(nlpProviderMappings) {
-                    listOf(SelectNlpProviderId) + nlpProviderMappings.keys
+                val providerOptions = remember(nlpProviders.suggestion) {
+                    SubtypeNlpProviderOptions.forSavedProvider(nlpProviders.suggestion)
                 }
-                val nlpProviderMappingLabels = remember(nlpProviderMappings) {
-                    selectListValues + nlpProviderMappings.values.map { it }
+                val providerLabels = providerOptions.options.map { option ->
+                    when (option) {
+                        SubtypeNlpProviderOption.Placeholder -> selectValue
+                        is SubtypeNlpProviderOption.Provider -> stringRes(option.metadata.labelRes)
+                        is SubtypeNlpProviderOption.Unavailable -> stringRes(
+                            R.string.settings__localization__nlp_provider__unavailable,
+                            "name" to (option.metadata?.let { stringRes(it.labelRes) } ?: option.id),
+                        )
+                    }
                 }
+                val selectedOption = providerOptions.selected
                 val expanded = remember { mutableStateOf(false) }
-                val selectedIndex = nlpProviderMappingIds.indexOf(nlpProviders.suggestion).coerceAtLeast(0)
                 JetPrefDropdown(
-                    options = nlpProviderMappingLabels,
+                    options = providerLabels,
                     expanded = expanded,
-                    selectedOptionIndex = selectedIndex,
-                    isError = showSelectAsError && selectedIndex == 0,
-                    onSelectOption = { nlpProviders = SubtypeNlpProviderMap(
-                        suggestion = nlpProviderMappingIds[it],
-                        spelling = nlpProviderMappingIds[it]
-                    ) },
+                    selectedOptionIndex = providerOptions.selectedIndex,
+                    isError = selectedOption is SubtypeNlpProviderOption.Unavailable ||
+                        (showSelectAsError && selectedOption == SubtypeNlpProviderOption.Placeholder),
+                    onSelectOption = { index ->
+                        // Picking the unavailable entry again keeps the saved pair as it was.
+                        val option = providerOptions.options[index]
+                        if (option !is SubtypeNlpProviderOption.Unavailable) {
+                            nlpProviders = SubtypeNlpProviderMap(
+                                suggestion = option.id,
+                                spelling = option.id,
+                            )
+                        }
+                    },
                     appearance = JetPrefDropdownMenuDefaults.outlined(shape = ShapeDefaults.Small),
                 )
+                val providerSummary = when (selectedOption) {
+                    SubtypeNlpProviderOption.Placeholder -> null
+                    is SubtypeNlpProviderOption.Provider -> stringRes(selectedOption.metadata.capabilitySummaryRes)
+                    is SubtypeNlpProviderOption.Unavailable -> stringRes(
+                        R.string.settings__localization__nlp_provider__unavailable_summary,
+                    )
+                }
+                if (providerSummary != null) {
+                    Text(
+                        modifier = Modifier.padding(top = FlorisSpacing.XSmall),
+                        text = providerSummary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             SubtypeGroupSpacer()

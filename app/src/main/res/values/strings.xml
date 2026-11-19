@@ -588,6 +588,15 @@
     <string name="settings__localization__subtype_popup_mapping" comment="Label for popup mapping dropdown in subtype screen">Popup mapping</string>
     <string name="settings__localization__subtype_characters_layout" comment="Label for layout dropdown in subtype dialog">Characters layout</string>
     <string name="settings__localization__subtype_suggestion_provider" comment="Label for suggestion provider dropdown in subtype dialog">Suggestion engine</string>
+    <string name="settings__localization__nlp_provider__latin" comment="Name of the default suggestion engine in the subtype dialog. Every language except Chinese shape-based input uses it.">Latin</string>
+    <string name="settings__localization__nlp_provider__han_shape" comment="Name of the suggestion engine that types Chinese characters from shape codes such as Zhengma">Chinese shape-based</string>
+    <string name="settings__localization__nlp_provider__advanced_spelling" comment="Name of a spell-checking-only engine. The subtype dialog only shows it when a saved language already names it.">Advanced spell checking</string>
+    <string name="settings__localization__nlp_provider__advanced_prediction" comment="Name of a word-prediction-only engine. The subtype dialog only shows it when a saved language already names it.">Advanced prediction</string>
+    <string name="settings__localization__nlp_provider_capability__spelling_and_suggestions" comment="Line under the suggestion engine dropdown saying what the selected engine does">Word suggestions and spell checking</string>
+    <string name="settings__localization__nlp_provider_capability__spelling_only" comment="Line under the suggestion engine dropdown saying what the selected engine does">Spell checking only</string>
+    <string name="settings__localization__nlp_provider_capability__suggestions_only" comment="Line under the suggestion engine dropdown saying what the selected engine does">Word suggestions only</string>
+    <string name="settings__localization__nlp_provider__unavailable" comment="Suggestion engine dropdown entry for a saved engine this version cannot use for a keyboard language. {name} is the engine name, or its ID when the engine is unknown.">Unavailable: {name}</string>
+    <string name="settings__localization__nlp_provider__unavailable_summary" comment="Line under the suggestion engine dropdown when the saved engine is unavailable">This version can\'t use that engine for a keyboard language. Pick one from the list.</string>
     <string name="settings__localization__subtype_symbols_layout" comment="Label for layout dropdown in subtype dialog">Symbols primary layout</string>
     <string name="settings__localization__subtype_symbols2_layout" comment="Label for layout dropdown in subtype dialog">Symbols secondary layout</string>
     <string name="settings__localization__subtype_composer" comment="Label for composer dropdown in subtype dialog.">Composer</string>

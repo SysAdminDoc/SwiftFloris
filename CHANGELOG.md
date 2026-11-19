@@ -9,6 +9,7 @@
 - Open the language list in the keyboard language editor on a normal tap. The "Primary language" field only opened when your finger stayed down long enough, so quick taps often did nothing, and TalkBack's double-tap and Switch Access couldn't open it at all. Screen readers now hear one dropdown with the language in it, and Tab or the D-pad stops on it once, where Enter opens it.
 - Even out the spacing on the settings home screen. The search box, the setup card and the Active badge used a few odd sizes of their own, so they now follow the same spacing steps as every other settings page.
 - Remove two unused honeycomb key widgets with hard-coded dark colors. The Honeycomb layout you can pick for a language never used them, so it looks and works the same.
+- Say what each suggestion engine does in the keyboard language editor. The engine names were English words written into the screen, so they never got translated. They're translatable now, and a line under the list says whether the engine you picked handles word suggestions, spell checking or both. A language saved with an engine this version can't use says "Unavailable" instead of looking like nothing was picked.
 - Close the suggestion bar's benchmark timing even when drawing the bar fails. A failed redraw used to leave that timing open in the trace. Nothing changes while you type.
 
 ## v1.9.69 (2026-11-19)
