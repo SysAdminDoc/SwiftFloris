@@ -161,12 +161,12 @@ def main() -> int:
                 "SQLCipher catalog drift",
                 lambda root: replace(
                     root / "gradle/libs.versions.toml",
-                    'sqlcipher-android = "4.18.0"',
-                    'sqlcipher-android = "4.18.1"',
+                    'sqlcipher-android = "4.20.0"',
+                    'sqlcipher-android = "4.20.1"',
                 ),
                 (
-                    "storage.sqlcipherVersion is '4.18.0'; "
-                    "live value is '4.18.1'"
+                    "storage.sqlcipherVersion is '4.20.0'; "
+                    "live value is '4.20.1'"
                 ),
             ),
             (

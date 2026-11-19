@@ -5,9 +5,9 @@
     {
       "catalogKey": "sqlcipher-android",
       "module": "net.zetetic:sqlcipher-android",
-      "minimumVersion": "4.17.0",
-      "reviewedOn": "2026-07-09",
-      "reason": "SQLCipher 4.17.0 includes the reviewed SQLite CVE baseline for encrypted personal dictionaries."
+      "minimumVersion": "4.20.0",
+      "reviewedOn": "2026-11-19",
+      "reason": "SQLCipher 4.20.0 bundles SQLite 3.54.1. SQLite 3.54.0 fixed CVE-2026-119375 (WAL page-cache read) and CVE-2026-119377 (authorizer bypass), and 4.18.0 still bundled 3.53.4, so nothing older may ship for the encrypted personal dictionary and clipboard history."
     },
     {
       "catalogKey": "tink-android",
