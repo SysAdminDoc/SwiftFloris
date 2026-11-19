@@ -398,21 +398,39 @@ def check_obtainium_manifest(root: Path, path: str, expected: dict[str, object])
     return errors
 
 
-def check_published_assets_match(root: Path, manifests: tuple[str, ...]) -> list[str]:
+def check_published_assets_match(
+    root: Path,
+    manifests: tuple[str, ...],
+    prerelease: bool = False,
+) -> list[str]:
     """Require the newest release to carry an asset each Obtainium filter matches.
 
     An apkFilterRegEx that matches nothing does not error in Obtainium; the app
     simply never offers an update. That is invisible from inside the repository,
     which is how `app-release.*\.apk` survived every release the project ever cut
     while no published asset was ever named that.
+
+    With prerelease=True the newest prerelease is checked instead, since
+    releases/latest never returns one; with no prerelease published there is
+    nothing a preview filter could match yet, so it passes.
     """
-    url = "https://api.github.com/repos/SysAdminDoc/SwiftFloris/releases/latest"
+    base = "https://api.github.com/repos/SysAdminDoc/SwiftFloris/releases"
+    url = f"{base}?per_page=50" if prerelease else f"{base}/latest"
     request = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json"})
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
-            release = json.loads(response.read().decode("utf-8"))
+            payload = json.loads(response.read().decode("utf-8"))
     except (OSError, ValueError) as exc:
         return [f"could not resolve the newest release from {url}: {exc}"]
+    if prerelease:
+        release = next(
+            (r for r in payload if isinstance(r, dict) and r.get("prerelease") and not r.get("draft")),
+            None,
+        )
+        if release is None:
+            return []
+    else:
+        release = payload
 
     names = [asset.get("name", "") for asset in release.get("assets", [])]
     tag = release.get("tag_name", "?")
@@ -489,9 +507,12 @@ def main() -> int:
     }))
 
     if args.check_published:
+        errors.extend(check_published_assets_match(root, ("fastlane/obtainium/stable.json",)))
+        # The preview filter only matches -beta assets, which only prereleases carry.
         errors.extend(check_published_assets_match(
             root,
-            ("fastlane/obtainium/stable.json", "fastlane/obtainium/preview.json"),
+            ("fastlane/obtainium/preview.json",),
+            prerelease=True,
         ))
 
     if errors:
