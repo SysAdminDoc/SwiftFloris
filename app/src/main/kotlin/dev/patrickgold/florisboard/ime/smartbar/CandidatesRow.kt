@@ -93,6 +93,13 @@ import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
 val CandidatesRowScrollbarHeight = 2.dp
 
+/**
+ * Smallest size a suggestion's word may shrink to, as a fraction of the theme's size (14 sp shrinks to 7 sp),
+ * before the theme's ellipsis takes over. At 0.6 a 17-letter word like "internationalized" still trailed off in a
+ * third of a Galaxy S25's strip; half fits about 20 letters there and stays readable.
+ */
+internal const val CandidateTextShrinkToFitMinScale = 0.5f
+
 @Composable
 fun CandidatesRow(modifier: Modifier = Modifier) {
     // ROADMAP §7 Next-12.1 — Macrobenchmark trace section. Compose forbids
@@ -251,7 +258,7 @@ internal fun ScrollableCandidatesPreviewSurface(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun CandidateStripContent(
+internal fun CandidateStripContent(
     candidates: List<SuggestionCandidate>,
     displayMode: CandidatesDisplayMode,
     longPressDelay: Long,
@@ -480,11 +487,18 @@ private fun CandidateItem(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // A long word shrinks to fit its slot instead of trailing off; the theme's ellipsis is only the last
+            // resort. Clipboard chips keep their size, since a pasted paragraph never fits a slot anyway.
             SnyggText(
                 elementName = "$elementName-text",
                 attributes = attributes,
                 selector = selector,
                 text = candidate.text.toString(),
+                shrinkToFitMinScale = if (candidate is ClipboardSuggestionCandidate) {
+                    null
+                } else {
+                    CandidateTextShrinkToFitMinScale
+                },
             )
             // The forget chip puts the word on top and the action under it, like the undo chip, so a
             // third of the strip never cuts the word off.

@@ -17,6 +17,8 @@
 package org.florisboard.lib.snygg.ui
 
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -33,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import org.florisboard.lib.snygg.SnyggQueryAttributes
 import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.SnyggStylesheet
+import kotlin.math.floor
 
 /**
  * Simple text composable, which displays the given [text].
@@ -49,6 +52,8 @@ import org.florisboard.lib.snygg.SnyggStylesheet
  * @param colorOverride Optional foreground color override while retaining the rest of the queried style.
  * @param fontSizeOverride Optional font size override while retaining the rest of the queried style.
  * @param fontStyleOverride Optional font style override while retaining the rest of the queried style.
+ * @param shrinkToFitMinScale When set, text too wide for its space shrinks in steps, down to this fraction of the
+ *  resolved font size, before the style's overflow (an ellipsis, say) applies. Text that fits keeps the resolved size.
  *
  * @since 0.5.0-alpha01
  *
@@ -65,8 +70,17 @@ fun SnyggText(
     colorOverride: Color? = null,
     fontSizeOverride: TextUnit? = null,
     fontStyleOverride: FontStyle? = null,
+    shrinkToFitMinScale: Float? = null,
 ) {
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
+        val fontSize = fontSizeOverride ?: style.fontSize()
+        val autoSize = shrinkToFitMinScale?.let { minScale ->
+            // Text falls back to the local text style's size, then to Compose's own 14 sp default.
+            val resolvedFontSize = fontSize.takeIf { it.isSp }
+                ?: LocalTextStyle.current.fontSize.takeIf { it.isSp }
+                ?: 14.sp
+            shrinkToFitAutoSize(fontSize = resolvedFontSize, minScale = minScale)
+        }
         Text(
             modifier = modifier
                 .snyggMargin(style)
@@ -76,7 +90,7 @@ fun SnyggText(
                 .snyggPadding(style),
             text = text,
             color = colorOverride ?: style.foreground(),
-            fontSize = fontSizeOverride ?: style.fontSize(),
+            fontSize = fontSize,
             fontStyle = fontStyleOverride ?: style.fontStyle(),
             fontWeight = style.fontWeight(),
             fontFamily = fontFamilyOverride ?: style.fontFamily(LocalSnyggPreloadedCustomFontFamilies.current),
@@ -86,8 +100,34 @@ fun SnyggText(
             textDecoration = style.textDecorationLine(),
             maxLines = style.textMaxLines(),
             overflow = style.textOverflow(),
+            autoSize = autoSize,
         )
     }
+}
+
+/**
+ * Step size of [SnyggText]'s shrink-to-fit. Half a sp is too small a change to see between two steps, and keeps the
+ * number of trial layouts low.
+ */
+internal val ShrinkToFitStepSize = 0.5.sp
+
+/**
+ * The auto size [SnyggText] uses for `shrinkToFitMinScale`: the largest size from [fontSize] down to
+ * [fontSize] * [minScale] that fits. Null when [fontSize] isn't a usable sp size or [minScale] leaves nothing to
+ * shrink, so the text keeps its fixed size.
+ */
+internal fun shrinkToFitAutoSize(fontSize: TextUnit, minScale: Float): TextAutoSize? {
+    if (!fontSize.isSp || fontSize.value <= 0f) return null
+    val step = ShrinkToFitStepSize.value
+    // StepBased only tries sizes on a grid counted up from the minimum, so the minimum sits a whole number of steps
+    // below the full size. Otherwise text that fits would come out a fraction of a step small (13.9 sp, not 14).
+    val steps = floor(fontSize.value * (1f - minScale.coerceIn(0f, 1f)) / step)
+    if (steps < 1f) return null
+    return TextAutoSize.StepBased(
+        minFontSize = (fontSize.value - steps * step).sp,
+        maxFontSize = fontSize,
+        stepSize = ShrinkToFitStepSize,
+    )
 }
 
 @Preview

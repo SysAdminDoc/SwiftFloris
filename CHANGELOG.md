@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Shrink a long suggestion to fit its spot in the suggestion bar instead of cutting it off. Words used to trail off in "..." at the theme's text size whenever they ran wider than their third of the bar. Now a word that doesn't fit gets smaller, down to half the normal size, and only a word too long even for that still ends in "...". Short words keep the normal size. Clipboard suggestions stay as they were, since a copied paragraph won't fit a spot at any size.
+
 ## v1.9.68 (2026-11-16)
 
 - Fix the per-app "Suggestions: Off for this app" setting. It only stopped the keyboard from underlining the word you were typing, so that app still showed suggestions and the space bar still corrected words. It now works like turning "Display suggestions" off while that app is open. Emoji and clipboard suggestions still follow their own settings.
