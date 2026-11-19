@@ -5,6 +5,7 @@
 - Say when your phone's own switch is what keeps the keyboard quiet. Out of the box the keyboard follows your phone's touch sounds and touch vibration (Touch interactions on a Samsung), not the volume. With those off it made no sound and no vibration even with every option on Sounds & Vibration turned on, and nothing said why. That screen now shows "Play key sounds anyway" or "Vibrate on key presses anyway" while it's happening, and one tap sets the keyboard to play or vibrate regardless.
 - Update the encryption library behind clipboard history and your personal dictionary to SQLCipher 4.20.0. It brings SQLite 3.54.1, which fixes two SQLite security bugs (CVE-2026-119375 and CVE-2026-119377). History and words saved by older versions open as before.
 - Make "Always vibrate, regardless of system settings" really vibrate. On Android 13 and later the phone threw those vibrations away whenever its touch vibration was off, so picking that option changed nothing. The previews on the vibration length and strength sliders follow the same choice now.
+- Put 👍 first when you type ":good". Every emoji that lists "good" as a keyword scored the same, and ties kept the emoji panel's order, so the strip showed 🫡 😪 😴. Emoji that tie now go by how often people use them (Unicode's own usage counts), so ":good" gives 👍 👏 😴, in your skin tone where there is one.
 
 ## v1.9.69 (2026-11-19)
 

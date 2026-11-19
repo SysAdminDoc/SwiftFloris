@@ -54,6 +54,7 @@ class EmojiSuggestionProvider(private val context: Context) : SuggestionProvider
         (subtype.locales() + ShortcodeFallbackLocale).forEach { locale ->
             mappingsFor(locale)
         }
+        EmojiUsageRank.get(context)
     }
 
     private suspend fun mappingsFor(locale: FlorisLocale): EmojiDataBySkinTone {
@@ -96,12 +97,14 @@ class EmojiSuggestionProvider(private val context: Context) : SuggestionProvider
         // ROADMAP §7 Next-9.4 — custom user tags participate in predict-by-tag
         // ranking.
         val customTagStore = CustomEmojiTagStore.get(context)
+        val usageRank = EmojiUsageRank.get(context)
         val emojis = withContext(Dispatchers.Default) {
             EmojiSuggestionRanker.rank(
                 query = query,
                 sources = sources,
                 customTagsFor = customTagStore::tagsFor,
                 maxCount = maxCandidateCount,
+                usageRank = usageRank,
             )
         }
         return emojis.map { emoji ->
@@ -176,11 +179,16 @@ internal object EmojiSuggestionRanker {
         return nameWeight * 0.55 + keywordWeight * 0.25 + customTagWeight * 0.20
     }
 
+    /**
+     * [usageRank] maps an emoji value to how often people use it (0 is the most used, see [EmojiUsageRank]).
+     * It only orders emoji that score the same; unranked ones go after them in source order.
+     */
     fun rank(
         query: String,
         sources: List<List<Emoji>>,
         customTagsFor: (String) -> Collection<String>,
         maxCount: Int,
+        usageRank: Map<String, Int> = emptyMap(),
     ): List<Emoji> {
         if (query.isEmpty() || maxCount <= 0) return emptyList()
         val best = LinkedHashMap<String, Pair<Emoji, Double>>()
@@ -197,9 +205,12 @@ internal object EmojiSuggestionRanker {
                 }
             }
         }
-        // sortedByDescending is stable, so ties keep the source order.
+        // sortedWith is stable, so ties the usage rank doesn't settle keep the source order.
         return best.values
-            .sortedByDescending { it.second }
+            .sortedWith(
+                compareByDescending<Pair<Emoji, Double>> { it.second }
+                    .thenBy { usageRank[it.first.value] ?: Int.MAX_VALUE },
+            )
             .take(maxCount)
             .map { it.first }
     }
