@@ -840,6 +840,30 @@ class ClipboardManagerCallbackOrderTest {
         }
     }
 
+    @Test
+    fun anOversizedCopyTheSystemRefusesLeavesThePasteTargetAlone() {
+        setHistoryEnabled(true)
+        historyRows()
+        manager.addNewPlaintext("kept")
+        waitUntil { manager.clipboardCallbacksInFlight == 0 && historyRows().isNotEmpty() }
+        // Past the retention limit, so it can only become the direct-paste text, never a clip.
+        val oversized = "x".repeat(ClipboardTextRetentionPolicy.MAX_RETAINED_UTF8_BYTES + 1)
+
+        SwitchableClipboardShadow.failure = IllegalStateException("clipboard service is gone")
+        val refused = try {
+            manager.setPlaintextWithoutHistory(oversized, isSensitive = false)
+            null
+        } catch (e: IllegalStateException) {
+            e
+        } finally {
+            SwitchableClipboardShadow.failure = null
+        }
+
+        withClue("the caller still hears that it failed") { (refused != null) shouldBe true }
+        withClue("the keyboard still pastes the clip from before") { manager.primaryClip?.text shouldBe "kept" }
+        withClue("the refused text isn't held for a direct paste") { manager.primaryTextForDirectPaste() shouldBe null }
+    }
+
     /** The history rows as stored. The first call also waits for the history database to open. */
     private fun historyRows(): List<ClipboardItem> = runBlocking { manager.snapshotHistoryForRestore() }
 
