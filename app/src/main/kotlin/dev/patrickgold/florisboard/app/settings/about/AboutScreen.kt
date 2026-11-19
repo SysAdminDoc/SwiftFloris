@@ -61,6 +61,7 @@ import androidx.core.net.toUri
 import dev.patrickgold.florisboard.lib.crashutility.CrashReportEnvironment
 import dev.patrickgold.florisboard.lib.crashutility.CrashReportFormatter
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.florisboard.lib.util.copyWithFeedback
 import dev.patrickgold.florisboard.lib.util.launchUrl
 import dev.patrickgold.florisboard.app.settings.search.Preference
 import org.florisboard.lib.android.stringRes
@@ -104,19 +105,17 @@ fun AboutScreen() = FlorisScreen {
             title = stringRes(R.string.about__version__title),
             summary = appVersion,
             onClick = {
-                try {
-                    clipboardManager.addNewPlaintext(appVersion)
-                    Toast.makeText(context, R.string.about__version_copied__title, Toast.LENGTH_SHORT).show()
-                } catch (e: Throwable) {
-                    Toast.makeText(
-                        context,
+                copyWithFeedback(
+                    context = context,
+                    text = appVersion,
+                    copied = R.string.about__version_copied__title,
+                    failed = { error ->
                         context.stringRes(
                             R.string.about__version_copied__error,
-                            "error_message" to e.summarizeForUser(detailsUnavailable),
-                        ),
-                        Toast.LENGTH_SHORT,
-                    ).show()
-                }
+                            "error_message" to error.summarizeForUser(detailsUnavailable),
+                        )
+                    },
+                ) { clipboardManager.addNewPlaintext(it) }
             },
         )
 
@@ -138,16 +137,13 @@ fun AboutScreen() = FlorisScreen {
                         ).let { url -> "[${BuildConfig.VERSION_NAME}]($url)" },
                     ),
                 )
-                val copied = runCatching { clipboardManager.addNewPlaintext(report) }.isSuccess
-                Toast.makeText(
-                    context,
-                    if (copied) {
-                        R.string.about__report_problem__copied
-                    } else {
-                        R.string.about__report_problem__copy_failed
-                    },
-                    Toast.LENGTH_LONG,
-                ).show()
+                copyWithFeedback(
+                    context = context,
+                    text = report,
+                    copied = R.string.about__report_problem__copied,
+                    failed = { context.getString(R.string.about__report_problem__copy_failed) },
+                    duration = Toast.LENGTH_LONG,
+                ) { clipboardManager.addNewPlaintext(it) }
                 runCatching {
                     context.startActivity(
                         Intent(Intent.ACTION_VIEW, context.stringRes(R.string.florisboard__bug_report_url).toUri()),
@@ -176,12 +172,12 @@ fun AboutScreen() = FlorisScreen {
             },
             onClick = {
                 val fp = signingFingerprint ?: return@Preference
-                try {
-                    clipboardManager.addNewPlaintext(fp)
-                    Toast.makeText(context, R.string.about__signing_fingerprint__copied, Toast.LENGTH_SHORT).show()
-                } catch (_: Throwable) {
-                    // Silent — clipboard write is the only side effect, no recovery needed.
-                }
+                copyWithFeedback(
+                    context = context,
+                    text = fp,
+                    copied = R.string.about__signing_fingerprint__copied,
+                    failed = { context.getString(R.string.about__signing_fingerprint__copy_failed) },
+                ) { clipboardManager.addNewPlaintext(it) }
             },
         )
         // What's-new feature contract F14 — inline, offline excerpt sourced

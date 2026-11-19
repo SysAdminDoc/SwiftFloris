@@ -108,6 +108,7 @@ import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 import java.io.FileNotFoundException
 import java.util.UUID
+import dev.patrickgold.florisboard.lib.util.copyWithFeedback
 import dev.patrickgold.florisboard.lib.util.summarizeForUser
 
 @Composable
@@ -851,7 +852,7 @@ private fun SyncChannelPreference(
 }
 
 @Composable
-private fun SyncQrPayloadCard(rawPayload: String) {
+internal fun SyncQrPayloadCard(rawPayload: String) {
     val context = LocalContext.current
     val clipboardManager by context.clipboardManager()
     val matrix = remember(rawPayload) { SyncQrCode.encode(rawPayload) }
@@ -885,8 +886,12 @@ private fun SyncQrPayloadCard(rawPayload: String) {
         )
         TextButton(
             onClick = {
-                clipboardManager.addNewPlaintext(rawPayload)
-                Toast.makeText(context, R.string.settings__sync__pairing_payload_copied, Toast.LENGTH_SHORT).show()
+                copyWithFeedback(
+                    context = context,
+                    text = rawPayload,
+                    copied = R.string.settings__sync__pairing_payload_copied,
+                    failed = { context.getString(R.string.settings__sync__pairing_payload_copy_failed) },
+                ) { clipboardManager.addNewPlaintext(it) }
             },
         ) {
             Text(text = stringRes(R.string.settings__sync__copy_pairing_payload))

@@ -48,6 +48,7 @@ import dev.patrickgold.florisboard.ime.smartcompose.AddonInvocationAudit
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
+import dev.patrickgold.florisboard.lib.util.copyWithFeedback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -193,10 +194,13 @@ fun PrivacyAuditScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__privacy_audit__export__summary),
                 enabledIf = { records.isNotEmpty() },
                 onClick = {
-                    runCatching {
-                        clipboardManager.addNewPlaintext(AddonAuditExport.toJsonString(records = records))
-                    }
-                    Toast.makeText(context, R.string.settings__privacy_audit__export_toast, Toast.LENGTH_LONG).show()
+                    copyWithFeedback(
+                        context = context,
+                        text = AddonAuditExport.toJsonString(records = records),
+                        copied = R.string.settings__privacy_audit__export_toast,
+                        failed = { context.getString(R.string.settings__privacy_audit__export_failed) },
+                        duration = Toast.LENGTH_LONG,
+                    ) { clipboardManager.addNewPlaintext(it) }
                 },
             )
             Preference(

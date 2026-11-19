@@ -503,6 +503,7 @@
     <string name="settings__sync__qr_ready_summary" comment="Sync pairing QR status summary">Show this QR code to the other SwiftFloris device. It contains no private key.</string>
     <string name="settings__sync__copy_pairing_payload" comment="Sync pairing action to copy the generated pairing JSON">Copy pairing payload</string>
     <string name="settings__sync__pairing_payload_copied" comment="Sync toast shown after copying the generated pairing JSON">Pairing payload copied.</string>
+    <string name="settings__sync__pairing_payload_copy_failed" comment="Sync toast shown when the pairing JSON could not be copied">Could not copy the pairing payload.</string>
     <string name="settings__sync__group_devices" comment="Sync settings group title">Paired devices</string>
     <string name="settings__sync__no_paired_devices" comment="Sync settings empty state">No paired devices yet.</string>
     <string name="settings__sync__syncthing_dialog_title" comment="Sync dialog title">Syncthing folder</string>
@@ -1352,6 +1353,7 @@
     <string name="settings__privacy_audit__export" comment="Action title">Copy log as JSON</string>
     <string name="settings__privacy_audit__export__summary" comment="Action summary">Copies the full audit bundle to the clipboard so you can paste it anywhere.</string>
     <string name="settings__privacy_audit__export_toast" comment="Toast after copying">Audit log copied to the clipboard.</string>
+    <string name="settings__privacy_audit__export_failed" comment="Toast when the audit log could not be copied">Could not copy the audit log.</string>
     <string name="settings__privacy_audit__save" comment="Action title">Save JSON file</string>
     <string name="settings__privacy_audit__save__summary" comment="Action summary">Creates a local application/json document that you choose. SwiftFloris does not upload it.</string>
     <string name="settings__privacy_audit__save_toast" comment="Toast after saving">Audit log saved as JSON.</string>
@@ -1612,6 +1614,7 @@
     <string name="about__signing_fingerprint__summary_loading" comment="Preference summary while computing the fingerprint">Computing SHA-256…</string>
     <string name="about__signing_fingerprint__summary_unavailable" comment="Preference summary when fingerprint cannot be obtained">Fingerprint unavailable on this build</string>
     <string name="about__signing_fingerprint__copied" comment="Toast confirming fingerprint was copied">Fingerprint copied to clipboard</string>
+    <string name="about__signing_fingerprint__copy_failed" comment="Toast when the fingerprint could not be copied">Could not copy the fingerprint.</string>
     <string name="about__whats_new__title" comment="Preference title">What\'s new</string>
     <string name="about__whats_new__summary" comment="Preference summary, {version} is the app version like 1.8.198">v{version} · see what changed in this release</string>
     <string name="about__whats_new__dialog_title" comment="Dialog title, {version} is the app version like 1.8.198">What\'s new in v{version}</string>
