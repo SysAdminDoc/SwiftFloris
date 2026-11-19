@@ -20,8 +20,6 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -33,18 +31,13 @@ import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -55,16 +48,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import android.app.Activity
-import android.view.WindowManager
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.settings.advanced.BackupPassphraseDialog
 import dev.patrickgold.florisboard.app.settings.theme.DialogProperty
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryImportFormat
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryImportException
@@ -172,6 +160,7 @@ fun UserDictionaryScreen(
     var pendingImportPreview by remember { mutableStateOf<PersonalDictionaryImportPreview?>(null) }
     var encryptedExportDialogVisible by rememberSaveable { mutableStateOf(false) }
     var encryptedImportUri by remember { mutableStateOf<Uri?>(null) }
+    var encryptedImportError by remember { mutableStateOf<String?>(null) }
     var pendingEncryptedExportPassphrase by remember { mutableStateOf<CharArray?>(null) }
     var activeEntryOperation by rememberSaveable { mutableStateOf<UserDictionaryEntryOperation?>(null) }
     var activeDictionaryTransfer by rememberSaveable { mutableStateOf<UserDictionaryTransferOperation?>(null) }
@@ -562,7 +551,16 @@ fun UserDictionaryScreen(
                         is DictionaryImportFlowResult.Applied -> handleImportSuccess(result.result)
                     }
                 }.onFailure { error ->
-                    handleImportFailure(error)
+                    if ((error as? EncryptedDictionaryException)?.reason ==
+                        EncryptedDictionaryExport.FailureReason.BAD_PASSPHRASE
+                    ) {
+                        // Ask again for the same file. The envelope is read from the URI on each
+                        // attempt and nothing was written, so there is nothing to clean up.
+                        encryptedImportError = encryptedDictionaryErrorMessage(error)
+                        encryptedImportUri = uri
+                    } else {
+                        handleImportFailure(error)
+                    }
                 }
             } finally {
                 finishDictionaryTransfer()
@@ -585,6 +583,7 @@ fun UserDictionaryScreen(
                 return@rememberLauncherForActivityResult
             }
             if (isEncrypted) {
+                encryptedImportError = null
                 encryptedImportUri = uri
             } else {
                 importPlainDictionary(uri)
@@ -1239,7 +1238,7 @@ fun UserDictionaryScreen(
     }
 
     if (encryptedExportDialogVisible) {
-        DictionaryPassphraseDialog(
+        BackupPassphraseDialog(
             title = stringRes(R.string.settings__udm__encrypted_export__dialog_title),
             message = stringRes(R.string.settings__udm__encrypted_export__dialog_message),
             confirmLabel = stringRes(R.string.action__export),
@@ -1250,122 +1249,28 @@ fun UserDictionaryScreen(
             onConfirm = { passphrase ->
                 encryptedExportDialogVisible = false
                 pendingEncryptedExportPassphrase?.fill('\u0000')
-                pendingEncryptedExportPassphrase = passphrase.toCharArray()
+                pendingEncryptedExportPassphrase = passphrase
                 exportEncryptedDictionary.launch(EncryptedUserDictionaryDefaultFileName)
             },
         )
     }
 
     encryptedImportUri?.let { uri ->
-        DictionaryPassphraseDialog(
+        BackupPassphraseDialog(
             title = stringRes(R.string.settings__udm__encrypted_import__dialog_title),
             message = stringRes(R.string.settings__udm__encrypted_import__dialog_message),
             confirmLabel = stringRes(R.string.action__import),
             requireConfirmation = false,
+            errorMessage = encryptedImportError,
             onDismiss = {
                 encryptedImportUri = null
+                encryptedImportError = null
             },
             onConfirm = { passphrase ->
                 encryptedImportUri = null
-                importEncryptedDictionary(uri, passphrase.toCharArray())
+                encryptedImportError = null
+                importEncryptedDictionary(uri, passphrase)
             },
         )
     }
-}
-
-@Composable
-private fun DictionaryPassphraseDialog(
-    title: String,
-    message: String,
-    confirmLabel: String,
-    requireConfirmation: Boolean,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
-) {
-    // While this dialog is on-screen, mark the host activity window as
-    // FLAG_SECURE so screen recordings / screenshots / external-display
-    // mirroring cannot capture the passphrase the user is typing. The
-    // PasswordVisualTransformation only masks the rendered dot/bullet —
-    // without FLAG_SECURE the typed characters are still in the surface
-    // layer that a screen recorder captures. Cleared on dispose.
-    val view = LocalView.current
-    DisposableEffect(view) {
-        val window = (view.context as? Activity)?.window
-        window?.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE,
-        )
-        onDispose {
-            window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        }
-    }
-    // Use plain `remember` (not `rememberSaveable`) so the passphrase does
-    // NOT survive process death / configuration change via the savedInstance
-    // state bundle. A passphrase in a savedInstanceState bundle is
-    // recoverable via `am dumpstate` and the like.
-    var passphrase by remember { mutableStateOf("") }
-    var passphraseConfirmation by remember { mutableStateOf("") }
-    val mismatch = requireConfirmation &&
-        passphraseConfirmation.isNotEmpty() &&
-        passphrase != passphraseConfirmation
-    val canConfirm = passphrase.isNotBlank() &&
-        (!requireConfirmation || passphrase == passphraseConfirmation)
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = title) },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(text = message)
-                OutlinedTextField(
-                    value = passphrase,
-                    onValueChange = { passphrase = it },
-                    label = { Text(text = stringRes(R.string.settings__udm__encrypted_dictionary__passphrase)) },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = if (requireConfirmation) ImeAction.Next else ImeAction.Done,
-                    ),
-                )
-                if (requireConfirmation) {
-                    OutlinedTextField(
-                        value = passphraseConfirmation,
-                        onValueChange = { passphraseConfirmation = it },
-                        label = {
-                            Text(text = stringRes(R.string.settings__udm__encrypted_dictionary__confirm_passphrase))
-                        },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done,
-                        ),
-                    )
-                    if (mismatch) {
-                        Text(
-                            text = stringRes(R.string.settings__udm__encrypted_dictionary__passphrase_mismatch),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(passphrase) },
-                enabled = canConfirm,
-            ) {
-                Text(text = confirmLabel)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringRes(R.string.action__cancel))
-            }
-        },
-    )
 }

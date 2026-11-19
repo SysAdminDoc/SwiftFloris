@@ -99,6 +99,30 @@ class PortableBackupEnvelopeTest : FunSpec({
         }
     }
 
+    test("a wrong passphrase leaves the copied envelope ready for the right one") {
+        withFiles { source, envelope, restored ->
+            source.writeText("settings and clipboard")
+            PortableBackupEnvelope.encrypt(
+                plaintextZip = source,
+                encryptedTarget = envelope,
+                passphrase = "right-passphrase".toCharArray(),
+                containsClipboard = true,
+                iterations = iterations,
+            )
+            val envelopeBytes = envelope.readBytes()
+
+            val error = shouldThrow<PortableBackupEnvelopeException> {
+                PortableBackupEnvelope.decrypt(envelope, restored, "wrong-passphrase".toCharArray())
+            }
+
+            BackupRestorePolicy.canRetryPassphrase(error) shouldBe true
+            envelope.readBytes().contentEquals(envelopeBytes) shouldBe true
+            restored.exists() shouldBe false
+            PortableBackupEnvelope.decrypt(envelope, restored, "right-passphrase".toCharArray())
+            restored.readText() shouldBe "settings and clipboard"
+        }
+    }
+
     test("ciphertext tampering is authenticated before plaintext publication") {
         withFiles { source, envelope, restored ->
             source.writeText("clipboard payload")

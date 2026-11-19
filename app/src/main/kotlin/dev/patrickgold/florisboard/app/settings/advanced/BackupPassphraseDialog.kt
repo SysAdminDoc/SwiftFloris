@@ -28,11 +28,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -42,9 +50,12 @@ import dev.patrickgold.florisboard.R
 import org.florisboard.lib.compose.stringRes
 
 /**
- * Non-saveable passphrase entry used by portable backup export and restore.
- * The hosting window is secure while the dialog is visible, and callers
- * receive the secret only as a short-lived [CharArray].
+ * Non-saveable passphrase entry used by portable backup export and restore and by encrypted
+ * dictionary export and import. The hosting window is secure while the dialog is visible, and
+ * callers receive the secret only as a short-lived [CharArray].
+ *
+ * [errorMessage] is shown under the field after a wrong passphrase, so the caller can ask again
+ * with the file still at hand. It's announced, and focus goes back to the field.
  */
 @Composable
 internal fun BackupPassphraseDialog(
@@ -54,6 +65,7 @@ internal fun BackupPassphraseDialog(
     requireConfirmation: Boolean,
     onDismiss: () -> Unit,
     onConfirm: (CharArray) -> Unit,
+    errorMessage: String? = null,
 ) {
     val view = LocalView.current
     DisposableEffect(view) {
@@ -75,6 +87,12 @@ internal fun BackupPassphraseDialog(
         passphrase != confirmation
     val canConfirm = passphrase.isNotBlank() &&
         (!requireConfirmation || passphrase == confirmation)
+    val passphraseFocus = remember { FocusRequester() }
+    if (errorMessage != null) {
+        LaunchedEffect(errorMessage) {
+            passphraseFocus.requestFocus()
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -83,10 +101,24 @@ internal fun BackupPassphraseDialog(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(message)
                 OutlinedTextField(
+                    // The field carries the specific error, so TalkBack reads it when focus lands
+                    // here, not just Material's generic "Invalid input".
+                    modifier = Modifier
+                        .focusRequester(passphraseFocus)
+                        .semantics { if (errorMessage != null) error(errorMessage) },
                     value = passphrase,
                     onValueChange = { passphrase = it },
                     label = {
                         Text(stringRes(R.string.settings__udm__encrypted_dictionary__passphrase))
+                    },
+                    isError = errorMessage != null,
+                    supportingText = errorMessage?.let { error ->
+                        {
+                            Text(
+                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+                                text = error,
+                            )
+                        }
                     },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),

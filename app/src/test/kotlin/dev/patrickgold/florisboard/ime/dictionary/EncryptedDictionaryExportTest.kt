@@ -91,6 +91,24 @@ class EncryptedDictionaryExportTest : io.kotest.core.spec.style.FunSpec({
         ex.reason shouldBe EncryptedDictionaryExport.FailureReason.BAD_PASSPHRASE
     }
 
+    test("the same envelope still opens with the right passphrase after a wrong one") {
+        val plaintext = "hello\nworld\n".toByteArray()
+        val envelope = EncryptedDictionaryExport.encrypt(
+            plaintext = plaintext,
+            passphrase = "right".toCharArray(),
+            iterations = testIterations,
+            secureRandom = fixedRandom(),
+        )
+        val untouched = envelope.copyOf()
+
+        shouldThrow<EncryptedDictionaryException> {
+            EncryptedDictionaryExport.decrypt(envelope, "wrong".toCharArray())
+        }.reason shouldBe EncryptedDictionaryExport.FailureReason.BAD_PASSPHRASE
+
+        envelope.contentEquals(untouched) shouldBe true
+        EncryptedDictionaryExport.decrypt(envelope, "right".toCharArray()).contentEquals(plaintext) shouldBe true
+    }
+
     test("decrypt of a tampered ciphertext byte fails with BAD_PASSPHRASE (cryptographic indistinguishability)") {
         val envelope = EncryptedDictionaryExport.encrypt(
             plaintext = byteArrayOf(1, 2, 3, 4),

@@ -23,6 +23,15 @@ internal object BackupRestorePolicy {
     fun requiresPortableEncryption(clipboardItemsSelected: Boolean): Boolean =
         clipboardItemsSelected
 
+    /**
+     * Whether a restore that failed with [error] can ask for the passphrase again on the same copied
+     * archive. Decryption writes nothing until the tag checks out, so a wrong passphrase leaves the
+     * copy as it was. Any other failure means the archive itself is the problem.
+     */
+    fun canRetryPassphrase(error: Throwable): Boolean =
+        (error as? PortableBackupEnvelopeException)?.reason ==
+            PortableBackupEnvelope.FailureReason.BadPassphraseOrTampered
+
     fun classifyBackupDocumentResult(
         uriSelected: Boolean,
         writeSucceeded: Boolean,

@@ -172,6 +172,7 @@ fun RestoreScreen() = FlorisScreen {
         mutableStateOf<CacheManager.BackupAndRestoreWorkspace?>(null)
     }
     var showRestorePassphraseDialog by remember { mutableStateOf(false) }
+    var restorePassphraseError by remember { mutableStateOf<String?>(null) }
     var showEraseRestoreConfirmation by rememberSaveable { mutableStateOf(false) }
     var lastRestoreNotice by rememberSaveable { mutableStateOf<RestoreFlowNotice?>(null) }
     var lastRestoreErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
@@ -190,6 +191,7 @@ fun RestoreScreen() = FlorisScreen {
         pendingEncryptedWorkspace?.close()
         pendingEncryptedWorkspace = null
         showRestorePassphraseDialog = false
+        restorePassphraseError = null
         setRestoreWorkspace(null)
     }
     val unknownRestoreError = stringRes(R.string.backup_and_restore__restore__unknown_error)
@@ -310,7 +312,10 @@ fun RestoreScreen() = FlorisScreen {
             workspace.restoreErrorId = validation.errorId
             workspace
         } catch (error: Throwable) {
-            workspace.close()
+            // The caller keeps the copied archive for another passphrase and closes it on Cancel.
+            if (!BackupRestorePolicy.canRetryPassphrase(error)) {
+                workspace.close()
+            }
             throw error
         }
     }
@@ -363,6 +368,7 @@ fun RestoreScreen() = FlorisScreen {
                         PortableBackupEnvelope.inspect(copiedWorkspace.archiveFile)
                         pendingEncryptedWorkspace = copiedWorkspace
                         copiedWorkspace = null
+                        restorePassphraseError = null
                         showRestorePassphraseDialog = true
                     } else {
                         val readyWorkspace = prepareRestoreWorkspace(copiedWorkspace)
@@ -393,8 +399,10 @@ fun RestoreScreen() = FlorisScreen {
             message = stringRes(R.string.backup_and_restore__restore__encryption_dialog_message),
             confirmLabel = stringRes(R.string.action__restore),
             requireConfirmation = false,
+            errorMessage = restorePassphraseError,
             onDismiss = {
                 showRestorePassphraseDialog = false
+                restorePassphraseError = null
                 pendingEncryptedWorkspace?.close()
                 pendingEncryptedWorkspace = null
                 lastRestoreNotice = RestoreFlowNotice.Cancelled
@@ -426,15 +434,22 @@ fun RestoreScreen() = FlorisScreen {
                             syncAdditionalRestoreSelection(readyWorkspace)
                             setRestoreWorkspace(readyWorkspace)
                         } catch (error: Throwable) {
-                            flogError { error.stackTraceToString() }
-                            encryptedWorkspace.close()
-                            val errorMessage = restoreArchiveErrorMessage(error)
-                            lastRestoreNotice = RestoreFlowNotice.Failure
-                            lastRestoreErrorMessage = errorMessage
-                            context.showLongToast(
-                                R.string.backup_and_restore__restore__failure,
-                                "error_message" to errorMessage,
-                            )
+                            if (BackupRestorePolicy.canRetryPassphrase(error)) {
+                                // Ask again over the same copy instead of sending the user back to the file picker.
+                                pendingEncryptedWorkspace = encryptedWorkspace
+                                restorePassphraseError = badBackupPassphrase
+                                showRestorePassphraseDialog = true
+                            } else {
+                                flogError { error.stackTraceToString() }
+                                encryptedWorkspace.close()
+                                val errorMessage = restoreArchiveErrorMessage(error)
+                                lastRestoreNotice = RestoreFlowNotice.Failure
+                                lastRestoreErrorMessage = errorMessage
+                                context.showLongToast(
+                                    R.string.backup_and_restore__restore__failure,
+                                    "error_message" to errorMessage,
+                                )
+                            }
                         } finally {
                             passphrase.fill('\u0000')
                             isRestoreInProgress = false

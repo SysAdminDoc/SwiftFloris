@@ -38,6 +38,18 @@ class BackupRestorePolicyTest : FunSpec({
             PortableBackupEnvelope.GcmTagBytes
     }
 
+    test("only a wrong passphrase keeps the copied archive for another try") {
+        BackupRestorePolicy.canRetryPassphrase(
+            PortableBackupEnvelopeException(PortableBackupEnvelope.FailureReason.BadPassphraseOrTampered),
+        ) shouldBe true
+        PortableBackupEnvelope.FailureReason.entries
+            .filter { it != PortableBackupEnvelope.FailureReason.BadPassphraseOrTampered }
+            .forEach { reason ->
+                BackupRestorePolicy.canRetryPassphrase(PortableBackupEnvelopeException(reason)) shouldBe false
+            }
+        BackupRestorePolicy.canRetryPassphrase(IllegalStateException("not a ZIP")) shouldBe false
+    }
+
     test("clipboard selection is the mandatory portable-encryption boundary") {
         BackupRestorePolicy.requiresPortableEncryption(clipboardItemsSelected = false) shouldBe false
         BackupRestorePolicy.requiresPortableEncryption(clipboardItemsSelected = true) shouldBe true
