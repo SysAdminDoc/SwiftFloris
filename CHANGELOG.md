@@ -19,6 +19,7 @@
 - Say when a copy didn't work on the About, Privacy audit and Sync screens. Copying the audit log claimed success even when the clipboard refused it, copying the signing fingerprint said nothing when it failed, and a failed copy of the pairing payload could close the Sync screen. Each copy button now shows one message saying whether the text was copied.
 - Close the suggestion bar's benchmark timing even when drawing the bar fails. A failed redraw used to leave that timing open in the trace. Nothing changes while you type.
 - Follow Remove animations the moment you turn it on. Android keeps that switch somewhere that doesn't restart open screens, so with the app already open the settings pages kept sliding and the Aurora theme's bands kept moving until you left and came back. Both stop right away now, and start again when you turn it back off.
+- Mirror the settings page transitions in right-to-left languages. In Arabic, Hebrew, Persian or Urdu the next page still slid in from the right and the page you left still shrank toward the right edge, the way it does in English. Both now run the other way.
 
 ## v1.9.69 (2026-11-19)
 

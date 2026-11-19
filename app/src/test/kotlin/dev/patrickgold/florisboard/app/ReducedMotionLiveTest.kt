@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -48,6 +47,7 @@ import dev.patrickgold.florisboard.screenshot.RoborazziHostActivity
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
 import io.kotest.assertions.withClue
 import io.kotest.matchers.floats.shouldBeGreaterThan
+import io.kotest.matchers.floats.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
@@ -65,7 +65,8 @@ import org.robolectric.annotation.GraphicsMode
  * Android's Remove animations lives in Settings.Global, and changing it is no configuration change, so motion
  * keyed on the configuration kept going until the screen was recreated. These flip the setting while the
  * settings screens and the Aurora background stay up, and check motion stops at once and comes back, all in the
- * same activity.
+ * same activity. The settings motion also has to mirror in a right-to-left language, where it used to enter from
+ * the right and shrink toward the right edge just like left-to-right.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w360dp-h640dp-xxhdpi", sdk = [35])
@@ -98,6 +99,33 @@ class ReducedMotionLiveTest {
             enteringShiftMidway(nav) shouldBeGreaterThan 1f
         }
         composeRule.activity shouldBeSameInstanceAs activity
+    }
+
+    @Test
+    fun forwardNavigationEntersFromTheLeftInRightToLeft() {
+        val nav = showSettings(LayoutDirection.Rtl)
+
+        withClue("in a right-to-left language the next screen slides in from the left") {
+            enteringShiftMidway(nav) shouldBeLessThan -1f
+        }
+    }
+
+    @Test
+    fun goingBackShrinksTowardTheRightInLeftToRight() {
+        val nav = showSettings(LayoutDirection.Ltr)
+
+        withClue("the screen being left shrinks toward its right edge") {
+            exitingCenterShiftMidway(nav) shouldBeGreaterThan 1f
+        }
+    }
+
+    @Test
+    fun goingBackShrinksTowardTheLeftInRightToLeft() {
+        val nav = showSettings(LayoutDirection.Rtl)
+
+        withClue("in a right-to-left language the screen being left shrinks toward its left edge") {
+            exitingCenterShiftMidway(nav) shouldBeLessThan -1f
+        }
     }
 
     @Test
@@ -136,6 +164,18 @@ class ReducedMotionLiveTest {
         return midway - settled
     }
 
+    /** Opens the language list, goes back, and reads how far its search field's center moved 64 ms in. */
+    private fun exitingCenterShiftMidway(nav: NavHostController): Float {
+        composeRule.runOnIdle { nav.navigate(Routes.Settings.SelectLocale) }
+        composeRule.mainClock.advanceTimeBy(3_000)
+        val settled = field().center.x
+        composeRule.runOnIdle { nav.popBackStack() }
+        composeRule.mainClock.advanceTimeBy(64)
+        val midway = field().center.x
+        composeRule.mainClock.advanceTimeBy(3_000)
+        return midway - settled
+    }
+
     private fun field(): Rect = composeRule.onNode(hasSetTextAction()).fetchSemanticsNode().boundsInRoot
 
     private fun movesOverASecond(): Boolean {
@@ -164,16 +204,14 @@ class ReducedMotionLiveTest {
         lateinit var nav: NavHostController
         composeRule.mainClock.autoAdvance = false
         composeRule.setContent {
-            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                SettingsFrame {
-                    nav = rememberNavController()
-                    CompositionLocalProvider(LocalNavController provides nav) {
-                        Routes.AppNavHost(
-                            modifier = Modifier.fillMaxSize(),
-                            navController = nav,
-                            startDestination = Routes.Settings.PrivacyAuditLog::class,
-                        )
-                    }
+            SettingsFrame(layoutDirection) {
+                nav = rememberNavController()
+                CompositionLocalProvider(LocalNavController provides nav) {
+                    Routes.AppNavHost(
+                        modifier = Modifier.fillMaxSize(),
+                        navController = nav,
+                        startDestination = Routes.Settings.PrivacyAuditLog::class,
+                    )
                 }
             }
         }
@@ -182,9 +220,14 @@ class ReducedMotionLiveTest {
     }
 }
 
+/** The settings frame the app wraps every screen in, which also sets the layout direction the screens see. */
 @Composable
-private fun SettingsFrame(content: @Composable () -> Unit) {
-    ProvideLocalizedResources(resourcesContext = LocalContext.current, appName = R.string.app_name) {
+private fun SettingsFrame(layoutDirection: LayoutDirection = LayoutDirection.Ltr, content: @Composable () -> Unit) {
+    ProvideLocalizedResources(
+        resourcesContext = LocalContext.current,
+        appName = R.string.app_name,
+        forceLayoutDirection = layoutDirection,
+    ) {
         FlorisAppTheme(theme = AppTheme.LIGHT) {
             ProvideDefaultDialogPrefStrings(
                 confirmLabel = stringRes(R.string.action__ok),

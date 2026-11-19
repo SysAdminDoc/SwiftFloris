@@ -30,7 +30,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -313,22 +315,25 @@ object Routes {
         startDestination: KClass<*>,
     ) {
         val reducedMotion = rememberReducedMotion()
+        // Forward motion runs from the end side toward the start side and going back shrinks toward the end
+        // side, so a right-to-left language gets the same motion mirrored.
+        val towardEnd = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1 else 1
         val forwardEnterTransition = if (reducedMotion) {
             EnterTransition.None
         } else {
-            slideIn { IntOffset(it.width, 0) } + fadeIn()
+            slideIn { IntOffset(towardEnd * it.width, 0) } + fadeIn()
         }
         val forwardExitTransition = if (reducedMotion) {
             ExitTransition.None
         } else {
-            slideOut { IntOffset(-it.width, 0) } + fadeOut()
+            slideOut { IntOffset(-towardEnd * it.width, 0) } + fadeOut()
         }
         val backExitTransition = if (reducedMotion) {
             ExitTransition.None
         } else {
             scaleOut(
                 targetScale = 0.85F,
-                transformOrigin = TransformOrigin(pivotFractionX = 0.8f, pivotFractionY = 0.5f)
+                transformOrigin = TransformOrigin(pivotFractionX = if (towardEnd > 0) 0.8f else 0.2f, pivotFractionY = 0.5f)
             ) + fadeOut(spring(stiffness = Spring.StiffnessMedium))
         }
 
