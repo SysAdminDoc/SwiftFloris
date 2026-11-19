@@ -20,6 +20,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,10 +29,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.input.HapticVibrationMode
 import dev.patrickgold.florisboard.ime.input.InputFeedbackActivationMode
+import dev.patrickgold.florisboard.ime.input.InputFeedbackSystemSwitches
 import dev.patrickgold.florisboard.ime.input.KeypressSoundClass
 import dev.patrickgold.florisboard.ime.input.KeypressSoundStore
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -41,12 +46,14 @@ import dev.patrickgold.florisboard.app.settings.search.ListPreference
 import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
+import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.systemVibratorOrNull
 import org.florisboard.lib.android.vibrate
 import org.florisboard.lib.android.showLongToast
+import org.florisboard.lib.android.showShortToast
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.stringRes
 import dev.patrickgold.florisboard.lib.util.summarizeForUser
@@ -64,6 +71,26 @@ fun InputFeedbackScreen() = FlorisScreen {
     val scope = rememberCoroutineScope()
     var pendingSoundClass by remember { mutableStateOf<KeypressSoundClass?>(null) }
     var selectedSoundClasses by remember { mutableStateOf(KeypressSoundStore.available(context)) }
+
+    // The phone's touch sounds and touch vibration switches, read again on every return here so
+    // a trip to the phone's settings shows up without reopening the screen.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var phoneTouchSoundOn by remember {
+        mutableStateOf(InputFeedbackSystemSwitches.isTouchSoundOn(context.contentResolver))
+    }
+    var phoneTouchVibrationOn by remember {
+        mutableStateOf(InputFeedbackSystemSwitches.isTouchVibrationOn(context.contentResolver))
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                phoneTouchSoundOn = InputFeedbackSystemSwitches.isTouchSoundOn(context.contentResolver)
+                phoneTouchVibrationOn = InputFeedbackSystemSwitches.isTouchVibrationOn(context.contentResolver)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val soundPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -109,6 +136,21 @@ fun InputFeedbackScreen() = FlorisScreen {
                 summarySwitchDisabled = stringRes(R.string.pref__input_feedback__audio_enabled__summary_disabled),
                 entries = enumDisplayEntriesOf(InputFeedbackActivationMode::class, "audio"),
             )
+            val audioEnabled by prefs.inputFeedback.audioEnabled.collectAsState()
+            val audioMode by prefs.inputFeedback.audioActivationMode.collectAsState()
+            // Without this the keyboard went quiet with every option here on and no word why (#26).
+            if (InputFeedbackSystemSwitches.isSilencedByPhone(audioEnabled, audioMode, phoneTouchSoundOn)) {
+                Preference(
+                    title = stringRes(R.string.pref__input_feedback__audio_silenced_by_system__label),
+                    summary = stringRes(R.string.pref__input_feedback__audio_silenced_by_system__summary),
+                    onClick = {
+                        scope.launch {
+                            prefs.inputFeedback.audioActivationMode.set(InputFeedbackActivationMode.IGNORE_SYSTEM_SETTINGS)
+                            context.showShortToast(R.string.pref__input_feedback__audio_silenced_by_system__done)
+                        }
+                    },
+                )
+            }
             DialogSliderPreference(
                 prefs.inputFeedback.audioVolume,
                 title = stringRes(R.string.pref__input_feedback__audio_volume__label),
@@ -207,6 +249,20 @@ fun InputFeedbackScreen() = FlorisScreen {
                 summarySwitchDisabled = stringRes(R.string.pref__input_feedback__haptic_enabled__summary_disabled),
                 entries = enumDisplayEntriesOf(InputFeedbackActivationMode::class, "haptic")
             )
+            val hapticEnabled by prefs.inputFeedback.hapticEnabled.collectAsState()
+            val hapticMode by prefs.inputFeedback.hapticActivationMode.collectAsState()
+            if (InputFeedbackSystemSwitches.isSilencedByPhone(hapticEnabled, hapticMode, phoneTouchVibrationOn)) {
+                Preference(
+                    title = stringRes(R.string.pref__input_feedback__haptic_silenced_by_system__label),
+                    summary = stringRes(R.string.pref__input_feedback__haptic_silenced_by_system__summary),
+                    onClick = {
+                        scope.launch {
+                            prefs.inputFeedback.hapticActivationMode.set(InputFeedbackActivationMode.IGNORE_SYSTEM_SETTINGS)
+                            context.showShortToast(R.string.pref__input_feedback__haptic_silenced_by_system__done)
+                        }
+                    },
+                )
+            }
             ListPreference(
                 prefs.inputFeedback.hapticVibrationMode,
                 title = stringRes(R.string.pref__input_feedback__haptic_vibration_mode__label),
@@ -229,7 +285,13 @@ fun InputFeedbackScreen() = FlorisScreen {
                 stepIncrement = 1,
                 onPreviewSelectedValue = { duration ->
                     val strength = prefs.inputFeedback.hapticVibrationStrength.get()
-                    vibrator?.vibrate(duration, strength)
+                    // A slider preview should feel like the key presses it tunes, so it follows the same mode.
+                    vibrator?.vibrate(
+                        duration,
+                        strength,
+                        ignoreSystemSettings = prefs.inputFeedback.hapticActivationMode.get() ==
+                            InputFeedbackActivationMode.IGNORE_SYSTEM_SETTINGS,
+                    )
                 },
                 enabledIf = {
                     prefs.inputFeedback.hapticEnabled isEqualTo true &&
@@ -255,7 +317,12 @@ fun InputFeedbackScreen() = FlorisScreen {
                 stepIncrement = 1,
                 onPreviewSelectedValue = { strength ->
                     val duration = prefs.inputFeedback.hapticVibrationDuration.get()
-                    vibrator?.vibrate(duration, strength)
+                    vibrator?.vibrate(
+                        duration,
+                        strength,
+                        ignoreSystemSettings = prefs.inputFeedback.hapticActivationMode.get() ==
+                            InputFeedbackActivationMode.IGNORE_SYSTEM_SETTINGS,
+                    )
                 },
                 enabledIf = {
                     prefs.inputFeedback.hapticEnabled isEqualTo true &&

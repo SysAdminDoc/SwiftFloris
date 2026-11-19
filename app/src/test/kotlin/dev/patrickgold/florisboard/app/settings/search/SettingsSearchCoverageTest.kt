@@ -138,6 +138,10 @@ class SettingsSearchCoverageTest {
             "settings__theme_editor__fine_tune__level",
             "settings__theme_editor__fine_tune__color_representation",
             "settings__theme_editor__fine_tune__display_kbd_after_dialogs",
+            // Shown on Sounds & Vibration only while the phone's touch sound or touch vibration
+            // switch is muting the keyboard, so a search result could land where the row isn't.
+            "pref__input_feedback__audio_silenced_by_system__label",
+            "pref__input_feedback__haptic_silenced_by_system__label",
         )
     }
 }

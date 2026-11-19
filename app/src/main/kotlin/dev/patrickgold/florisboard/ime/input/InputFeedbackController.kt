@@ -20,7 +20,6 @@ import android.inputmethodservice.InputMethodService
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.SoundPool
-import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import androidx.compose.runtime.staticCompositionLocalOf
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -131,8 +130,8 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
     private var systemHapticEnabled: Boolean = false
 
     fun updateSystemPrefsState() {
-        systemAudioEnabled = systemPref(Settings.System.SOUND_EFFECTS_ENABLED)
-        systemHapticEnabled = systemPref(Settings.System.HAPTIC_FEEDBACK_ENABLED)
+        systemAudioEnabled = InputFeedbackSystemSwitches.isTouchSoundOn(contentResolver)
+        systemHapticEnabled = InputFeedbackSystemSwitches.isTouchVibrationOn(contentResolver)
     }
 
     fun keyPress(data: KeyData = TextKeyData.UNSPECIFIED) {
@@ -172,11 +171,6 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
         soundPool.release()
     }
 
-    private fun systemPref(id: String): Boolean {
-        if (contentResolver == null) return false
-        return Settings.System.getInt(contentResolver, id, 0) != 0
-    }
-
     private fun performAudioFeedback(data: KeyData, factor: Double) {
         // A volatile long read on the keypress path, and a reload only when it
         // moved. Cheap enough to sit here, which is what lets an import made
@@ -184,8 +178,12 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
         syncCustomSounds()
         if (audioManager == null && customSounds.isEmpty()) return
         if (!prefs.inputFeedback.audioEnabled.get()) return
-        if (prefs.inputFeedback.audioActivationMode.get() ==
-            InputFeedbackActivationMode.RESPECT_SYSTEM_SETTINGS && !systemAudioEnabled) return
+        if (InputFeedbackSystemSwitches.isSilencedByPhone(
+                keyboardSwitchOn = true,
+                mode = prefs.inputFeedback.audioActivationMode.get(),
+                phoneSwitchOn = systemAudioEnabled,
+            )
+        ) return
 
         scope.launch {
             val volume = (prefs.inputFeedback.audioVolume.get() * factor) / 100.0
@@ -222,11 +220,24 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
     private fun performHapticFeedback(data: KeyData, factor: Double) {
         if (vibrator == null) return
         if (!prefs.inputFeedback.hapticEnabled.get()) return
-        if (prefs.inputFeedback.hapticActivationMode.get() ==
-            InputFeedbackActivationMode.RESPECT_SYSTEM_SETTINGS && !systemHapticEnabled) return
+        val mode = prefs.inputFeedback.hapticActivationMode.get()
+        if (InputFeedbackSystemSwitches.isSilencedByPhone(
+                keyboardSwitchOn = true,
+                mode = mode,
+                phoneSwitchOn = systemHapticEnabled,
+            )
+        ) return
+        val ignoreSystemSettings = mode == InputFeedbackActivationMode.IGNORE_SYSTEM_SETTINGS
+        // Since Android 13 the view's haptic feedback obeys the phone's touch vibration switch
+        // (FLAG_IGNORE_GLOBAL_SETTING does nothing there), so while that switch is off it can't
+        // vibrate "regardless of system settings" and the vibrator is used directly instead.
+        val feedbackInterfaceCanVibrate = !ignoreSystemSettings || systemHapticEnabled ||
+            !AndroidVersion.ATLEAST_API33_T
 
         scope.launch {
-            if (prefs.inputFeedback.hapticVibrationMode.get() == HapticVibrationMode.USE_HAPTIC_FEEDBACK_INTERFACE) {
+            if (feedbackInterfaceCanVibrate &&
+                prefs.inputFeedback.hapticVibrationMode.get() == HapticVibrationMode.USE_HAPTIC_FEEDBACK_INTERFACE
+            ) {
                 val didPerform = withContext(Dispatchers.Main) {
                     val view = ims.window?.window?.decorView ?: return@withContext false
                     val hfc = if (factor < 1.0 && AndroidVersion.ATLEAST_API27_O_MR1) {
@@ -246,6 +257,7 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
                 duration = prefs.inputFeedback.hapticVibrationDuration.get(),
                 strength = prefs.inputFeedback.hapticVibrationStrength.get(),
                 factor = factor,
+                ignoreSystemSettings = ignoreSystemSettings,
             )
         }
     }

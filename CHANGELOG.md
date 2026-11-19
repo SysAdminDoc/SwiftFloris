@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Say when your phone's own switch is what keeps the keyboard quiet. Out of the box the keyboard follows your phone's touch sounds and touch vibration (Touch interactions on a Samsung), not the volume. With those off it made no sound and no vibration even with every option on Sounds & Vibration turned on, and nothing said why. That screen now shows "Play key sounds anyway" or "Vibrate on key presses anyway" while it's happening, and one tap sets the keyboard to play or vibrate regardless.
+- Make "Always vibrate, regardless of system settings" really vibrate. On Android 13 and later the phone threw those vibrations away whenever its touch vibration was off, so picking that option changed nothing. The previews on the vibration length and strength sliders follow the same choice now.
+
 ## v1.9.69 (2026-11-19)
 
 - Correct more slips on space. A wrong letter that happens to spell some rare entry in the word list, like "thos" for "this", "rhe" for "the" or "yoy" for "you", counted as a real word and stayed as typed. Now space fixes it when a far more common word is one letter off. Real words that are just rare, like "snide", "plop" or "wager", stay as typed, and so does any word you've typed before. Because every word in the list used to be learned the first time you typed it, a slip like "thos" that space let through was learned and then never fixed. Those learned slips are cleared once on update, and a slip now has to be typed twice before it's learned, the same as any word the keyboard doesn't know. Undoing a fix still teaches the word right away. Short slips also stop turning into rare longer words, so "thw" now becomes "the" instead of "thwart". When several fixes are common enough, the keyboard now weighs where your taps landed between all of them instead of always taking the most common one. On the accuracy test careful typing gets 60 of its 101 slips fixed instead of 52, sloppy typing 434 of 840 instead of 378, and still no correctly typed word gets changed.
