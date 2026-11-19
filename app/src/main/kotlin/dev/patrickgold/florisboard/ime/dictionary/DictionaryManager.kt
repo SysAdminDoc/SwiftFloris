@@ -242,6 +242,12 @@ class DictionaryManager private constructor(context: Context) {
     }
 
     private var florisUserDictionaryDatabase: FlorisUserDictionaryDatabase? = null
+    private val learnedWordWriter = LearnedWordWriter(
+        dao = { florisUserDictionaryDao() },
+        initialFrequency = LEARN_INITIAL_FREQUENCY,
+        increment = LEARN_INCREMENT,
+        maxFrequency = LEARN_MAX_FREQUENCY,
+    )
     private var systemUserDictionaryDatabase: SystemUserDictionaryDatabase? = null
     private val florisUserDictionaryOpenExecutor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "SwiftFloris-UserDictionaryOpen").apply { isDaemon = true }
@@ -290,6 +296,14 @@ class DictionaryManager private constructor(context: Context) {
      * process can be killed without warning after that. Returns at once and writes on IO.
      */
     fun flushPendingLearnedWords() {
+        if (learnedWordWriter.waitingSize > 0) {
+            ioScope.launch {
+                val failed = runCatching { learnedWordWriter.retry() }.getOrElse { 1 }
+                if (failed > 0) {
+                    flogWarning(LogTopic.DICTIONARY) { "Couldn't write $failed learned word uses that waited for the store" }
+                }
+            }
+        }
         if (!pendingLearnedWordsSaveQueued.get()) return
         ioScope.launch { savePendingLearnedWordsIfQueued() }
     }
@@ -461,33 +475,8 @@ class DictionaryManager private constructor(context: Context) {
 
         ioScope.launch {
             runCatching {
-                val dao = florisUserDictionaryDao() ?: return@launch
-                // LIKE-based query is ASCII case-insensitive, so a manually-added
-                // cased entry ("Patrick") reinforces instead of duplicating.
-                val existingMatches = dao.query(normalized, locale)
-                    .filter { it.word.equals(normalized, ignoreCase = true) }
-                if (existingMatches.isNotEmpty()) {
-                    val entry = existingMatches.first()
-                    val newFreq = (entry.freq + LEARN_INCREMENT).coerceAtMost(LEARN_MAX_FREQUENCY)
-                    if (newFreq != entry.freq) {
-                        dao.update(entry.copy(freq = newFreq))
-                    }
-                } else {
-                    dao.insert(
-                        UserDictionaryEntry(
-                            id = 0,
-                            word = normalized,
-                            freq = LEARN_INITIAL_FREQUENCY,
-                            // Must match the Room TypeConverter format (localeTag(), e.g.
-                            // "en_US") — FlorisLocale.toString() is a debug format that no
-                            // locale-scoped DAO query can ever match, which made learned
-                            // words invisible after process restart and grew a new row per
-                            // re-commit. See repairLegacyLearnedLocaleRowsAsync().
-                            locale = locale.localeTag(),
-                            shortcut = null,
-                        ),
-                    )
-                }
+                // A closed store keeps the word for later instead of dropping it (see LearnedWordWriter).
+                learnedWordWriter.write(normalized, locale)
             }.onFailure { e ->
                 flogError(LogTopic.DICTIONARY) {
                     "learnWord(word=${normalized.debugSummarizeTextForLog()}) DAO write failed: ${e.message}"

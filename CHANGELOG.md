@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Keep words the keyboard learns while your personal dictionary can't be opened. If the encrypted store wasn't ready, a new word was only remembered until the keyboard restarted. It now waits and gets saved as soon as the store opens.
 - Suggest the word you usually type next while you're still typing it. After "see you", typing "to" now puts "tomorrow" first if that's how you finish the phrase, even though plenty of more common words start with "to". It kicks in from the first letter, once you've typed the phrase twice.
 - Rank the words you use most above the ones you've typed once or twice. Every learned word reached the top weight on its second use and tied with all the others, so the shortest one won. Now each of a word's first 11 uses moves it up. Words only you use, like names or slang, also get full credit when suggestions are sorted and when you glide; they used to score there as if they weren't words at all. The keyboard keeps up to 10,000 of your words per language instead of about 4,000.
 - Remember phrases longer, and keep the new ones. Each word kept only its 16 most-typed followers, so a pair you'd typed once was usually thrown out the next time the keyboard closed, before you could type it the second time it takes to be suggested. New and recently used pairs now win that cut, and there's room for twice as many. A pair you've typed twice also stays suggestible for a year without use instead of fading after about three weeks, and phrases that start with "I" or "a" ("I think", "a lot") are learned at all now.
