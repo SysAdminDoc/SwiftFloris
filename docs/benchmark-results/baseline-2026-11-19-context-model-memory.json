@@ -1,0 +1,135 @@
+{
+  "benchmark": "imeMemory",
+  "measuredAt": "2026-11-19T17:39:37.5914420-05:00",
+  "packageName": "io.github.sysadmindoc.swiftfloris.bench",
+  "iterations": 3,
+  "keyboardDuringScenarios": "io.github.sysadmindoc.swiftfloris/dev.patrickgold.florisboard.FlorisImeService",
+  "device": {
+    "deviceKey": "sha256:7fde90da128b3bcf889c9cfbbed9a92e88712ea28af8e9fa7d2a78070087b835",
+    "manufacturer": "samsung",
+    "model": "SM-S908U1",
+    "device": "b0q",
+    "androidRelease": "16",
+    "sdk": "36"
+  },
+  "summary": {
+    "contextModel": {
+      "before": {
+        "pssKbMedian": 39797.0,
+        "javaHeapKbMedian": 2784.0,
+        "nativeHeapKbMedian": 7268.0,
+        "graphicsKbMedian": 14416.0,
+        "codeKbMedian": 8784.0
+      },
+      "loaded": {
+        "pssKbMedian": 45781.0,
+        "javaHeapKbMedian": 2812.0,
+        "nativeHeapKbMedian": 7536.0,
+        "graphicsKbMedian": 14416.0,
+        "codeKbMedian": 14348.0
+      },
+      "trimmed": {
+        "pssKbMedian": 45761.0,
+        "javaHeapKbMedian": 2796.0,
+        "nativeHeapKbMedian": 7536.0,
+        "graphicsKbMedian": 14416.0,
+        "codeKbMedian": 14348.0
+      }
+    }
+  },
+  "runs": [
+    {
+      "scenario": "contextModel",
+      "iteration": 1,
+      "phases": {
+        "before": {
+          "pssKb": 39797.0,
+          "javaHeapKb": 2796.0,
+          "nativeHeapKb": 7236.0,
+          "graphicsKb": 14416.0,
+          "codeKb": 8784.0
+        },
+        "loaded": {
+          "pssKb": 45851.0,
+          "javaHeapKb": 2808.0,
+          "nativeHeapKb": 7448.0,
+          "graphicsKb": 14416.0,
+          "codeKb": 14552.0,
+          "loadMs": 6.10349,
+          "lookups": 13800.0,
+          "scored": 13800.0,
+          "usPerLookup": 3.8338730434782606
+        },
+        "trimmed": {
+          "pssKb": 45819.0,
+          "javaHeapKb": 2784.0,
+          "nativeHeapKb": 7448.0,
+          "graphicsKb": 14416.0,
+          "codeKb": 14552.0
+        }
+      }
+    },
+    {
+      "scenario": "contextModel",
+      "iteration": 2,
+      "phases": {
+        "before": {
+          "pssKb": 39938.0,
+          "javaHeapKb": 2780.0,
+          "nativeHeapKb": 7464.0,
+          "graphicsKb": 14416.0,
+          "codeKb": 8832.0
+        },
+        "loaded": {
+          "pssKb": 45781.0,
+          "javaHeapKb": 2824.0,
+          "nativeHeapKb": 7648.0,
+          "graphicsKb": 14416.0,
+          "codeKb": 14348.0,
+          "loadMs": 4.313646,
+          "lookups": 13800.0,
+          "scored": 13800.0,
+          "usPerLookup": 2.5010076811594204
+        },
+        "trimmed": {
+          "pssKb": 45761.0,
+          "javaHeapKb": 2800.0,
+          "nativeHeapKb": 7648.0,
+          "graphicsKb": 14416.0,
+          "codeKb": 14348.0
+        }
+      }
+    },
+    {
+      "scenario": "contextModel",
+      "iteration": 3,
+      "phases": {
+        "before": {
+          "pssKb": 39621.0,
+          "javaHeapKb": 2784.0,
+          "nativeHeapKb": 7268.0,
+          "graphicsKb": 14416.0,
+          "codeKb": 8780.0
+        },
+        "loaded": {
+          "pssKb": 45546.0,
+          "javaHeapKb": 2812.0,
+          "nativeHeapKb": 7536.0,
+          "graphicsKb": 14416.0,
+          "codeKb": 14296.0,
+          "loadMs": 5.904375,
+          "lookups": 13800.0,
+          "scored": 13800.0,
+          "usPerLookup": 3.4356884057971016
+        },
+        "trimmed": {
+          "pssKb": 45530.0,
+          "javaHeapKb": 2796.0,
+          "nativeHeapKb": 7536.0,
+          "graphicsKb": 14416.0,
+          "codeKb": 14296.0
+        }
+      }
+    }
+  ]
+}

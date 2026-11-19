@@ -23,6 +23,7 @@
 - Keep the preview Obtainium link from offering the stable release. Its file filter also matched every regular release APK, so with no preview out it would have handed a preview subscription the stable build. It now only takes files named like `SwiftFloris-v1.9.70-beta.apk`, which no regular release uses.
 - Build the app without Kotlin's experimental local type aliases. One shorthand name in the keyboard's screen-size code needed them, and they made the compiler mark every class as a pre-release build. Nothing changes in how the keyboard sizes itself.
 - Check the release build's screenshots before every release again. That check couldn't even compile, since one shared test used a class only debug builds have, so text and settings that only release builds carry never got a visual check. It builds again, keeps its own reference pictures for the screens that show the app's name, and the release checklist now runs it.
+- Measure what the English next-word model costs on a real phone. On a Galaxy S22 Ultra, loading it adds about 5.4 MB of file pages the phone can drop when memory runs low (the file itself is 5.9 MB) and under 50 KB of app memory. It loads in about 6 ms and each lookup takes a few microseconds. The numbers are checked in with the other benchmark results.
 
 ## v1.9.69 (2026-11-19)
 

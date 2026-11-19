@@ -32,6 +32,17 @@ import java.nio.channels.FileChannel
  * memory-mapped straight out of the APK (app/build.gradle.kts stores `.sflm` assets uncompressed so they can be),
  * so the model holds no heap: its pages are clean file pages the system can drop under memory pressure and read
  * back on the next lookup.
+ *
+ * Measured budget for the English model (5,941,616 bytes, 5,802 KiB), Galaxy S22 Ultra on Android 16, three runs of
+ * `tools/benchmark-ime-memory.ps1 -Scenarios contextModel` on 2026-11-19
+ * (docs/benchmark-results/baseline-2026-11-19-context-model-memory.json), loaded minus before:
+ * - code pages (`codeKb`, the mapped file): +5,516 to +5,768 KiB, median +5,516, under the file's size
+ * - Java heap: +12 to +44 KB, median +28, under the 256 KB budget
+ * - native heap: +184 to +268 KB, median +212
+ * - load: 4.3 to 6.1 ms, median 5.9 ms
+ * - lookup: 2.5 to 3.8 us each over 13,800 lookups, median 3.4 us
+ * A change that pushes the code pages past the file's size or the Java heap past 256 KB is copying the model
+ * somewhere instead of reading the mapping.
  */
 internal object ContextModelStore {
     private val AssetPaths = mapOf("en" to "lm/en_context.sflm")
