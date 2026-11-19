@@ -21,6 +21,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.window.core.layout.WindowSizeClass
+import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_EXPANDED_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXTRA_LARGE_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_LARGE_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import androidx.window.core.layout.computeWindowSizeClass
 
 /**
@@ -59,16 +65,15 @@ data class ImeFormFactor(
          * @param boundsDp The root window bounds in dp.
          */
         fun of(boundsDp: DpRect): ImeFormFactor {
-            typealias BP = WindowSizeClass.Companion
             val sizeClass = WindowSizeClass.BREAKPOINTS_V2.computeWindowSizeClass(
                 widthDp = boundsDp.width.value,
                 heightDp = boundsDp.height.value,
             )
             val typeGuess = when {
-                sizeClass.isWidthAtLeastBreakpoint(BP.WIDTH_DP_EXTRA_LARGE_LOWER_BOUND) -> {
+                sizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_EXTRA_LARGE_LOWER_BOUND) -> {
                     Type.DESKTOP
                 }
-                sizeClass.isWidthAtLeastBreakpoint(BP.WIDTH_DP_LARGE_LOWER_BOUND) -> {
+                sizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_LARGE_LOWER_BOUND) -> {
                     Type.LARGE_TABLET
                 }
                 boundsDp.width >= 600.dp && boundsDp.height >= 600.dp -> {
@@ -81,13 +86,13 @@ data class ImeFormFactor(
                         Type.TABLET_PORTRAIT
                     }
                 }
-                sizeClass.isAtLeastBreakpoint(BP.WIDTH_DP_MEDIUM_LOWER_BOUND, BP.HEIGHT_DP_EXPANDED_LOWER_BOUND) -> {
+                sizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_EXPANDED_LOWER_BOUND) -> {
                     Type.TABLET_PORTRAIT
                 }
-                sizeClass.isAtLeastBreakpoint(BP.WIDTH_DP_EXPANDED_LOWER_BOUND, BP.HEIGHT_DP_MEDIUM_LOWER_BOUND) -> {
+                sizeClass.isAtLeastBreakpoint(WIDTH_DP_EXPANDED_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) -> {
                     Type.TABLET_LANDSCAPE
                 }
-                sizeClass.isHeightAtLeastBreakpoint(BP.HEIGHT_DP_MEDIUM_LOWER_BOUND) -> {
+                sizeClass.isHeightAtLeastBreakpoint(HEIGHT_DP_MEDIUM_LOWER_BOUND) -> {
                     Type.PHONE_PORTRAIT
                 }
                 else -> Type.PHONE_LANDSCAPE
