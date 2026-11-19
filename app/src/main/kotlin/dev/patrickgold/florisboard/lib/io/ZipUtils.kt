@@ -37,7 +37,10 @@ class ArchiveEntryTooLargeException(
 object ZipUtils {
     /** [unzip] leaves out a file past this many bytes without failing. */
     internal const val MaxUnzippedEntrySizeBytes = 100_000_000L
-    /** [unzip] leaves out every file once the ones before it reach this many bytes. */
+    /**
+     * [unzip] fails once it has inflated this many bytes in total. Files it leaves out for size count too, so an
+     * archive of oversized entries can't make it inflate the same remaining budget over and over.
+     */
     internal const val MaxUnzippedArchiveSizeBytes = 250_000_000L
 
     // Cap on entry count to defeat archives that ship millions of empty entries
@@ -229,13 +232,16 @@ object ZipUtils {
     /**
      * Unzips a given Zip file to the destination directory.
      *
-     * Security violations abort the entire extraction (no partial extraction is
-     * left on disk). Three classes of violation abort:
+     * Security violations abort the entire extraction, and any failure removes
+     * every file and folder this call created, so no partial extraction is left
+     * on disk. Four classes of violation abort:
      *
      *  - Entry-name traversal / drive-letter / leading-slash patterns
      *    (see [isUnsafeEntryName]).
      *  - Post-canonical-resolution paths that fall outside `dstDir` (zip-slip).
      *  - More than [MaxUnzippedEntryCount] entries in the archive (zip-bomb).
+     *  - More than [MaxUnzippedArchiveSizeBytes] bytes inflated in total, counting
+     *    entries left out for size (zip-bomb).
      *
      * Benign anomalies (name longer than 255 chars, destination path longer than
      * 1023 chars, individual entry exceeding the per-entry byte cap) still skip
@@ -258,11 +264,31 @@ object ZipUtils {
      * @throws java.io.IOException If an I/O error has occurred.
      */
     fun unzip(srcFile: FsFile, dstDir: FsDir) {
+        unzip(srcFile, dstDir, MaxUnzippedEntrySizeBytes, ArchiveWorkBudget(MaxUnzippedArchiveSizeBytes))
+    }
+
+    internal fun unzip(srcFile: FsFile, dstDir: FsDir, maxEntryBytes: Long, budget: ArchiveWorkBudget) {
         require(srcFile.exists() && srcFile.isFile) { "Given src file `$srcFile` is not valid or a directory." }
-        dstDir.mkdirs()
+        val created = ExtractedPaths()
+        try {
+            created.mkdirs(dstDir)
+            extractEntries(srcFile, dstDir, maxEntryBytes, budget, created)
+        } catch (error: Throwable) {
+            created.removeAll()
+            flogWarning { "ZipUtils.unzip failed and removed what it had extracted (src=$srcFile): ${error.message}" }
+            throw error
+        }
+    }
+
+    private fun extractEntries(
+        srcFile: FsFile,
+        dstDir: FsDir,
+        maxEntryBytes: Long,
+        budget: ArchiveWorkBudget,
+        created: ExtractedPaths,
+    ) {
         ZipFile(srcFile).use { flexFile ->
             val flexEntries = flexFile.entries()
-            var totalUnzippedBytes = 0L
             var processedEntries = 0
             while (flexEntries.hasMoreElements()) {
                 val flexEntry = flexEntries.nextElement()
@@ -323,17 +349,16 @@ object ZipUtils {
                     )
                 }
                 if (flexEntry.isDirectory) {
-                    flexEntryFile.mkdirs()
+                    created.mkdirs(flexEntryFile)
                 } else {
-                    val copiedBytes = flexFile.copy(
+                    val extracted = flexFile.copy(
                         srcEntry = flexEntry,
                         dstFile = flexEntryFile,
-                        maxEntryBytes = MaxUnzippedEntrySizeBytes,
-                        maxRemainingArchiveBytes = MaxUnzippedArchiveSizeBytes - totalUnzippedBytes,
+                        maxEntryBytes = maxEntryBytes,
+                        budget = budget,
+                        created = created,
                     )
-                    if (copiedBytes > 0L) {
-                        totalUnzippedBytes += copiedBytes
-                    } else if (flexEntry.size > 0L) {
+                    if (!extracted) {
                         flogWarning {
                             "ZipUtils.unzip skipped oversized entry (src=$srcFile, name=${flexEntry.name}, size=${flexEntry.size})"
                         }
@@ -343,17 +368,20 @@ object ZipUtils {
         }
     }
 
+    /** Returns false when the entry is over [maxEntryBytes] and was left out. Every byte it inflates is charged to [budget]. */
     private fun ZipFile.copy(
         srcEntry: ZipEntry,
         dstFile: FsFile,
         maxEntryBytes: Long,
-        maxRemainingArchiveBytes: Long,
-    ): Long {
-        if (maxRemainingArchiveBytes <= 0L || srcEntry.size > maxEntryBytes) {
-            return 0L
+        budget: ArchiveWorkBudget,
+        created: ExtractedPaths,
+    ): Boolean {
+        if (srcEntry.size > maxEntryBytes) {
+            return false
         }
         // Unlike mkdirs(), this throws with the reason, so a full disk reads as one.
-        dstFile.parentFile?.let { java.nio.file.Files.createDirectories(it.toPath()) }
+        dstFile.parentFile?.let { created.createDirectories(it) }
+        created.file(dstFile)
         var copiedBytes = 0L
         var exceededBound = false
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
@@ -362,9 +390,11 @@ object ZipUtils {
                 while (true) {
                     val readBytes = inStream.read(buffer)
                     if (readBytes < 0) break
+                    // Charged before the entry check, so a left-out entry still uses up the budget.
+                    budget.spend(readBytes)
                     copiedBytes += readBytes
-                    if (copiedBytes > maxEntryBytes || copiedBytes > maxRemainingArchiveBytes) {
-                        // Stop writing — must break out (rather than delete
+                    if (copiedBytes > maxEntryBytes) {
+                        // Stop writing. Break out (rather than delete
                         // mid-`use`) so the output stream is closed before
                         // we try to delete the file. Some filesystems
                         // reject `delete()` on a still-open handle.
@@ -377,9 +407,9 @@ object ZipUtils {
         }
         if (exceededBound) {
             dstFile.delete()
-            return 0L
+            return false
         }
-        return copiedBytes
+        return true
     }
 
     private fun InputStream.readUtf8TextLimited(maxBytes: Long): String {
@@ -416,5 +446,51 @@ object ZipUtils {
         ZipFile(file).use { archive ->
             archive.entries()
         }
+    }
+}
+
+/** Bytes one [ZipUtils.unzip] call may inflate in total, whether the files they belong to are kept or not. */
+internal class ArchiveWorkBudget(val maxBytes: Long) {
+    var usedBytes: Long = 0L
+        private set
+
+    fun spend(bytes: Int) {
+        usedBytes += bytes
+        if (usedBytes > maxBytes) {
+            throw SecurityException(
+                "Archive inflates past $maxBytes bytes; refusing to extract (zip-bomb defence)."
+            )
+        }
+    }
+}
+
+/** What one [ZipUtils.unzip] call made on disk, so a failed call can take it back. */
+private class ExtractedPaths {
+    private val paths = mutableListOf<FsFile>()
+
+    fun mkdirs(dir: FsFile) {
+        val missing = missingFrom(dir)
+        dir.mkdirs()
+        paths += missing
+    }
+
+    fun createDirectories(dir: FsFile) {
+        val missing = missingFrom(dir)
+        java.nio.file.Files.createDirectories(dir.toPath())
+        paths += missing
+    }
+
+    /** A file that already existed is overwritten in place and stays. */
+    fun file(file: FsFile) {
+        if (!file.exists()) paths += file
+    }
+
+    /** Deepest first, so each folder is empty by its turn. A folder something else put a file in stays. */
+    fun removeAll() {
+        for (path in paths.asReversed()) path.delete()
+    }
+
+    private fun missingFrom(dir: FsFile): List<FsFile> {
+        return generateSequence(dir) { it.parentFile }.takeWhile { !it.exists() }.toList().asReversed()
     }
 }

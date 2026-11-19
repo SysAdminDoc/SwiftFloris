@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.lib.io
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.longs.shouldBeLessThanOrEqual
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.shouldBe
 import java.io.File
@@ -57,6 +58,84 @@ class ZipUtilsTest : FunSpec({
 
             root.subFile("escape.txt").exists() shouldBe false
             destination.subFile("safe/file.txt").exists() shouldBe false
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("unzip stops an archive once its inflated bytes pass the budget, even when entries are left out") {
+        val root = Files.createTempDirectory("floris-zip-test").toFile()
+        try {
+            val archive = root.subFile("budget.zip")
+            // Four entries fill most of the budget, then each further entry fits the per-entry cap but not what's
+            // left. Leaving those out without charging them let every one inflate the same remainder again.
+            val chunk = "a".repeat(60 * 1024)
+            val entries = (1..10).map { "big/$it.bin" to chunk }
+            writeZip(archive, "first.txt" to "ok", *entries.toTypedArray(), "last.txt" to "never")
+            val destination = root.subDir("out")
+            val budget = ArchiveWorkBudget(maxBytes = 256L * 1024)
+
+            shouldThrow<SecurityException> {
+                ZipUtils.unzip(archive, destination, maxEntryBytes = 64L * 1024, budget = budget)
+            }
+
+            budget.usedBytes shouldBeLessThanOrEqual 256L * 1024 + DEFAULT_BUFFER_SIZE
+            destination.exists() shouldBe false
+            root.walk().filter { it.isFile }.toList() shouldBe listOf(archive)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("unzip leaves out an entry over the per-entry cap and extracts the rest") {
+        val root = Files.createTempDirectory("floris-zip-test").toFile()
+        try {
+            val archive = root.subFile("oversized.zip")
+            writeZip(archive, "first.txt" to "ok", "big.bin" to "a".repeat(100 * 1024), "last.txt" to "fine")
+            val destination = root.subDir("out")
+
+            ZipUtils.unzip(archive, destination, maxEntryBytes = 64L * 1024, budget = ArchiveWorkBudget(1024L * 1024))
+
+            destination.subFile("first.txt").readText() shouldBe "ok"
+            destination.subFile("big.bin").exists() shouldBe false
+            destination.subFile("last.txt").readText() shouldBe "fine"
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("a failed unzip removes the files and folders it created") {
+        val root = Files.createTempDirectory("floris-zip-test").toFile()
+        try {
+            val archive = root.subFile("late-traversal.zip")
+            writeZip(archive, "safe/nested/file.txt" to "good", "../escape.txt" to "bad")
+            val destination = root.subDir("out")
+
+            shouldThrow<SecurityException> {
+                ZipUtils.unzip(archive, destination)
+            }
+
+            destination.exists() shouldBe false
+            root.subFile("escape.txt").exists() shouldBe false
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("a failed unzip keeps what was in the destination before") {
+        val root = Files.createTempDirectory("floris-zip-test").toFile()
+        try {
+            val archive = root.subFile("late-traversal.zip")
+            writeZip(archive, "new.txt" to "good", "../escape.txt" to "bad")
+            val destination = root.subDir("out").apply { mkdirs() }
+            destination.subFile("kept.txt").writeText("mine")
+
+            shouldThrow<SecurityException> {
+                ZipUtils.unzip(archive, destination)
+            }
+
+            destination.subFile("kept.txt").readText() shouldBe "mine"
+            destination.subFile("new.txt").exists() shouldBe false
         } finally {
             root.deleteRecursively()
         }
