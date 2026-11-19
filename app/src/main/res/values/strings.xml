@@ -180,6 +180,7 @@
     <string name="quick_action__clipboard_select_all" comment="Please mind the limited available space for the quick action strings">Select all</string>
     <string name="quick_action__clipboard_select_all__tooltip">Perform clipboard select all</string>
     <string name="quick_action__forward_delete" comment="Please mind the limited available space for the quick action strings">Forward delete</string>
+    <string name="quick_action__forward_delete__tooltip">Delete the character after the cursor</string>
     <string name="quick_action__ime_ui_mode_clipboard" comment="Please mind the limited available space for the quick action strings">Clipboard</string>
     <string name="quick_action__ime_ui_mode_clipboard__tooltip">Open clipboard history</string>
     <string name="quick_action__ime_ui_mode_media" comment="Please mind the limited available space for the quick action strings">Emoji</string>
@@ -233,6 +234,15 @@
     <string name="quick_action__one_handed_mode__tooltip">Toggle one-handed mode</string>
     <string name="quick_action__resize_mode" comment="Please mind the limited available space for the quick action strings">Resize</string>
     <string name="quick_action__resize_mode__tooltip">Toggle resize mode</string>
+    <string name="quick_action__insert_text__tooltip" comment="{text} = the text this action types">Insert text \'{text}\'</string>
+    <string name="quick_action__translate_selection" comment="Please mind the limited available space for the quick action strings">Translate</string>
+    <string name="quick_action__translate_selection__tooltip">Translate the current selection (via InlineTranslator addon)</string>
+    <string name="quick_action__insert_task" comment="Please mind the limited available space for the quick action strings">Add task</string>
+    <string name="quick_action__insert_task__compact" comment="Fits on a small key next to the suggestions; screen readers hear the full name instead, so keep it to about four characters">Task</string>
+    <string name="quick_action__insert_task__tooltip">Send current selection to a task / note app (Tasks.org, OpenTasks, Google Tasks, Joplin, etc.)</string>
+    <string name="quick_action__insert_calendar_event" comment="Please mind the limited available space for the quick action strings">Insert event</string>
+    <string name="quick_action__insert_calendar_event__compact" comment="Fits on a small key next to the suggestions; screen readers hear the full name instead, so keep it to about four characters">Cal</string>
+    <string name="quick_action__insert_calendar_event__tooltip">Pick a local calendar event and insert its title and date/time</string>
     <string name="quick_action__drag_marker" comment="This action is only used as a placeholder in the actions editor drag and drop screen and only visible in debug mode">Drag marker</string>
     <string name="quick_action__drag_marker__tooltip" comment="This action is only used as a placeholder in the actions editor drag and drop screen and only visible in debug mode">Current drag marker position</string>
     <string name="quick_action__noop" comment="Noop=no operation; this action is only used as a placeholder in the actions editor drag and drop screen">None</string>

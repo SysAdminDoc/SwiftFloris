@@ -207,7 +207,8 @@ fun QuickActionButton(
                             elementName = "$elementName-text",
                             attributes = attributes,
                             selector = selector,
-                            text = "Task",
+                            // A short label to fit the key. Screen readers get the full name above.
+                            text = stringRes(R.string.quick_action__insert_task__compact),
                         )
                     }
 
@@ -216,7 +217,7 @@ fun QuickActionButton(
                             elementName = "$elementName-text",
                             attributes = attributes,
                             selector = selector,
-                            text = "Cal",
+                            text = stringRes(R.string.quick_action__insert_calendar_event__compact),
                         )
                     }
                 }

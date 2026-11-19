@@ -322,10 +322,11 @@ fun QuickAction.computeDisplayName(evaluator: ComputingEvaluator): String {
             KeyCode.NOOP -> R.string.quick_action__noop
             else -> R.string.general__invalid_fatal
         })
+        // The user's own text is its name, so it reads back the way they wrote it.
         is QuickAction.InsertText -> data
-        is QuickAction.TranslateSelection -> "Translate"
-        is QuickAction.InsertTask -> "Add task"
-        is QuickAction.InsertCalendarEvent -> "Insert event"
+        is QuickAction.TranslateSelection -> stringRes(R.string.quick_action__translate_selection)
+        is QuickAction.InsertTask -> stringRes(R.string.quick_action__insert_task)
+        is QuickAction.InsertCalendarEvent -> stringRes(R.string.quick_action__insert_calendar_event)
     }
 }
 
@@ -348,6 +349,7 @@ fun QuickAction.computeTooltip(evaluator: ComputingEvaluator): String {
             KeyCode.CLIPBOARD_CUT -> R.string.quick_action__clipboard_cut__tooltip
             KeyCode.CLIPBOARD_PASTE -> R.string.quick_action__clipboard_paste__tooltip
             KeyCode.CLIPBOARD_SELECT_ALL -> R.string.quick_action__clipboard_select_all__tooltip
+            KeyCode.FORWARD_DELETE -> R.string.quick_action__forward_delete__tooltip
             KeyCode.IME_UI_MODE_CLIPBOARD -> R.string.quick_action__ime_ui_mode_clipboard__tooltip
             KeyCode.IME_UI_MODE_MEDIA -> R.string.quick_action__ime_ui_mode_media__tooltip
             KeyCode.LANGUAGE_SWITCH -> R.string.quick_action__language_switch__tooltip
@@ -371,9 +373,9 @@ fun QuickAction.computeTooltip(evaluator: ComputingEvaluator): String {
             KeyCode.NOOP -> R.string.quick_action__noop__tooltip
             else -> R.string.general__invalid_fatal
         })
-        is QuickAction.InsertText -> "Insert text '$data'"
-        is QuickAction.TranslateSelection -> "Translate the current selection (via InlineTranslator addon)"
-        is QuickAction.InsertTask -> "Send current selection to a task / note app (Tasks.org, OpenTasks, Google Tasks, Joplin, etc.)"
-        is QuickAction.InsertCalendarEvent -> "Pick a local calendar event and insert its title and date/time"
+        is QuickAction.InsertText -> stringRes(R.string.quick_action__insert_text__tooltip, "text" to data)
+        is QuickAction.TranslateSelection -> stringRes(R.string.quick_action__translate_selection__tooltip)
+        is QuickAction.InsertTask -> stringRes(R.string.quick_action__insert_task__tooltip)
+        is QuickAction.InsertCalendarEvent -> stringRes(R.string.quick_action__insert_calendar_event__tooltip)
     }
 }
