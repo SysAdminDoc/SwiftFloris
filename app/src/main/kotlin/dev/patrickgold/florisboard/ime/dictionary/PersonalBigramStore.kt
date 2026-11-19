@@ -46,7 +46,7 @@ import dev.patrickgold.florisboard.lib.devtools.flogError
 class PersonalBigramStore private constructor(private val context: Context) {
     companion object {
         private const val MAX_PREV_WORDS = 2000
-        private const val MAX_NEXT_PER_PREV = 16
+        private const val MAX_NEXT_PER_PREV = 32
         private const val MAX_REJECTED_PREV_WORDS = 2000
         private const val MAX_REJECTIONS_PER_PREV = 24
         private const val MAX_COUNT = 1000
@@ -365,18 +365,22 @@ class PersonalBigramStore private constructor(private val context: Context) {
             }
         }.orEmpty()
         val now = System.currentTimeMillis()
+        // Whether a continuation is offered depends on how often it was typed (and not removed),
+        // not on how recently: recency only orders what's offered.
         return snapshot.first.entries
             .asSequence()
             .filter { it.value >= MIN_COUNT_FOR_SUGGEST }
-            .map { entry ->
+            .filter { entry -> PersonalNgramRecency.isRemembered(snapshot.second[entry.key] ?: now, now) }
+            .mapNotNull { entry ->
+                val discount = rejectionDiscount(rejectionCounts[entry.key] ?: 0)
+                if (entry.value * discount < MIN_REJECTION_ADJUSTED_SCORE_FOR_SUGGEST) return@mapNotNull null
                 val decayedScore = PersonalNgramRecency.decayedScore(
                     count = entry.value,
                     lastSeenMs = snapshot.second[entry.key] ?: now,
                     nowMs = now,
                 )
-                entry to decayedScore * rejectionDiscount(rejectionCounts[entry.key] ?: 0)
+                entry to decayedScore * discount
             }
-            .filter { (_, adjustedScore) -> adjustedScore >= MIN_REJECTION_ADJUSTED_SCORE_FOR_SUGGEST }
             .sortedWith(
                 compareByDescending<Pair<Map.Entry<String, Int>, Double>> { it.second }
                     .thenByDescending { it.first.value }
@@ -565,9 +569,10 @@ class PersonalBigramStore private constructor(private val context: Context) {
             val rejectionSnapshot: List<BigramRejectionSnapshot>
             synchronized(table) {
                 pendingCommitsByLocale[localeTag]?.set(0)
+                val now = System.currentTimeMillis()
                 if (table.size > MAX_PREV_WORDS) {
                     val keepKeys = table.entries
-                        .sortedByDescending { e -> e.value.values.sum() }
+                        .sortedByDescending { e -> PersonalNgramRecency.totalScore(e.value, recencyTable[e.key], now) }
                         .take(MAX_PREV_WORDS)
                         .map { it.key }
                         .toSet()
@@ -579,11 +584,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
                 }
                 for ((prev, nextMap) in table) {
                     if (nextMap.size > MAX_NEXT_PER_PREV) {
-                        val keepKeys = nextMap.entries
-                            .sortedByDescending { it.value }
-                            .take(MAX_NEXT_PER_PREV)
-                            .map { it.key }
-                            .toSet()
+                        val keepKeys = PersonalNgramRecency.keysToKeep(nextMap, recencyTable[prev], MAX_NEXT_PER_PREV, now)
                         val removeKeys = nextMap.keys.filter { it !in keepKeys }
                         val recencyNextMap = recencyTable[prev]
                         for (k in removeKeys) {

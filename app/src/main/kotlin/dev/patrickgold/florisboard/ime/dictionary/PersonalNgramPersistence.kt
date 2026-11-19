@@ -27,6 +27,10 @@ internal object PersonalNgramPersistence {
      * Normalizes a committed word into a persistable n-gram token, or returns
      * an empty string when the word must not be learned.
      *
+     * One letter is enough: "I" and "a" start more English phrases than any
+     * other word ("I think", "a lot"), and single-letter words carry phrases in
+     * other languages too ("y", "à", "w").
+     *
      * Beyond length/digit gates, any token containing whitespace or a control
      * character is rejected outright: the TSV row format (`\t` columns, `\n`
      * rows) and the trigram context delimiter (`U+0000`) have no escaping, so
@@ -35,7 +39,7 @@ internal object PersonalNgramPersistence {
     fun normalizeToken(word: String): String {
         if (word.isBlank()) return ""
         val trimmed = word.trim().trim { ch -> !ch.isLetter() && ch != '\'' && ch != '-' }
-        if (trimmed.length < 2 || trimmed.length > 32) return ""
+        if (trimmed.isEmpty() || trimmed.length > 32) return ""
         if (trimmed.any { it.isDigit() }) return ""
         if (trimmed.none { it.isLetter() }) return ""
         if (trimmed.any { it.isWhitespace() || it.isISOControl() }) return ""
