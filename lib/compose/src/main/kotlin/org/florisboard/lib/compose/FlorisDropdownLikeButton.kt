@@ -16,20 +16,23 @@
 
 package org.florisboard.lib.compose
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdownMenuDefaults
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import dev.patrickgold.jetpref.material.ui.JetPrefTextFieldAppearance
@@ -47,17 +50,15 @@ fun FlorisDropdownLikeButton(
     Box(
         modifier = modifier.wrapContentSize(Alignment.TopStart)
     ) {
+        // The field only shows the value. A clear layer on top takes the click, so a quick tap, TalkBack's
+        // double-tap and Switch Access (clicks with no press) open it too, and screen readers hear one
+        // dropdown with the value instead of an editable field.
         val interactionSource = remember { MutableInteractionSource() }
-        val pressed by interactionSource.collectIsPressedAsState()
-
-        LaunchedEffect(pressed) {
-            if (pressed) {
-                onClick()
-            }
-        }
 
         JetPrefTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clearAndSetSemantics { },
             value = item,
             onValueChange = {},
             enabled = true,
@@ -72,6 +73,18 @@ fun FlorisDropdownLikeButton(
             },
             appearance = appearance,
             interactionSource = interactionSource,
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .semantics { text = AnnotatedString(item) }
+                // Shares the field's interaction source, so the field still shows its own focus and press look.
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    role = Role.DropdownList,
+                    onClick = onClick,
+                ),
         )
     }
 }
