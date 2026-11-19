@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
@@ -52,12 +53,14 @@ fun FlorisDropdownLikeButton(
     ) {
         // The field only shows the value. A clear layer on top takes the click, so a quick tap, TalkBack's
         // double-tap and Switch Access (clicks with no press) open it too, and screen readers hear one
-        // dropdown with the value instead of an editable field.
+        // dropdown with the value instead of an editable field. The field never takes focus either, so Tab and
+        // the D-pad stop once, on the layer, where Enter opens it.
         val interactionSource = remember { MutableInteractionSource() }
 
         JetPrefTextField(
             modifier = Modifier
                 .fillMaxWidth()
+                .focusProperties { canFocus = false }
                 .clearAndSetSemantics { },
             value = item,
             onValueChange = {},

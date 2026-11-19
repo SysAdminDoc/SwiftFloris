@@ -19,17 +19,25 @@ package dev.patrickgold.florisboard.app.settings.localization
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dev.patrickgold.florisboard.R
@@ -90,6 +98,23 @@ class FlorisDropdownLikeButtonClickTest {
         composeRule.onNodeWithText("Polish")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.DropdownList))
         composeRule.onAllNodesWithText("Polish").assertCountEquals(1)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun aKeyboardReachesItInOneStepAndEnterOpensIt() {
+        lateinit var focusManager: FocusManager
+        composeRule.setContent {
+            focusManager = LocalFocusManager.current
+            Frame { FlorisDropdownLikeButton(item = "Polish", onClick = { clicks++ }) }
+        }
+        composeRule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        composeRule.onNodeWithText("Polish").assertIsFocused()
+        composeRule.onNodeWithText("Polish").performKeyInput { pressKey(Key.Enter) }
+        composeRule.waitForIdle()
+
+        clicks shouldBe 1
     }
 }
 
