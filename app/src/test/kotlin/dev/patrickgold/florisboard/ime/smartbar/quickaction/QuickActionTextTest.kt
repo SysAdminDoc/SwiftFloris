@@ -255,6 +255,21 @@ class QuickActionTextTest {
         insertTextKeyLabel(" hi") shouldBe "?"
     }
 
+    @Test
+    fun aTypedTextKeyKeepsAnEmojiMadeOfSeveralCodePointsWhole() {
+        fun chars(vararg codePoints: Int) = codePoints.joinToString("") { String(Character.toChars(it)) }
+        val flagPoland = chars(0x1F1F5, 0x1F1F1)
+        val womanTechnologist = chars(0x1F469, 0x200D, 0x1F4BB)
+        val thumbsUpMediumDark = chars(0x1F44D, 0x1F3FE)
+        val keycapHash = chars(0x23, 0xFE0F, 0x20E3)
+        val redHeart = chars(0x2764, 0xFE0F)
+        for (emoji in listOf(flagPoland, womanTechnologist, thumbsUpMediumDark, keycapHash, redHeart)) {
+            withClue(emoji.codePoints().toArray().joinToString { Integer.toHexString(it) }) {
+                insertTextKeyLabel("$emoji rest") shouldBe emoji
+            }
+        }
+    }
+
     @Composable
     private fun Frame(content: @Composable () -> Unit) {
         val base = LocalContext.current

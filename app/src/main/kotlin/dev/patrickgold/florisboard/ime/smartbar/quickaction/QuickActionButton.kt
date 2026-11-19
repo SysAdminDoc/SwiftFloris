@@ -245,10 +245,14 @@ fun QuickActionButton(
 }
 
 /**
- * What a typed-text key shows: the first character of [text], kept whole when it takes two chars (an emoji, say),
- * or "?" when the text is empty or starts with a space, where there's nothing to show.
+ * What a typed-text key shows: the first user-perceived character of [text], kept whole when it spans several
+ * code points (a flag, a skin tone, a family emoji, a keycap), or "?" when the text is empty or starts with a
+ * space, where there's nothing to show.
  */
 internal fun insertTextKeyLabel(text: String): String {
     if (text.isEmpty() || text[0].isWhitespace()) return "?"
-    return text.substring(0, Character.charCount(text.codePointAt(0)))
+    val graphemes = java.text.BreakIterator.getCharacterInstance()
+    graphemes.setText(text)
+    val end = graphemes.next()
+    return if (end == java.text.BreakIterator.DONE) text else text.substring(0, end)
 }
