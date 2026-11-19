@@ -45,6 +45,19 @@ internal data class SubtypeNlpProviderOptions(
     val selected: SubtypeNlpProviderOption get() = options[selectedIndex]
 
     companion object {
+        /**
+         * Options for a saved suggestion and spelling pair. The editor shows one engine for both, so when either
+         * half can't be picked here that half is the one shown, as unavailable. Otherwise a pair whose spelling
+         * engine went missing would look like a working suggestion engine.
+         */
+        fun forSavedProviders(suggestionId: String, spellingId: String): SubtypeNlpProviderOptions {
+            val selectableIds = NlpProviderCatalog.selectable.map { it.id }
+            val shownId = listOf(suggestionId, spellingId).firstOrNull { id ->
+                id != SelectNlpProviderId && id !in selectableIds
+            } ?: suggestionId
+            return forSavedProvider(shownId)
+        }
+
         /** The placeholder, every selectable provider, and the saved engine last when it isn't one of them. */
         fun forSavedProvider(savedProviderId: String): SubtypeNlpProviderOptions {
             val selectable = NlpProviderCatalog.selectable.map { SubtypeNlpProviderOption.Provider(it) }

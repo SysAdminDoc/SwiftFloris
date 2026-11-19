@@ -20,6 +20,7 @@ import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.nlp.NlpProviderCatalog
 import dev.patrickgold.florisboard.ime.nlp.advanced.AdvancedSpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.han.HanShapeBasedLanguageProvider
+import dev.patrickgold.florisboard.ime.nlp.latin.LatinLanguageProvider
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldNotContainAnyOf
@@ -58,6 +59,36 @@ class SubtypeNlpProviderOptionsTest : FunSpec({
         selected.id shouldBe "com.example.nlp.providers.gone"
         selected.metadata.shouldBeNull()
         options.selectedIndex shouldBe options.options.lastIndex
+    }
+
+    test("a pair whose spelling engine is gone shows that engine as unavailable") {
+        val options = SubtypeNlpProviderOptions.forSavedProviders(
+            suggestionId = LatinLanguageProvider.ProviderId,
+            spellingId = "com.example.nlp.providers.gone",
+        )
+
+        options.selected.shouldBeInstanceOf<SubtypeNlpProviderOption.Unavailable>().id shouldBe
+            "com.example.nlp.providers.gone"
+    }
+
+    test("a pair whose spelling engine can't be picked shows it as unavailable under its own name") {
+        val options = SubtypeNlpProviderOptions.forSavedProviders(
+            suggestionId = LatinLanguageProvider.ProviderId,
+            spellingId = AdvancedSpellingProvider.ProviderId,
+        )
+
+        options.selected.shouldBeInstanceOf<SubtypeNlpProviderOption.Unavailable>()
+            .metadata.shouldNotBeNull().id shouldBe AdvancedSpellingProvider.ProviderId
+    }
+
+    test("a matching pair of selectable engines shows that engine") {
+        val options = SubtypeNlpProviderOptions.forSavedProviders(
+            suggestionId = LatinLanguageProvider.ProviderId,
+            spellingId = LatinLanguageProvider.ProviderId,
+        )
+
+        options.selected.shouldBeInstanceOf<SubtypeNlpProviderOption.Provider>().id shouldBe
+            LatinLanguageProvider.ProviderId
     }
 
     test("a registered provider no language can pick shows as unavailable under its own name") {

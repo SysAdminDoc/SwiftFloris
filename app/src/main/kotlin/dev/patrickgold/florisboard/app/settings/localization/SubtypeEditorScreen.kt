@@ -402,8 +402,8 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
             SubtypeGroupSpacer()
 
             SubtypeProperty(stringRes(R.string.settings__localization__subtype_suggestion_provider)) {
-                val providerOptions = remember(nlpProviders.suggestion) {
-                    SubtypeNlpProviderOptions.forSavedProvider(nlpProviders.suggestion)
+                val providerOptions = remember(nlpProviders) {
+                    SubtypeNlpProviderOptions.forSavedProviders(nlpProviders.suggestion, nlpProviders.spelling)
                 }
                 val providerLabels = providerOptions.options.map { option ->
                     when (option) {
