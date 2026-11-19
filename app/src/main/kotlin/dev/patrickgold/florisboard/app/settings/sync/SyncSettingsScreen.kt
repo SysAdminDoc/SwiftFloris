@@ -95,7 +95,7 @@ import dev.patrickgold.florisboard.ime.sync.SyncQrCodeMatrix
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.florisboard.app.settings.search.Preference
-import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

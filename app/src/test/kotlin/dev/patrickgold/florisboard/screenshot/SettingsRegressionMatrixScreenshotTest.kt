@@ -37,6 +37,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -45,10 +46,12 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.unit.Constraints
@@ -67,7 +70,8 @@ import dev.patrickgold.florisboard.app.AppTheme
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.settings.HomeScreen
-import dev.patrickgold.florisboard.app.settings.SettingsHomeDashboardTag
+import dev.patrickgold.florisboard.app.settings.SettingsHomeListTag
+import dev.patrickgold.florisboard.app.settings.settingsHomeRowTag
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
 import dev.patrickgold.florisboard.app.settings.localization.LocalizationScreen
@@ -291,8 +295,8 @@ class RoborazziWideLandscapeSettingsCaptureTest {
 }
 
 /**
- * The settings home dashboard at 200 percent text on narrow phones. The window is tall so the
- * whole dashboard is on screen for the capture.
+ * The settings home list at 200 percent text on narrow phones. The window is tall so the
+ * whole list is on screen for the capture.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w360dp-h2800dp-hdpi", sdk = [35])
@@ -355,19 +359,19 @@ class RoborazziSettingsHomeLargeTextCaptureTest {
         }
         composeRule.waitForIdle()
 
-        val dashboard = composeRule.onNodeWithTag(SettingsHomeDashboardTag).fetchSemanticsNode()
+        val list = composeRule.onNodeWithTag(SettingsHomeListTag).fetchSemanticsNode()
         val window = composeRule.onRoot().fetchSemanticsNode()
         assertTrue(
-            "the dashboard runs past the window, so the capture would cut it off",
-            dashboard.boundsInRoot.bottom <= window.boundsInRoot.bottom,
+            "the home list runs past the window, so the capture would cut it off",
+            list.boundsInRoot.bottom <= window.boundsInRoot.bottom,
         )
 
         val texts = composeRule.onAllNodes(
-            hasAnyAncestor(hasTestTag(SettingsHomeDashboardTag)) and
+            hasAnyAncestor(hasTestTag(SettingsHomeListTag)) and
                 SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult),
             useUnmergedTree = true,
         ).fetchSemanticsNodes()
-        assertTrue("no text found in the dashboard", texts.size > 10)
+        assertTrue("no text found in the home list", texts.size > 10)
         texts.forEach { node ->
             val layouts = mutableListOf<TextLayoutResult>()
             node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
@@ -398,25 +402,30 @@ class RoborazziSettingsHomeLargeTextCaptureTest {
             )
         }
 
+        // Above the list: the setup prompt (Robolectric never enables the keyboard) and search.
         listOf(
             R.string.settings__home__open_keyboard_settings,
             R.string.settings__search__placeholder,
-            R.string.settings__home__section_typing,
-            R.string.settings__home__section_personalization,
-            R.string.settings__home__section_privacy_data,
+        ).forEach { label ->
+            val text = composeRule.activity.getString(label)
+            composeRule.onAllNodes(hasText(text) and hasClickAction()).onFirst().assertExists()
+        }
+        listOf(
+            R.string.settings__keyboard__title,
+            R.string.settings__typing__title,
+            R.string.settings__theme__title,
+            R.string.settings__localization__title,
+            R.string.settings__home__backup_restore_title,
             R.string.settings__home__section_advanced,
-            R.string.settings__home__section_about,
-            R.string.settings__home__quick_action_import,
-            R.string.settings__home__quick_action_privacy,
-            R.string.settings__home__quick_action_about,
+            R.string.about__title,
         ).forEach { label ->
             val text = composeRule.activity.getString(label)
             composeRule.onAllNodes(
-                hasAnyAncestor(hasTestTag(SettingsHomeDashboardTag)) and hasText(text) and hasClickAction(),
+                hasAnyAncestor(hasTestTag(SettingsHomeListTag)) and hasText(text) and hasClickAction(),
             ).onFirst().assertExists()
         }
 
-        composeRule.onNodeWithTag(SettingsHomeDashboardTag).captureRoboImage(
+        composeRule.onNodeWithTag(SettingsHomeListTag).captureRoboImage(
             filePath = "src/test/snapshots/settings_regression_matrix/" +
                 "home_font_scale_200_w${width.value.toInt()}_${theme.id}_${layoutDirection.name.lowercase()}.png",
             roborazziOptions = RoborazziOptions(
@@ -552,6 +561,55 @@ class RoborazziLocalizationSettingsCaptureTest {
               ]
             }
         """.trimIndent()
+    }
+}
+
+/**
+ * Home opens a settings page in place under its row, one row at a time, and the page drawn there
+ * brings no app bar of its own.
+ */
+@RunWith(AndroidJUnit4::class)
+@Config(qualifiers = "w360dp-h2800dp-hdpi", sdk = [35])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class SettingsHomeExpandTest {
+    @get:Rule
+    val composeRule = createAndroidComposeRule<RoborazziHostActivity>()
+
+    @Before
+    fun setUp() {
+        val app = composeRule.activity.application as FlorisApplication
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            app.preferenceStoreLoaded.value
+        }
+    }
+
+    @Test
+    fun rowOpensItsPageInPlaceAndClosesTheOpenOne() {
+        composeRule.setContent {
+            SettingsRegressionFrame(height = 2800.dp) {
+                HomeScreen()
+            }
+        }
+        composeRule.waitForIdle()
+        val smartbarSwitch = composeRule.activity.getString(R.string.pref__smartbar__enabled__label)
+        val glideSwitch = composeRule.activity.getString(R.string.pref__glide__enabled__label)
+        val smartbarTitle = composeRule.activity.getString(R.string.settings__smartbar__title)
+        composeRule.onAllNodesWithText(smartbarSwitch).assertCountEquals(0)
+
+        composeRule.onNodeWithTag(settingsHomeRowTag("smartbar")).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText(smartbarSwitch).assertExists()
+        // Only the row carries the page title; an embedded page draws no app bar.
+        composeRule.onAllNodesWithText(smartbarTitle).assertCountEquals(1)
+
+        composeRule.onNodeWithTag(settingsHomeRowTag("gestures")).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText(glideSwitch).assertExists()
+        composeRule.onAllNodesWithText(smartbarSwitch).assertCountEquals(0)
+
+        composeRule.onNodeWithTag(settingsHomeRowTag("gestures")).performClick()
+        composeRule.waitForIdle()
+        composeRule.onAllNodesWithText(glideSwitch).assertCountEquals(0)
     }
 }
 

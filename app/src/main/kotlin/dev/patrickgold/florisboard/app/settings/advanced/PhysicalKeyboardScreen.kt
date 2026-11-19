@@ -51,7 +51,7 @@ import dev.patrickgold.florisboard.ime.hardware.ImportedHardwareKeyboardLayout
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.app.settings.search.Preference
-import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import kotlinx.coroutines.launch

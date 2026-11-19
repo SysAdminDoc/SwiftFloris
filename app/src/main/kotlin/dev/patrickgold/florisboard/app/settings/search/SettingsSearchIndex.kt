@@ -401,8 +401,6 @@ object SettingsSearchIndex {
         entry("typing.use-udm-entries", R.string.settings__typing__title, R.string.pref__spelling__use_udm_entries__label, destination = SettingsSearchDestination.TYPING),
 
         // about/AiFeaturesScreen.kt
-        entry("ai-features.local-processing", R.string.about__ai_features__title, R.string.about__ai_features__local_processing_title, destination = SettingsSearchDestination.AI_FEATURES),
-        entry("ai-features.no-accounts", R.string.about__ai_features__title, R.string.about__ai_features__no_accounts_title, destination = SettingsSearchDestination.AI_FEATURES),
         entry("ai-features.docs-group", R.string.about__ai_features__title, R.string.about__ai_features__docs_group, destination = SettingsSearchDestination.AI_FEATURES),
         entry("ai-features.privacy-doc", R.string.about__ai_features__title, R.string.about__ai_features__privacy_doc_title, destination = SettingsSearchDestination.AI_FEATURES),
         entry("ai-features.threat-model", R.string.about__ai_features__title, R.string.about__ai_features__threat_model_title, destination = SettingsSearchDestination.AI_FEATURES),

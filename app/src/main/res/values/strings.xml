@@ -21,8 +21,6 @@
     <string name="media__tab__stickers" comment="Tab description for stickers in the media UI">Stickers</string>
     <string name="prefs__media__emoji_preferred_skin_tone">Preferred emoji skin tone</string>
     <string name="prefs__media__emoji_preferred_hair_style">Preferred emoji hair style</string>
-    <string name="settings__media__local_media_title" comment="Media settings intro card title">Emoji and stickers stay local</string>
-    <string name="settings__media__local_media_summary" comment="Media settings intro card summary">Emoji history is stored on this device, and imported sticker folders use Android folder grants. Clear controls below stop retention without deleting your own files.</string>
     <string name="prefs__media__emoji_defaults__title" comment="Preference group title">Emoji defaults</string>
     <string name="prefs__media__emoji_history__title" comment="Preference group title">Emoji history</string>
     <string name="prefs__media__emoji_history_enabled" comment="Preference title">Enable emoji history</string>
@@ -267,77 +265,38 @@
     <string name="settings__system_default" comment="General string which is used when a preference has the system default value set">System default</string>
 
     <string name="settings__home__title" comment="Title of the Home screen">{app_name}</string>
-    <string name="settings__home__ime_ready" comment="Status message shown in Home when SwiftFloris is enabled and selected">SwiftFloris is active</string>
-    <string name="settings__home__ime_ready_summary" comment="Status summary shown in Home when SwiftFloris is enabled and selected">Use the preview below to check languages, layout, autocorrect, and theme before switching apps. Your typing data stays on this device.</string>
     <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when SwiftFloris is not enabled in the system">SwiftFloris is not enabled yet</string>
     <string name="settings__home__ime_not_enabled_summary" comment="Error summary shown in Home fragment when SwiftFloris is not enabled in the system">Android requires one system approval before SwiftFloris can appear in the keyboard picker.</string>
     <string name="settings__home__open_keyboard_settings" comment="Action label shown on Home status card">Open keyboard settings</string>
     <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when SwiftFloris is not selected as the default keyboard">SwiftFloris is enabled but not selected</string>
     <string name="settings__home__ime_not_selected_summary" comment="Warning summary shown in Home fragment when SwiftFloris is not selected as the default keyboard">Choose SwiftFloris as your active keyboard. You can switch back from the Android keyboard picker at any time.</string>
     <string name="settings__home__choose_keyboard" comment="Action label shown on Home status card">Choose keyboard</string>
-    <string name="settings__home__privacy_posture" comment="Home screen privacy posture card title">Private keyboard, local control</string>
-    <string name="settings__home__privacy_posture_summary" comment="Home screen privacy posture card summary">SwiftFloris ships without Internet permission. Addons, translation, sync, and tool calls are opt-in and auditable on this device.</string>
-    <string name="settings__home__privacy_posture_action" comment="Home screen privacy posture card action">Review privacy posture</string>
-    <string name="settings__home__dashboard_eyebrow" comment="Home dashboard eyebrow label">Keyboard settings</string>
-    <string name="settings__home__dashboard_summary" comment="Home dashboard summary">No cloud, no account, no telemetry. Imports, addons, sync, and tools stay local and opt-in.</string>
-    <string name="settings__home__overview_status_a11y" comment="Home overview status accessibility label">Status: {status_title}. {status_summary}</string>
-    <string name="settings__home__status_signal_setup_needed" comment="Home dashboard compact keyboard status value">Setup needed</string>
-    <string name="settings__home__status_signal_choose_keyboard" comment="Home dashboard compact keyboard status value">Choose keyboard</string>
-    <string name="settings__home__status_signal_ready" comment="Home dashboard compact keyboard status value">Ready</string>
-    <string name="settings__home__search_summary" comment="Home dashboard search summary">Find any setting, route, or privacy control</string>
-    <string name="settings__home__search_a11y" comment="Home dashboard search accessibility label">Search settings. Opens the settings search screen.</string>
-    <string name="settings__home__signal_privacy_title" comment="Home dashboard signal title">Privacy</string>
-    <string name="settings__home__signal_privacy_value" comment="Home dashboard signal value">No Internet</string>
-    <string name="settings__home__signal_build_title" comment="Home dashboard signal title">Build</string>
-    <string name="settings__home__signal_build_value" comment="Home dashboard signal value">v{version}</string>
-    <string name="settings__home__signal_status_title" comment="Home dashboard signal title">Keyboard</string>
-    <string name="settings__home__signal_sync_title" comment="Home dashboard signal title">Sync</string>
-    <string name="settings__home__signal_sync_value" comment="Home dashboard signal value">Local files</string>
-    <string name="settings__home__trust_chip_no_cloud" comment="Home dashboard compact trust chip">No cloud</string>
-    <string name="settings__home__trust_chip_no_telemetry" comment="Home dashboard compact trust chip">No telemetry</string>
-    <string name="settings__home__trust_chip_offline" comment="Home dashboard compact trust chip">Offline</string>
-    <string name="settings__home__quick_actions_title" comment="Home overview quick action section title">Pinned tools</string>
-    <string name="settings__home__quick_action_search" comment="Home overview quick action">Search</string>
-    <string name="settings__home__quick_action_import" comment="Home overview quick action">Import</string>
-    <string name="settings__home__quick_action_privacy" comment="Home overview quick action">Privacy</string>
-    <string name="settings__home__quick_action_about" comment="Home overview quick action">About</string>
-    <string name="settings__home__trust_checks_title" comment="Home overview trust-check section title">Trust checks</string>
-    <string name="settings__home__trust_no_network_title" comment="Home overview trust-check title">No Internet permission</string>
-    <string name="settings__home__trust_no_network_summary" comment="Home overview trust-check summary">Release checks fail if network permissions appear.</string>
-    <string name="settings__home__trust_local_import_title" comment="Home overview trust-check title">Local imports only</string>
-    <string name="settings__home__trust_local_import_summary" comment="Home overview trust-check summary">Dictionary migration reads files you choose on this device and lets you review entries before keeping them.</string>
-    <string name="settings__home__trust_verification_title" comment="Home overview trust-check title">Verifiable releases</string>
-    <string name="settings__home__trust_verification_summary" comment="Home overview trust-check summary">Source, signing fingerprints, and reproducible-build notes are available from About and Privacy posture.</string>
-    <string name="settings__home__section_typing" comment="Home screen section title">Typing experience</string>
-    <string name="settings__home__section_personalization" comment="Home screen section title">Personalization</string>
-    <string name="settings__home__section_privacy_data" comment="Home screen section title">Privacy &amp; data</string>
-    <string name="settings__home__section_advanced" comment="Home screen section title">Advanced</string>
-    <string name="settings__home__section_about" comment="Home screen section title">About</string>
-    <string name="settings__home__navigation_title" comment="Home overview settings navigation section title">Explore settings</string>
-    <string name="settings__home__nav_typing_summary" comment="Home overview navigation card summary">Keyboard, typing, gestures, and voice</string>
-    <string name="settings__home__nav_personalization_summary" comment="Home overview navigation card summary">Themes, languages, emoji, and media</string>
-    <string name="settings__home__nav_privacy_summary" comment="Home overview navigation card summary">Clipboard, dictionary, sync, and backups</string>
-    <string name="settings__home__nav_advanced_summary" comment="Home overview navigation card summary">Addons, extensions, MCP, and hardware</string>
-    <string name="settings__home__nav_about_summary" comment="Home overview navigation card summary">Version, source, licenses, and disclosures</string>
-    <string name="settings__home__localization_summary" comment="Home screen preference summary">Languages, layouts, subtype presets, and language packs</string>
-    <string name="settings__home__typing_summary" comment="Home screen preference summary">Word suggestions, autocorrect, spelling, and dictionaries</string>
-    <string name="settings__home__keyboard_summary" comment="Home screen preference summary">Rows, labels, popups, spacing, and key behavior</string>
-    <string name="settings__home__smartbar_summary" comment="Home screen preference summary">Suggestion strip layout and quick action behavior</string>
-    <string name="settings__home__input_feedback_summary" comment="Home screen preference summary">Sounds, vibration strength, duration, and per-action feedback</string>
-    <string name="settings__home__theme_summary" comment="Home screen preference summary">Keyboard themes, accent color, and visual style</string>
-    <string name="settings__home__gestures_summary" comment="Home screen preference summary">Glide typing, swipe actions, and gesture thresholds</string>
-    <string name="settings__home__voice_input_summary" comment="Home screen preference summary">External voice keyboard setup, offline language models, and voice status</string>
-    <string name="settings__home__clipboard_summary" comment="Home screen preference summary">Clipboard history, suggestions, privacy, and cleanup</string>
-    <string name="settings__home__media_summary" comment="Home screen preference summary">Emoji history, emoji suggestions, and media behavior</string>
-    <string name="settings__home__dictionary_summary" comment="Home screen preference summary">Personal words used by suggestions, correction, and spell checking</string>
-    <string name="settings__home__extensions_summary" comment="Home screen preference summary">Manage keyboard, theme, and language extensions</string>
-    <string name="settings__home__sync_summary" comment="Home screen preference summary">Pair devices and choose a local sync folder or manual export flow</string>
-    <string name="settings__home__mcp_summary" comment="Home screen preference summary">On-device bridge to local MCP tool servers. Never opens a network connection</string>
-    <string name="settings__home__addons_summary" comment="Home screen preference summary">Installed dictionary, language, theme, layout, and popup-mapping addon APKs</string>
-    <string name="settings__home__backup_summary" comment="Home screen preference summary">Export preferences, themes, keyboards, and optional clipboard data</string>
-    <string name="settings__home__restore_summary" comment="Home screen preference summary">Inspect and restore data from a SwiftFloris backup archive</string>
-    <string name="settings__home__other_summary" comment="Home screen preference summary">Settings app, physical keyboard, launcher icon, and developer tools</string>
-    <string name="settings__home__about_summary" comment="Home screen preference summary">Version, AI disclosures, privacy policy, source, and licenses</string>
+    <string name="settings__home__active" comment="Short badge in the Home title bar while SwiftFloris is enabled and selected as the keyboard">Active</string>
+    <string name="settings__home__section_advanced" comment="Home screen row that expands into the less used settings pages">Advanced</string>
+    <string name="settings__home__nav_advanced_summary" comment="Summary of the Advanced row on the Home screen">Addons, extensions and hardware</string>
+    <string name="settings__home__backup_restore_title" comment="Home screen row that expands into Back up and Restore">Backup and restore</string>
+    <string name="settings__home__backup_restore_summary" comment="Summary of the Backup and restore row on the Home screen">Save or restore your settings</string>
+    <string name="settings__home__expanded" comment="Accessibility state of a Home screen row whose settings are shown below it">Expanded</string>
+    <string name="settings__home__collapsed" comment="Accessibility state of a Home screen row whose settings are hidden">Collapsed</string>
+    <string name="settings__home__localization_summary" comment="Home screen preference summary">Languages and layouts</string>
+    <string name="settings__home__typing_summary" comment="Home screen preference summary">Suggestions, autocorrect and spelling</string>
+    <string name="settings__home__keyboard_summary" comment="Home screen preference summary">Layout, size and keys</string>
+    <string name="settings__home__smartbar_summary" comment="Home screen preference summary">Suggestion bar and quick actions</string>
+    <string name="settings__home__input_feedback_summary" comment="Home screen preference summary">Key sounds and haptics</string>
+    <string name="settings__home__theme_summary" comment="Home screen preference summary">Colors and style</string>
+    <string name="settings__home__gestures_summary" comment="Home screen preference summary">Glide typing and swipes</string>
+    <string name="settings__home__voice_input_summary" comment="Home screen preference summary">Voice keyboard and models</string>
+    <string name="settings__home__clipboard_summary" comment="Home screen preference summary">History and suggestions</string>
+    <string name="settings__home__media_summary" comment="Home screen preference summary">Emoji and stickers</string>
+    <string name="settings__home__dictionary_summary" comment="Home screen preference summary">Your own words</string>
+    <string name="settings__home__extensions_summary" comment="Home screen preference summary">Keyboard, theme and language extensions</string>
+    <string name="settings__home__sync_summary" comment="Home screen preference summary">Share your words between devices</string>
+    <string name="settings__home__mcp_summary" comment="Home screen preference summary">Connect MCP tool servers</string>
+    <string name="settings__home__addons_summary" comment="Home screen preference summary">Installed addon apps</string>
+    <string name="settings__home__backup_summary" comment="Home screen preference summary">Save your settings, themes and keyboards to a file</string>
+    <string name="settings__home__restore_summary" comment="Home screen preference summary">Restore from a SwiftFloris backup</string>
+    <string name="settings__home__other_summary" comment="Home screen preference summary">App icon and developer tools</string>
+    <string name="settings__home__about_summary" comment="Home screen preference summary">Version, source and licenses</string>
     <string name="settings__search__title" comment="Settings search screen title">Search settings</string>
     <string name="settings__search__placeholder" comment="Settings search text field placeholder">Search settings</string>
     <string name="settings__search__field_content_description" comment="Settings search field accessibility label">Search settings field</string>
@@ -462,8 +421,8 @@
     <string name="settings__voice_input__provider_needs_mic_summary" comment="Voice input supported provider row summary">{provider} is enabled but Android has not granted Microphone permission.</string>
     <string name="settings__voice_input__provider_installed_not_enabled_summary" comment="Voice input supported provider row summary">{provider} is installed but is not enabled as an Android keyboard.</string>
     <string name="settings__voice_input__group_voice_commands" comment="Voice input settings group title">Voice commands</string>
-    <string name="settings__voice_input__voice_commands_info_title" comment="Voice command settings information title">Custom commands stay on device</string>
-    <string name="settings__voice_input__voice_commands_info_summary" comment="Voice command settings information summary">SwiftFloris can store and test command phrases locally. FUTO dictation is still an external keyboard, so live command execution needs a transcript handoff path.</string>
+    <string name="settings__voice_input__voice_commands_info_title" comment="Voice command settings information title">Custom voice commands</string>
+    <string name="settings__voice_input__voice_commands_info_summary" comment="Voice command settings information summary">SwiftFloris can store and test command phrases. FUTO dictation is still a separate keyboard, so commands can\'t run live yet.</string>
     <string name="settings__voice_input__custom_command_add" comment="Voice command settings add row title">Add custom command</string>
     <string name="settings__voice_input__custom_command_add_summary" comment="Voice command settings add row summary">Create a spoken phrase and map it to a command action.</string>
     <string name="settings__voice_input__custom_commands_empty_title" comment="Voice command settings empty list title">No custom commands</string>
@@ -515,7 +474,7 @@
     <string name="settings__voice_input__language_indonesian">Indonesian</string>
     <string name="settings__sync__title" comment="Title of Sync settings screen">Sync</string>
     <string name="settings__sync__intro_title" comment="Sync settings intro card title">Local sync, sealed before sharing</string>
-    <string name="settings__sync__intro_summary" comment="Sync settings intro card summary">SwiftFloris creates encrypted dictionary envelopes for paired devices, then writes them to a folder or file channel you choose. The base keyboard still declares no network permission.</string>
+    <string name="settings__sync__intro_summary" comment="Sync settings intro card summary">SwiftFloris creates encrypted dictionary envelopes for paired devices, then writes them to a folder or file channel you choose.</string>
     <string name="settings__sync__group_channel" comment="Sync settings group title">Sync channel</string>
     <string name="settings__sync__channel_syncthing" comment="Sync channel option">Syncthing folder</string>
     <string name="settings__sync__channel_syncthing_summary" comment="Sync channel option summary">Use a shared Syncthing folder name. SwiftFloris never opens a network connection.</string>
@@ -674,7 +633,7 @@
     <string name="pref__theme__customization__label" comment="Label of the shortcut that opens theme customization">Theme customization</string>
     <string name="pref__theme__customization__summary" comment="Summary of the shortcut that opens theme customization">Create, edit, import, or manage keyboard theme extensions</string>
     <string name="pref__theme__per_app_accent_enabled__label" comment="Preference title">Tint to active app\'s icon</string>
-    <string name="pref__theme__per_app_accent_enabled__summary" comment="Preference summary">When typing in an app, tint the keyboard accent to match that app\'s launcher icon. All on-device, no extra permissions, no network.</string>
+    <string name="pref__theme__per_app_accent_enabled__summary" comment="Preference summary">When typing in an app, tint the keyboard accent to match that app\'s launcher icon.</string>
     <string name="settings__per_app_accent_preview__title" comment="Theme settings preview title">Per-app accent preview</string>
     <string name="settings__per_app_accent_preview__summary" comment="Theme settings preview summary">Illustrative samples only. Real colors are computed on device from the active editor app\'s launcher icon.</string>
     <string name="settings__per_app_accent_preview__default_label" comment="Label for preview without app tint">Theme accent</string>
@@ -948,7 +907,7 @@
     <string name="pref__input_feedback__audio_enabled__label" comment="Preference title">Enable audio feedback</string>
     <string name="pref__input_feedback__audio_enabled__summary_disabled" comment="Preference summary">Never play sounds for input events, regardless of system settings</string>
     <string name="pref__input_feedback__audio_volume__label" comment="Preference title">Sound volume for input events</string>
-    <string name="pref__input_feedback__custom_sounds__summary" comment="Preference summary">Choose local audio for each key class. Imported files stay on this device and are included in backups.</string>
+    <string name="pref__input_feedback__custom_sounds__summary" comment="Preference summary">Choose local audio for each key class. Imported files are included in backups.</string>
     <string name="pref__input_feedback__custom_sounds__standard__label" comment="Preference title">Standard key sound</string>
     <string name="pref__input_feedback__custom_sounds__delete__label" comment="Preference title">Delete key sound</string>
     <string name="pref__input_feedback__custom_sounds__return__label" comment="Preference title">Return key sound</string>
@@ -1123,14 +1082,14 @@
     <string name="pref__correction__double_space_period__label" comment="Preference title">Double-space period</string>
     <string name="pref__correction__double_space_period__summary" comment="Preference summary">Tapping twice on spacebar inserts a period followed by a space</string>
     <string name="pref__correction__adaptive_touch_model__label" comment="Preference title">Adaptive touch model</string>
-    <string name="pref__correction__adaptive_touch_model__summary" comment="Preference summary">Learn how you actually tap each key and bias hit-tests toward your tap pattern. All on-device.</string>
+    <string name="pref__correction__adaptive_touch_model__summary" comment="Preference summary">Learn how you actually tap each key and bias hit-tests toward your tap pattern.</string>
     <string name="pref__correction__touch_calibration_profile__label" comment="Preference title">Touch calibration</string>
     <string name="pref__suggestion__next_word_prediction__label" comment="Preference title">Predict the next word</string>
-    <string name="pref__suggestion__next_word_prediction__summary" comment="Preference summary">Show predicted next words in the suggestion strip after a space. Learns from your typing history, all on-device.</string>
+    <string name="pref__suggestion__next_word_prediction__summary" comment="Preference summary">Show predicted next words in the suggestion strip after a space. Learns from your typing history.</string>
     <string name="pref__correction__multilingual_suggestions__label" comment="Preference title">Multilingual suggestions</string>
     <string name="pref__correction__multilingual_suggestions__summary" comment="Preference summary">When a subtype has secondary languages, score the typed word against every enabled language and prefer the language that recognizes it.</string>
     <string name="pref__correction__heuristic_smart_compose__label" comment="Preference title">Inline next-word hint</string>
-    <string name="pref__correction__heuristic_smart_compose__summary" comment="Preference summary">Show a grey inline hint for the likely next word, predicted from your own typing history on this device. No model download, no network. Off by default.</string>
+    <string name="pref__correction__heuristic_smart_compose__summary" comment="Preference summary">Show a grey inline hint for the likely next word, predicted from your own typing history. Off by default.</string>
     <string name="pref__spelling__title" comment="Preference group title">Spelling</string>
     <string name="pref__spelling__active_spellchecker__summary_disabled">Disabled system-wide. No red lines will appear in text fields for incorrect words. Tap to change.</string>
     <string name="pref__spelling__active_spellchecker__summary_none">No inline text spell checker service set. Tap to change.</string>
@@ -1142,10 +1101,10 @@
 
     <string name="settings__dictionary__title" comment="Title of the User dictionaries screen">User dictionaries</string>
     <string name="settings__dictionary__local_import_title" comment="Dictionary settings intro card title">Bring words in before you type</string>
-    <string name="settings__dictionary__local_import_summary" comment="Dictionary settings intro card summary">Import SwiftKey JSON, Gboard XML or ZIP, FlorisBoard CSV, .flbackup, .fldic, or an encrypted SwiftFloris export. Files are parsed on this device.</string>
+    <string name="settings__dictionary__local_import_summary" comment="Dictionary settings intro card summary">Import SwiftKey JSON, Gboard XML or ZIP, FlorisBoard CSV, .flbackup, .fldic, or an encrypted SwiftFloris export.</string>
     <string name="settings__typing__dictionary_summary" comment="Typing screen shortcut summary">Manage personal words used by suggestions, corrections, and spell checking</string>
     <string name="settings__typing_stats__title" comment="Title of the Typing stats screen">Typing stats</string>
-    <string name="settings__typing_stats__summary" comment="Summary of the Typing stats entry on the Typing screen">See how much SwiftFloris has learned from your typing. It stays local and is never uploaded</string>
+    <string name="settings__typing_stats__summary" comment="Summary of the Typing stats entry on the Typing screen">See how much SwiftFloris has learned from your typing</string>
     <string name="settings__typing_stats__group_corpus" comment="Section header on the Typing stats screen">Learned corpus</string>
     <string name="settings__typing_stats__group_top_words" comment="Section header on the Typing stats screen">Your top 10 words</string>
     <string name="settings__typing_stats__group_actions" comment="Section header on the Typing stats screen">Actions</string>
@@ -1184,7 +1143,7 @@
     <string name="settings__typing_stats__erase_everything__toast" comment="Toast shown after erasing everything">All on-device learning and your personal dictionary were erased.</string>
     <string name="settings__typing_stats__erase_everything__incomplete_toast" comment="Toast shown when erasing everything left personal dictionary files behind; {files} lists their names">Your typing learning was erased, but these personal dictionary files couldn\'t be deleted: {files}</string>
     <string name="settings__privacy_posture__title" comment="Screen + preference title">Privacy posture</string>
-    <string name="settings__privacy_posture__home_summary" comment="Home preference summary">Network, learning, clipboard, addon, voice, and typing profile status</string>
+    <string name="settings__privacy_posture__home_summary" comment="Home preference summary">Learning, clipboard and addon status</string>
 
     <string name="settings__migration_assistant__title" comment="Screen title">Migration assistant</string>
     <string name="settings__migration_assistant__home_summary" comment="Home preference summary">Import words from SwiftKey, Gboard, FlorisBoard, or a backup</string>
@@ -1205,8 +1164,6 @@
     <string name="settings__migration_assistant__group_learn_more" comment="Preference group title">Learn more</string>
     <string name="settings__migration_assistant__guide_title" comment="Preference title">Migration guide</string>
     <string name="settings__migration_assistant__guide_summary" comment="Preference summary">Full walkthrough with screenshots and troubleshooting on GitHub.</string>
-    <string name="settings__privacy_posture__intro_title" comment="Info card title">Private by default</string>
-    <string name="settings__privacy_posture__intro_summary" comment="Info card summary">SwiftFloris has no Internet permission. This screen shows the optional local surfaces that can retain data or hand off to user-installed providers.</string>
     <string name="settings__privacy_posture__group_status" comment="Preference group title">Current posture</string>
     <string name="settings__privacy_posture__group_profiles" comment="Preference group title">Profiles</string>
     <string name="settings__privacy_posture__network_title" comment="Preference title">Network permission</string>
@@ -1339,7 +1296,7 @@
     <string name="settings__privacy_posture__on" comment="Short enabled label">on</string>
     <string name="settings__privacy_posture__off" comment="Short disabled label">off</string>
     <string name="settings__privacy_audit__title" comment="Screen + preference title">Local audit log</string>
-    <string name="settings__privacy_audit__home_summary" comment="Home preference summary">Review every on-device addon, MCP and translation call</string>
+    <string name="settings__privacy_audit__home_summary" comment="Home preference summary">Review every addon, MCP and translation call</string>
     <string name="settings__privacy_audit__intro" comment="Explainer at the top of the audit log screen">Every routed cross-process call SwiftFloris makes on your behalf is recorded here, on this device only. Smart compose and translation use this audited path. MCP daemon binding and tool dispatch are paused until a live audited keyboard action exists, so no auditable MCP invocation can occur yet. Nothing is uploaded, and no typed text, suggestions or translated content is ever stored. The log keeps only the app, the language pair, or the tool name. The log is kept in memory rather than written to disk, so it covers the current keyboard session and is empty again after the keyboard restarts.</string>
     <string name="settings__privacy_audit__group_summary" comment="Preference group title">Summary</string>
     <string name="settings__privacy_audit__group_actions" comment="Preference group title">Actions</string>
@@ -1363,7 +1320,7 @@
     <string name="settings__privacy_audit__empty" comment="Shown when no records exist">No recorded activity yet.</string>
     <string name="settings__privacy_audit__empty_message" comment="Empty-state body shown when no audit records exist">SwiftFloris hasn\'t made any routed cross-process calls on this device yet. Smart compose and translation activity will appear here as it happens; no auditable MCP invocation can occur until a live keyboard action is connected.</string>
     <string name="settings__privacy_audit__export" comment="Action title">Copy log as JSON</string>
-    <string name="settings__privacy_audit__export__summary" comment="Action summary">Copies the full audit bundle to the clipboard so you can paste it anywhere. It never leaves the device on its own.</string>
+    <string name="settings__privacy_audit__export__summary" comment="Action summary">Copies the full audit bundle to the clipboard so you can paste it anywhere.</string>
     <string name="settings__privacy_audit__export_toast" comment="Toast after copying">Audit log copied to the clipboard.</string>
     <string name="settings__privacy_audit__save" comment="Action title">Save JSON file</string>
     <string name="settings__privacy_audit__save__summary" comment="Action summary">Creates a local application/json document that you choose. SwiftFloris does not upload it.</string>
@@ -1638,32 +1595,25 @@
     <string name="about__privacy_policy__title" comment="Preference title">Privacy policy</string>
     <string name="about__privacy_policy__summary" comment="Preference summary">The privacy policy for this project</string>
     <string name="about__ai_features__title" comment="Preference title">AI features in this keyboard</string>
-    <string name="about__ai_features__summary" comment="Preference summary">What runs on device, what data it sees, and how to turn each surface off</string>
-    <string name="about__ai_features__headline" comment="AI features screen headline">All AI/ML processing stays on this device</string>
-    <string name="about__ai_features__headline_summary" comment="AI features screen headline summary">SwiftFloris has no Internet permission, no vendor account, and no telemetry. The keyboard only uses local text, touch, voice, and addon state needed for the feature you enable.</string>
-    <string name="about__ai_features__processing_group" comment="Preference group title">Processing promise</string>
-    <string name="about__ai_features__local_processing_title" comment="Preference title">Local processing only</string>
-    <string name="about__ai_features__local_processing_summary" comment="Preference summary">Predictions, glide classification, voice hand-off, translation, and smart-compose routing run on your device or on an explicitly installed local addon.</string>
-    <string name="about__ai_features__no_accounts_title" comment="Preference title">No cloud account or telemetry</string>
-    <string name="about__ai_features__no_accounts_summary" comment="Preference summary">SwiftFloris does not sign in to Microsoft, Google, Grammarly, or other cloud services, and it cannot upload typing data because the app declares no network permission.</string>
+    <string name="about__ai_features__summary" comment="Preference summary">What each feature uses and how to turn it off</string>
     <string name="about__ai_features__surfaces_group" comment="Preference group title">Feature surfaces</string>
     <string name="about__ai_features__next_word_title" comment="Preference title">Next-word and next-phrase prediction</string>
     <string name="about__ai_features__next_word_summary" comment="Preference summary">Uses local dictionaries and personal n-grams from non-sensitive fields. Turn it off in Settings → Typing → Suggestions.</string>
     <string name="about__ai_features__glide_title" comment="Preference title">Glide typing</string>
     <string name="about__ai_features__glide_summary" comment="Preference summary">Classifies swipe traces locally against installed language vocabularies. Turn it off in Settings → Gestures → Glide typing.</string>
     <string name="about__ai_features__voice_title" comment="Preference title">Voice input</string>
-    <string name="about__ai_features__voice_summary" comment="Preference summary">Hands dictation to FUTO Voice Input or an installed local model; no audio is sent by SwiftFloris. Configure it in Settings → Voice input.</string>
+    <string name="about__ai_features__voice_summary" comment="Preference summary">Hands dictation to FUTO Voice Input or an installed model. Configure it in Settings → Voice input.</string>
     <string name="about__ai_features__translation_title" comment="Preference title">Translation</string>
     <string name="about__ai_features__translation_summary" comment="Preference summary">Routes text only to explicit local translation packs after consent. Manage packs in addon settings; consent is requested on first use.</string>
     <string name="about__ai_features__smart_compose_title" comment="Preference title">Smart compose and rewrites</string>
     <string name="about__ai_features__smart_compose_summary" comment="Preference summary">Uses local addon routing, sensitive-field guards, and consent gates before any generated text appears. Configure the surface in Smartbar settings.</string>
     <string name="about__ai_features__docs_group" comment="Preference group title">Documentation</string>
     <string name="about__ai_features__privacy_doc_title" comment="Preference title">Privacy and AI document</string>
-    <string name="about__ai_features__privacy_doc_summary" comment="Preference summary">Detailed per-feature inventory and SwiftKey/Gboard/Grammarly posture comparison</string>
+    <string name="about__ai_features__privacy_doc_summary" comment="Preference summary">What each feature reads and stores</string>
     <string name="about__ai_features__threat_model_title" comment="Preference title">Threat model</string>
     <string name="about__ai_features__threat_model_summary" comment="Preference summary">Attacker scenarios, privacy invariants, and security hardening checklist</string>
     <string name="about__ai_features__project_context_title" comment="Preference title">Project context</string>
-    <string name="about__ai_features__project_context_summary" comment="Preference summary">Current architecture, shipped guarantees, roadmap context, and handoff notes</string>
+    <string name="about__ai_features__project_context_summary" comment="Preference summary">Current architecture and roadmap</string>
     <string name="about__project_license__title" comment="Preference title">Project license</string>
     <string name="about__project_license__summary" comment="Preference summary">SwiftFloris is licensed under {license_name}</string>
     <string name="about__project_license__error_license_text_failed" comment="Error text for license text loading failure">Error: Failed to load license text.\n-&gt; Reason: {error_message}</string>
@@ -1674,14 +1624,11 @@
     <!-- Setup UI strings -->
     <string name="setup__title" comment="Title of Setup">Set up {app_name}</string>
     <string name="setup__intro_message" comment="Short intro message welcoming new users">Complete these steps to enable {app_name}, choose it as your keyboard, and keep recovery options available.</string>
-    <string name="setup__privacy_status_title" comment="Privacy note shown during setup">Private by default</string>
-    <string name="setup__privacy_status_summary" comment="Privacy note summary shown during setup">SwiftFloris has no Internet permission. Local learning, dictionaries, clipboard, and settings stay in app-private storage unless you export or import them. Use Source code below and About > Version/signing fingerprint after setup to verify the build.</string>
     <string name="setup__footer__privacy_policy" comment="Privacy policy label for URL">Privacy policy</string>
     <string name="setup__footer__repository" comment="Repository label for URL">Source code</string>
 
-    <string name="setup__ai_features__title">Review local AI features</string>
-    <string name="setup__ai_features__description_p1">SwiftFloris uses on-device AI/ML surfaces for next-word prediction, glide typing, voice input, translation, and smart compose.</string>
-    <string name="setup__ai_features__description_p2">All processing stays on this device. No data leaves the device, no vendor account is required, and the app declares no Internet permission.</string>
+    <string name="setup__ai_features__title">Review AI features</string>
+    <string name="setup__ai_features__description_p1">SwiftFloris uses AI/ML for next-word prediction, glide typing, voice input, translation and smart compose.</string>
     <string name="setup__ai_features__acknowledge_btn">I understand</string>
     <string name="setup__ai_features__open_details_btn">Read AI feature details</string>
 
@@ -1697,7 +1644,7 @@
 
     <string name="setup__import_hint__title" comment="Title of first-run dictionary import hint">Import your dictionary</string>
     <string name="setup__import_hint__description_p1" comment="Explains the first-run personal dictionary import option">If you exported words from SwiftKey, Gboard, FlorisBoard, or SwiftFloris, you can import them before typing.</string>
-    <string name="setup__import_hint__description_p2" comment="Lists supported dictionary export formats for the first-run import hint">Supported files include SwiftKey JSON, Gboard XML or ZIP, FlorisBoard CSV, .flbackup, and .fldic exports. SwiftFloris reads the selected file on this device.</string>
+    <string name="setup__import_hint__description_p2" comment="Lists supported dictionary export formats for the first-run import hint">Supported files include SwiftKey JSON, Gboard XML or ZIP, FlorisBoard CSV, .flbackup, and .fldic exports.</string>
     <string name="setup__import_hint__choose_file_btn" comment="Button label to open the dictionary import file picker during setup">Choose export file</string>
     <string name="setup__import_hint__skip_btn" comment="Button label to skip first-run dictionary import">Skip import</string>
 
@@ -1817,9 +1764,9 @@
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_image_items">Images</string>
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_video_items">Videos</string>
     <string name="backup_and_restore__back_up__privacy_title">Local archive under your control</string>
-    <string name="backup_and_restore__back_up__privacy_summary">SwiftFloris prepares the archive on-device. Clipboard-bearing backups are passphrase encrypted, sensitive items are skipped, and nothing leaves app-private storage until you save or share it.</string>
+    <string name="backup_and_restore__back_up__privacy_summary">Backups that include the clipboard are encrypted with a passphrase, and sensitive items are skipped.</string>
     <string name="backup_and_restore__android_managed__title">Android-managed backup</string>
-    <string name="backup_and_restore__android_managed__summary">SwiftFloris runs no cloud service. Android may retain portable preferences and customizations through your device backup provider. Cloud export requires client-side encryption, Android 8 exports nothing, and learned text, clipboard data, keys, authentication secrets, and adaptive touch stay on this device.</string>
+    <string name="backup_and_restore__android_managed__summary">Android\'s own device backup can save your preferences and customizations. Learned text, clipboard data, keys, sign-in secrets and touch data are left out.</string>
     <string name="backup_and_restore__back_up__coverage_title" comment="Card title listing what a manual archive does not contain">What an archive leaves behind</string>
     <string name="backup_and_restore__back_up__coverage_summary" comment="Card summary listing stores excluded from the manual archive. {stores} is a comma-separated list of store names.">An archive never carries {stores}. These are personal to this device and their encryption keys cannot leave it. Use Settings &#8594; Personal dictionary &#8594; Export to move your words to another device.</string>
     <string name="backup_omission__personal_dictionary" comment="Store name in the list of things a backup archive does not carry">your personal dictionary</string>
@@ -2073,9 +2020,7 @@
     <string name="settings__clipboard__history_retry_title" comment="Card title shown when clipboard history read failed without corruption evidence">Clipboard history could not be read</string>
     <string name="settings__clipboard__history_retry_summary" comment="Card summary shown when clipboard history read failed without corruption evidence">The existing history and its encryption key were kept intact. Restart SwiftFloris and try again; app storage must not be cleared unless you have recovered the preserved database.</string>
     <string name="settings__clipboard__history_unencrypted_title" comment="Card title shown when clipboard history cannot be encrypted on this device">Clipboard history is not encrypted</string>
-    <string name="settings__clipboard__history_unencrypted_summary" comment="Card summary shown when clipboard history cannot be encrypted on this device">The encryption library could not be loaded on this device, so clipboard history is stored in app-private storage without an extra layer of encryption. It still never leaves this device.</string>
-    <string name="settings__clipboard__local_retention_title" comment="Clipboard settings intro card title">Clipboard history stays under your control</string>
-    <string name="settings__clipboard__local_retention_summary" comment="Clipboard settings intro card summary">History and saved media are encrypted at rest on this device. Suggestions, size limits, and sensitive-item cleanup are local settings you control below.</string>
+    <string name="settings__clipboard__history_unencrypted_summary" comment="Card summary shown when clipboard history cannot be encrypted on this device">The encryption library could not be loaded on this device, so clipboard history is stored in app-private storage without an extra layer of encryption.</string>
     <string name="pref__clipboard__group_system_clipboard__label">System clipboard sync</string>
     <string name="pref__clipboard__use_internal_clipboard__label">Use internal clipboard</string>
     <string name="pref__clipboard__use_internal_clipboard__summary">Use an internal clipboard instead of the system clipboard</string>
@@ -2171,7 +2116,7 @@
     <string name="devtools__debuglog__copy_log">Copy log</string>
     <string name="devtools__debuglog__copy_for_github">Copy GitHub log</string>
     <string name="devtools__debuglog__loading">Loading…</string>
-    <string name="devtools__debuglog__loading_summary">Collecting app, device, and logcat details. Nothing leaves this device unless you copy it.</string>
+    <string name="devtools__debuglog__loading_summary">Collecting app, device, and logcat details.</string>
     <string name="devtools__debuglog__ready_title">Debug log ready</string>
     <string name="devtools__debuglog__ready_summary">{line_count} lines collected. Copy the raw log for local troubleshooting or the formatted log for GitHub issues.</string>
 

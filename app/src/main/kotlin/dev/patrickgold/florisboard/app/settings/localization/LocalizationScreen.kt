@@ -52,7 +52,7 @@ import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.florisboard.app.settings.search.ListPreference
 import dev.patrickgold.florisboard.app.settings.search.Preference
-import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem

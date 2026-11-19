@@ -23,8 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.app.LocalNavController
-import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.clipboard.CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
@@ -34,11 +32,10 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.app.settings.search.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.florisboard.app.settings.search.ListPreference
-import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.compose.FlorisErrorCard
-import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
@@ -49,17 +46,7 @@ fun ClipboardScreen() = FlorisScreen {
     title = stringRes(R.string.settings__clipboard__title)
     previewFieldVisible = true
 
-    val navController = LocalNavController.current
-
     content {
-        FlorisInfoCard(
-            modifier = Modifier.padding(8.dp),
-            text = stringRes(R.string.settings__clipboard__local_retention_title),
-            secondaryText = stringRes(R.string.settings__clipboard__local_retention_summary),
-            actionLabel = stringRes(R.string.settings__home__privacy_posture_action),
-            onClick = { navController.navigate(Routes.Settings.PrivacyPosture) },
-        )
-
         // Clipboard history is encrypted at rest. Classified corruption is reset only after the
         // old store is preserved; an unclassified read failure stays retryable and is not hidden.
         val storageState by ClipboardHistoryStore.state.collectAsState()

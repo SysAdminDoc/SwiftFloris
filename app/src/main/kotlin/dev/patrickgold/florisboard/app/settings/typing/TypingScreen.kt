@@ -47,7 +47,7 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.florisboard.app.settings.search.ListPreference
 import dev.patrickgold.florisboard.app.settings.search.Preference
-import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.compose.FlorisInfoCard

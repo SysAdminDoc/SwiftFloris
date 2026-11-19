@@ -51,6 +51,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -89,11 +90,21 @@ internal object FlorisScreenFocusOrder {
     val orderedTraversal = listOf(AppBar, Content, BottomBar, FloatingActionButton)
 }
 
+/**
+ * True inside a settings page drawn in place under its Home row. Such a page draws only its content: no app bar,
+ * scroll container, bottom bar or floating button, and it leaves the preview field alone.
+ */
+val LocalFlorisScreenEmbedded = staticCompositionLocalOf { false }
+
 @Composable
 fun FlorisScreen(builder: @Composable FlorisScreenScope.() -> Unit) {
     val scope = remember { FlorisScreenScopeImpl() }
     builder(scope)
-    scope.Render()
+    if (LocalFlorisScreenEmbedded.current) {
+        scope.RenderEmbedded()
+    } else {
+        scope.Render()
+    }
 }
 
 typealias FlorisScreenActions = @Composable RowScope.() -> Unit
@@ -163,6 +174,18 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
 
     override fun navigationIcon(navigationIcon: FlorisScreenNavigationIcon) {
         this.navigationIcon = navigationIcon
+    }
+
+    @Composable
+    fun RenderEmbedded() {
+        CompositionLocalProvider(LocalSettingsSearchScreenTitle provides title) {
+            PreferenceLayout(
+                FlorisPreferenceStore,
+                modifier = Modifier.fillMaxWidth(),
+                iconSpaceReserved = iconSpaceReserved,
+                content = { content() },
+            )
+        }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)

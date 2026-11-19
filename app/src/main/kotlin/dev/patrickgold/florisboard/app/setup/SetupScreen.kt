@@ -91,7 +91,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.compose.FlorisOutlinedButton
-import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisStep
 import org.florisboard.lib.compose.FlorisStepLayout
 import org.florisboard.lib.compose.FlorisStepLayoutScope
@@ -243,11 +242,6 @@ private fun FlorisScreenScope.Content(
             header = {
                 StepText(stringRes(R.string.setup__intro_message))
                 Spacer(modifier = Modifier.height(16.dp))
-                FlorisSuccessCard(
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    text = stringRes(R.string.setup__privacy_status_title),
-                    secondaryText = stringRes(R.string.setup__privacy_status_summary),
-                )
             },
             steps = steps(
                 context, navController, requestNotification, scope, stepState
@@ -312,10 +306,6 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
             title = stringRes(R.string.setup__ai_features__title),
         ) {
             StepText(stringRes(R.string.setup__ai_features__description_p1))
-            StepText(
-                modifier = Modifier.padding(top = 8.dp),
-                text = stringRes(R.string.setup__ai_features__description_p2),
-            )
             StepButton(label = stringRes(R.string.setup__ai_features__acknowledge_btn)) {
                 scope.launch { this@steps.prefs.internal.aiFeaturesExplainerSeen.set(true) }
             }

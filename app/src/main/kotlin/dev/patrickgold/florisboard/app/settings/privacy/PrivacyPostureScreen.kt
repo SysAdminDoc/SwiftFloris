@@ -59,13 +59,12 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.util.launchUrl
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.florisboard.app.settings.search.Preference
-import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.FlorisErrorCard
-import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
@@ -204,12 +203,6 @@ fun PrivacyPostureScreen() = FlorisScreen {
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.settings__privacy_posture__network_title),
                 secondaryText = stringRes(R.string.settings__privacy_posture__network_declared),
-            )
-        } else {
-            FlorisSuccessCard(
-                modifier = Modifier.padding(8.dp),
-                text = stringRes(R.string.settings__privacy_posture__intro_title),
-                secondaryText = stringRes(R.string.settings__privacy_posture__intro_summary),
             )
         }
 

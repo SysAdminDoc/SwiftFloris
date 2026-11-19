@@ -62,14 +62,13 @@ import dev.patrickgold.florisboard.app.settings.search.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.florisboard.app.settings.search.ListPreference
 import dev.patrickgold.florisboard.app.settings.search.Preference
-import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showLongToast
-import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
@@ -159,11 +158,6 @@ fun MediaScreen() = FlorisScreen {
     }
 
     content {
-        FlorisInfoCard(
-            modifier = Modifier.padding(8.dp),
-            text = stringRes(R.string.settings__media__local_media_title),
-            secondaryText = stringRes(R.string.settings__media__local_media_summary),
-        )
         if (localStickerStorageState == LocalStickerPackStorageState.UNREADABLE) {
             FlorisErrorCard(
                 modifier = Modifier.padding(8.dp),

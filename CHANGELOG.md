@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Make settings a short list you open in place. The home screen is now a search box and one row per area (Keyboard, Typing, Smartbar, Sounds & Vibration and so on). Tap a row and its settings open right under it, and opening another row closes the first. Localization, Sync, Backup, Restore and Extensions still open their own page because they have buttons of their own along the bottom. Each section inside a page now sits in its own rounded card under a small heading, so long pages are easier to scan.
+- Cut the promotional copy from settings and setup. The "No cloud", "No telemetry" and "Offline" chips are gone, along with the privacy promise cards on the home, AI features, clipboard, media, privacy and setup screens. The warning that shows up if a build ever asks for Internet access stays.
 - Shrink a long suggestion to fit its spot in the suggestion bar instead of cutting it off. Words used to trail off in "..." at the theme's text size whenever they ran wider than their third of the bar. Now a word that doesn't fit gets smaller, down to half the normal size, and only a word too long even for that still ends in "...". Short words keep the normal size. Clipboard suggestions stay as they were, since a copied paragraph won't fit a spot at any size.
 
 ## v1.9.68 (2026-11-16)
