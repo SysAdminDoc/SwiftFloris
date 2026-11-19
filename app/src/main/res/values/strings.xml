@@ -610,6 +610,10 @@
     <string name="settings__localization__subtype_select_locale" comment="Subtype select language title">Select language</string>
     <string name="settings__localization__subtype_search_locale_placeholder" comment="Subtype search language placeholder">Search for a language</string>
     <string name="settings__localization__subtype_search_locale_not_found" comment="Subtype search language not found">Could not find a language matching \"{search_term}\".</string>
+    <plurals name="settings__localization__subtype_search_locale_results" comment="Result line under the language search, read out by screen readers once typing pauses; {count} = matching languages">
+        <item quantity="one">{count} language found</item>
+        <item quantity="other">{count} languages found</item>
+    </plurals>
     <string name="settings__localization__subtype_select_placeholder" comment="Subtype dialog select value placeholder (&amp;#8210; is a hyphen character)">&#8210; select &#8210;</string>
     <string name="settings__localization__subtype_summary" comment="Subtype summary">{characters_name} / {symbols_name} / {currency_set_name}</string>
     <string name="settings__localization__suggested_subtype_presets" comment="Suggested presets title">Suggested subtype presets</string>

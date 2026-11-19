@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,7 +42,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
@@ -52,7 +56,9 @@ import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import kotlinx.coroutines.delay
 import org.florisboard.lib.compose.florisScrollbar
+import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
 const val SelectLocaleScreenResultLanguageTag = "SelectLocaleScreen.languageTag"
@@ -68,28 +74,35 @@ fun SelectLocaleScreen() = FlorisScreen {
     val displayLanguageNamesIn by prefs.localization.displayLanguageNamesIn.collectAsState()
     var searchTermValue by remember { mutableStateOf(TextFieldValue()) }
     val context = LocalContext.current
-    val systemLocales =
+    val systemLocales = remember(context, displayLanguageNamesIn) {
         FlorisLocale.extendedAvailableLocales(context).sortedBy { locale ->
             when (displayLanguageNamesIn) {
                 DisplayLanguageNamesIn.SYSTEM_LOCALE -> locale.displayName()
                 DisplayLanguageNamesIn.NATIVE_LOCALE -> locale.displayName(locale)
             }.lowercase()
         }
-
-    val filteredSystemLocales = remember(searchTermValue) {
-        if (searchTermValue.text.isBlank()) {
-            systemLocales
-        } else {
-            val term = searchTermValue.text.trim().lowercase()
-            systemLocales.filter { locale ->
-                locale.displayName().lowercase().contains(term) ||
-                    locale.displayName(locale).lowercase().contains(term) ||
-                    locale.displayName(FlorisLocale.ENGLISH).lowercase().contains(term) ||
-                    locale.languageTag().lowercase().startsWith(term) ||
-                    locale.localeTag().lowercase().startsWith(term)
-            }
-        }
     }
+    val searchIndex = remember(systemLocales) {
+        LocaleSearchIndex(
+            items = systemLocales,
+            names = { locale ->
+                listOf(locale.displayName(), locale.displayName(locale), locale.displayName(FlorisLocale.ENGLISH))
+            },
+            tags = { locale -> listOf(locale.languageTag(), locale.localeTag()) },
+        )
+    }
+
+    val filteredSystemLocales = remember(searchIndex, searchTermValue.text) {
+        searchIndex.filter(searchTermValue.text)
+    }
+    // The list follows every keystroke, but the result line waits for typing to pause, so TalkBack reads one
+    // count per search instead of one per letter.
+    var settledQuery by remember { mutableStateOf("") }
+    LaunchedEffect(searchTermValue.text) {
+        delay(LocaleSearchSettleMillis)
+        settledQuery = searchTermValue.text
+    }
+    val settledResultCount = remember(searchIndex, settledQuery) { searchIndex.filter(settledQuery).size }
 
     content {
         val state = rememberLazyListState()
@@ -113,15 +126,24 @@ fun SelectLocaleScreen() = FlorisScreen {
                     disabledIndicatorColor = Color.Transparent,
                 ),
             )
-            if (filteredSystemLocales.isEmpty()) {
+            if (settledQuery.isNotBlank()) {
                 Text(
                     modifier = Modifier
                         .padding(16.dp)
-                        .align(Alignment.CenterHorizontally),
-                    text = stringRes(
-                        R.string.settings__localization__subtype_search_locale_not_found,
-                        "search_term" to searchTermValue.text,
-                    ),
+                        .align(Alignment.CenterHorizontally)
+                        .semantics { liveRegion = LiveRegionMode.Polite },
+                    text = if (settledResultCount == 0) {
+                        stringRes(
+                            R.string.settings__localization__subtype_search_locale_not_found,
+                            "search_term" to settledQuery.trim(),
+                        )
+                    } else {
+                        pluralsRes(
+                            R.plurals.settings__localization__subtype_search_locale_results,
+                            settledResultCount,
+                            "count" to settledResultCount,
+                        )
+                    },
                     color = LocalContentColor.current.copy(alpha = 0.54f),
                 )
             }
