@@ -378,10 +378,18 @@ class NlpManager(
                 currentWordStart = currentWordStart,
                 candidates = userDictionarySuggestions + suggestions,
             )
+            // A rare dictionary word one key off a far more common one ("thos") is decoded as unknown so
+            // space can correct it. Learning keeps the plain answer: the word is still in the dictionary.
+            val typedWordLooksLikeSlip = typedWordKnown &&
+                suggestionProvider.isLikelySlip(subtype, content, currentWord) &&
+                activeLocales(subtype).none { locale ->
+                    currentWord.normalizedCandidateSignalKey()
+                        ?.let { dictionaryManager.isKnownUserDictionaryWord(it, locale) } == true
+                }
             val decoderContext = SwiftKeyDecoderContext(
                 currentWord = currentWord,
                 maxCandidateCount = 8,
-                typedWordKnown = typedWordKnown,
+                typedWordKnown = typedWordKnown && !typedWordLooksLikeSlip,
                 touchEvidence = touchDecoderEvidence.evidenceFor(currentWord),
                 candidateSignals = candidateSignals,
             )

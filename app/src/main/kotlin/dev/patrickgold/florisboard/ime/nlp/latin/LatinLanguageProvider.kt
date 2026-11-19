@@ -508,6 +508,34 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         return maxOf(bundled, learned)
     }
 
+    /**
+     * Every language of [subtype] is checked, not only those multilingual suggestions would use, because the
+     * typed word counts as known through any of them: "como" on an English and Spanish keyboard is Spanish, not
+     * a slip for "come".
+     */
+    override suspend fun isLikelySlip(subtype: Subtype, content: EditorContent, word: String): Boolean {
+        val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: return false
+        var slipSomewhere = false
+        for (locale in subtype.locales().distinctBy { it.languageTag() }) {
+            val languageCode = LatinDictionaryStore.normalizeLanguageCode(locale.language)
+            val dictionary = dictionaryStore.dictionaryForLanguage(languageCode)
+            val overlay = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get().viewFor(locale)
+            if (overlay.containsKey(normalizedWord)) return false
+            if (!dictionary.contains(normalizedWord)) continue
+            // Checked before the context model is asked: nearly every known word is vetted.
+            if (normalizedWord !in dictionary.unvettedWords) return false
+            val fixes = LatinDictionarySuggester.likelySlipFixes(
+                word = normalizedWord,
+                dictionary = dictionary,
+                userOverlay = overlay,
+                contextFit = contextFit(languageCode, content, word),
+            )
+            if (fixes.isEmpty()) return false
+            slipSomewhere = true
+        }
+        return slipSomewhere
+    }
+
     override suspend fun destroy() {
         // Here we have the chance to de-allocate memory and finish our work. However this might never be called if
         // the app process is killed (which will most likely always be the case).
@@ -645,7 +673,7 @@ internal class LatinDictionaryStore(
             withZipf.withMisspellings(
                 parseMisspellings(misspellingsTsv),
                 commonwealth = parseCommonwealthMisspellings(misspellingsTsv),
-            )
+            ).withUnvettedWords(parseWordList(readAsset.read(EnglishUnvettedWordsPath).orEmpty()))
         } else {
             withZipf
         }
@@ -761,7 +789,17 @@ internal class LatinDictionaryStore(
         private const val LegacyEnglishDictionaryPath = "$DictionaryRoot/data.json"
         private const val SupplementalEnglishDictionaryPath = "$DictionaryRoot/en_supplemental.json"
         internal const val EnglishMisspellingsPath = "$DictionaryRoot/en_misspellings.tsv"
+        internal const val EnglishUnvettedWordsPath = "$DictionaryRoot/en_unvetted.txt"
         private const val FldicExtension = ".fldic"
+
+        /** One word per line, lowercased, skipping blanks and `#` comments. */
+        internal fun parseWordList(raw: String): Set<String> {
+            return raw.lineSequence()
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && !it.startsWith("#") }
+                .map { it.lowercase() }
+                .toHashSet()
+        }
         private const val FldicWordsSection = "[words]"
 
         /**
@@ -829,6 +867,12 @@ internal data class LatinDictionarySnapshot(
     val misspellings: Map<String, String> = emptyMap(),
     /** The misspellings whose fix is spelled differently outside the US ("jewelery" to "jewellery"). */
     val commonwealthMisspellings: Map<String, String> = emptyMap(),
+    /**
+     * Dictionary words no vetted word list backs, from `ime/dict/en_unvetted.txt`; English only. Web-corpus
+     * entries like "thos" and "snd" that a slip lands on. Only these can be corrected as a likely slip
+     * ([LatinDictionarySuggester.likelySlipFixes]); a rare real word ("snide") never is.
+     */
+    val unvettedWords: Set<String> = emptySet(),
 ) {
     val isLoaded: Boolean get() = frequencies.isNotEmpty()
 
@@ -860,6 +904,12 @@ internal data class LatinDictionarySnapshot(
     ): LatinDictionarySnapshot {
         if (table.isEmpty()) return this
         return copy(misspellings = table, commonwealthMisspellings = commonwealth)
+    }
+
+    /** Return a copy carrying the [unvettedWords] list (used at load time). */
+    fun withUnvettedWords(words: Set<String>): LatinDictionarySnapshot {
+        if (words.isEmpty()) return this
+        return copy(unvettedWords = words)
     }
 
     /**
@@ -1076,6 +1126,25 @@ internal object LatinDictionarySuggester {
     private const val MaxRealWordCorrections = 2
 
     /**
+     * A dictionary word this rare or rarer is taken for a slip when a one-edit word is at least [SlipFixMinGap]
+     * more common: "thos" (0.51) for "this" (0.93), "thd" (0.15) for "the". The bundled list carries thousands of
+     * such entries (abbreviations, surnames, archaic forms) that otherwise sit between a slip and its fix.
+     */
+    private const val SlipTypedMaxFrequency = 0.60
+    private const val SlipFixMinGap = 0.25
+
+    /** A typed word up to this common still gives way to one of the very top words: "amd" (0.73) for "and" (0.97). */
+    private const val SlipTypedMaxFrequencyForTopWord = 0.75
+    private const val SlipTopWordMinFrequency = 0.95
+    private const val SlipTopWordMinGap = 0.20
+
+    /**
+     * A word shorter than [MinCorrectionOverCompletionLength] keeps its correction eligible over its completions when
+     * the correction is this much more common than every one of them: "thw" goes to "the", not "thwart".
+     */
+    private const val CorrectionOverCompletionMinGap = 0.20
+
+    /**
      * Countries whose English keyboard takes the US fix from the misspelling list: no country (plain "en"), the US
      * and its territories, the countries in free association with it, the Philippines and Liberia. Canada takes
      * the Commonwealth fix except where [canadianKeepsUsSpelling]. The rest, the bundled en-UK and en-AU presets
@@ -1150,12 +1219,26 @@ internal object LatinDictionarySuggester {
         }
 
         val completionCandidates = completions(normalizedWord, dictionary, maxCandidateCount, userOverlay)
+        val bestCompletionFrequency = completionCandidates.firstOrNull()
+            ?.let { blendedFrequencyFor(it.text, dictionary, userOverlay) }
+            ?: 0.0
         // ROADMAP §7 Next-3 — when the user has typed [normalizedWord] before
         // (overlay carries it under any frequency), treat it as a known word so
         // we skip running corrections against it.  Otherwise the ranker would
         // happily replace a user-typed proper noun with a SCOWL look-alike.
         val isKnownInOverlay = userOverlay.containsKey(normalizedWord)
-        val correctionCandidates = if (!dictionary.contains(normalizedWord) &&
+        val slipFixes = likelySlipFixes(normalizedWord, dictionary, userOverlay, contextFit)
+        val correctionCandidates = if (slipFixes.isNotEmpty()) {
+            // Every fix is far more common than the typed word, so each may be committed; the ranker picks
+            // between them by the taps and the words before ("tou" to "you" when the t was a slip off y).
+            slipFixes.take(maxCandidateCount).map { fix ->
+                LatinSuggestion(
+                    text = fix,
+                    confidence = correctionConfidence(blendedFrequencyForCorrection(fix, dictionary, userOverlay), 1),
+                    isEligibleForAutoCommit = true,
+                )
+            }
+        } else if (!dictionary.contains(normalizedWord) &&
             !isKnownInOverlay &&
             normalizedWord.length >= MinCorrectionLength
         ) {
@@ -1164,15 +1247,18 @@ internal object LatinDictionarySuggester {
                 dictionary = dictionary,
                 maxCandidateCount = maxCandidateCount,
                 userOverlay = userOverlay,
-            ).map { candidate ->
-                if (shouldDeferCorrectionForActiveCompletion(normalizedWord, completionCandidates, candidate)) {
-                    candidate.copy(isEligibleForAutoCommit = false)
-                } else {
-                    candidate
-                }
-            }
+            )
         } else {
             emptyList()
+        }.map { candidate ->
+            val deferred = shouldDeferCorrectionForActiveCompletion(
+                normalizedWord = normalizedWord,
+                completionCandidates = completionCandidates,
+                correctionCandidate = candidate,
+                correctionFrequency = blendedFrequencyForCorrection(candidate.text, dictionary, userOverlay),
+                bestCompletionFrequency = bestCompletionFrequency,
+            )
+            if (deferred) candidate.copy(isEligibleForAutoCommit = false) else candidate
         }
         // ROADMAP §7 Next-3 — when any completion candidate is a word the
         // user has typed before (lives in the overlay), demote SCOWL
@@ -1184,19 +1270,19 @@ internal object LatinDictionarySuggester {
             userOverlay.isNotEmpty() &&
                 completionCandidates.any { userOverlay.containsKey(it.text.lowercase()) }
             )
+        // Only the leading correction can move ahead of the completions. The others may be eligible too (the
+        // ranker weighs the taps between them), but while a prefix is being typed its completions keep the lead.
+        fun isPromoted(index: Int, candidate: LatinSuggestion): Boolean =
+            index == 0 && shouldPromoteCorrectionBeforeCompletions(normalizedWord, completionCandidates, candidate)
         val primaryCorrections = if (hasOverlayCompletion) {
             emptyList()
         } else {
-            correctionCandidates.filter { candidate ->
-                shouldPromoteCorrectionBeforeCompletions(normalizedWord, completionCandidates, candidate)
-            }
+            correctionCandidates.filterIndexed { index, candidate -> isPromoted(index, candidate) }
         }
         val secondaryCorrections = if (hasOverlayCompletion) {
             correctionCandidates
         } else {
-            correctionCandidates.filterNot { candidate ->
-                shouldPromoteCorrectionBeforeCompletions(normalizedWord, completionCandidates, candidate)
-            }
+            correctionCandidates.filterIndexed { index, candidate -> !isPromoted(index, candidate) }
         }
         val realWordCorrections = if (contextFit != null && dictionary.contains(normalizedWord)) {
             realWordCorrections(normalizedWord, dictionary, userOverlay, contextFit)
@@ -1221,7 +1307,22 @@ internal object LatinDictionarySuggester {
             secondaryCorrections.forEach { candidate ->
                 if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
             }
-        }.take(maxCandidateCount)
+        }.keepingEligible(maxCandidateCount)
+    }
+
+    /**
+     * The first [maxCandidateCount] of these, except that candidates eligible for auto-commit past the cut replace
+     * the last ones that aren't, so eight completions of a prefix can't push the corrections out before the ranker
+     * sees them. Order is kept otherwise.
+     */
+    private fun List<LatinSuggestion>.keepingEligible(maxCandidateCount: Int): List<LatinSuggestion> {
+        if (size <= maxCandidateCount) return this
+        val head = take(maxCandidateCount)
+        val rescued = drop(maxCandidateCount).filter { it.isEligibleForAutoCommit }
+        val replaceable = head.indices.reversed().filter { !head[it].isEligibleForAutoCommit }
+        val replaced = replaceable.take(rescued.size).toSet()
+        if (replaced.isEmpty()) return head
+        return head.filterIndexed { index, _ -> index !in replaced } + rescued.take(replaced.size)
     }
 
     /**
@@ -1333,10 +1434,54 @@ internal object LatinDictionarySuggester {
         normalizedWord: String,
         completionCandidates: List<LatinSuggestion>,
         correctionCandidate: LatinSuggestion,
+        correctionFrequency: Double,
+        bestCompletionFrequency: Double,
     ): Boolean {
         if (completionCandidates.isEmpty()) return false
-        if (normalizedWord.length < MinCorrectionOverCompletionLength) return true
+        if (normalizedWord.length < MinCorrectionOverCompletionLength) {
+            return correctionFrequency < bestCompletionFrequency + CorrectionOverCompletionMinGap
+        }
         return correctionCandidate.text.length < normalizedWord.length
+    }
+
+    /**
+     * One-edit dictionary words, most common first, that make [word] more likely a slip than meant, or empty when
+     * it isn't one. [word] must be one of the dictionary's [LatinDictionarySnapshot.unvettedWords] and rare (see
+     * [SlipTypedMaxFrequency]), and each fix far more common. A word the user has typed before ([userOverlay]) is
+     * never a slip, and neither is one that fits the words before it ([contextFit] above [RealWordMaxTypedFit]).
+     */
+    internal fun likelySlipFixes(
+        word: String,
+        dictionary: LatinDictionarySnapshot,
+        userOverlay: Map<String, Int>,
+        contextFit: ((String) -> Double?)?,
+    ): List<String> {
+        if (word.length < MinCorrectionLength || userOverlay.containsKey(word) || word !in dictionary.unvettedWords) {
+            return emptyList()
+        }
+        val typedFrequency = dictionary.frequencyFor(word)
+        if (typedFrequency > SlipTypedMaxFrequencyForTopWord) return emptyList()
+        val typedFit = contextFit?.invoke(word)
+        if (typedFit != null && typedFit > RealWordMaxTypedFit) return emptyList()
+        return knownEdits1(word, dictionary)
+            .asSequence()
+            .filter { (_, distance) -> distance == 1 }
+            .map { (candidate, _) -> candidate to blendedFrequencyForCorrection(candidate, dictionary, userOverlay) }
+            .filter { (_, frequency) -> isSlipFix(typedFrequency, frequency) }
+            .filter { (candidate, _) -> typedFit == null || (contextFit(candidate) ?: 0.0) >= typedFit }
+            .sortedWith(
+                compareByDescending<Pair<String, Double>> { (_, frequency) -> frequency }
+                    .thenBy { (candidate, _) -> candidate.length }
+                    .thenBy { (candidate, _) -> candidate },
+            )
+            .map { (candidate, _) -> candidate }
+            .toList()
+    }
+
+    private fun isSlipFix(typedFrequency: Double, fixFrequency: Double): Boolean {
+        if (fixFrequency < AutoCommitMinFrequency) return false
+        if (typedFrequency <= SlipTypedMaxFrequency && fixFrequency >= typedFrequency + SlipFixMinGap) return true
+        return fixFrequency >= SlipTopWordMinFrequency && fixFrequency >= typedFrequency + SlipTopWordMinGap
     }
 
     private fun shouldPromoteCorrectionBeforeCompletions(
@@ -1391,7 +1536,9 @@ internal object LatinDictionarySuggester {
                     .thenBy { (candidate, _) -> candidate }
             )
             .take(maxCandidateCount)
-            .mapIndexed { index, (candidate, distance) ->
+            // Each correction common enough may be committed, not only the most common one, so the ranker
+            // weighs the taps and the words before between them instead of a lone eligible pick winning on role.
+            .map { (candidate, distance) ->
                 val frequency =
                     blendedFrequencyForCorrection(candidate, dictionary, userOverlay)
                 val autoCommitThreshold = when (distance) {
@@ -1402,8 +1549,7 @@ internal object LatinDictionarySuggester {
                 LatinSuggestion(
                     text = candidate,
                     confidence = correctionConfidence(frequency, distance),
-                    isEligibleForAutoCommit = index == 0 &&
-                        distance in 1..2 &&
+                    isEligibleForAutoCommit = distance in 1..2 &&
                         word.length >= MinCorrectionLength &&
                         frequency >= autoCommitThreshold,
                 )

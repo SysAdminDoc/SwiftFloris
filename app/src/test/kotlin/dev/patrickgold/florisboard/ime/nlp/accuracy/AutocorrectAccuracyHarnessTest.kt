@@ -147,6 +147,29 @@ class AutocorrectAccuracyHarnessTest : FunSpec({
                 .strip shouldNotContain meant
         }
     }
+
+    test("a slip onto a rare dictionary entry is fixed on space") {
+        // Each typed word is a web-corpus entry no vetted word list backs (en_unvetted.txt), or for thw no word at
+        // all; space left all of them as typed, or turned thw into thwart, before the likely-slip rule.
+        val slips = mapOf(
+            "thos" to "this",
+            "rhe" to "the",
+            "yoy" to "you",
+            "lile" to "like",
+            "tume" to "time",
+            "thw" to "the",
+        )
+        val committed = slips.mapValues { (typed, _) ->
+            replay.space(textBefore = "", typed = typed, samples = centerTaps(typed)).committed
+        }
+        committed shouldBe slips
+    }
+
+    test("rare real words near common ones stay as typed") {
+        for (word in RareRealWords) {
+            replay.space(textBefore = "", typed = word, samples = centerTaps(word)).committed shouldBe word
+        }
+    }
 })
 
 private const val CorpusPath = "accuracy/tatoeba_en_sentences.tsv"
@@ -166,6 +189,13 @@ private fun mapContextModel(file: File): ContextModel {
 
 /** Words space turned into longer ones before the 2026-11-15 fix (riverbed, violets, hedgehogs). */
 private val MustNotChange = listOf("river", "violet", "hedgehog")
+
+/**
+ * Real words as rare as the web-corpus slips the likely-slip rule fixes, each one edit from a far more common
+ * word. SCOWL backs them, so they stay. Without that check space turned five of them (in the corpus) into water,
+ * dying, pop, slide and sites.
+ */
+private val RareRealWords = listOf("wager", "dyeing", "plop", "snide", "kites", "tine", "mow")
 
 /**
  * Misspellings people really type, and what space must turn them into. All six are in
@@ -199,27 +229,35 @@ private val TapNoiseLevels = listOf(
  *
  * Before the context model the same run fixed 50 and 344, changed 13 and 172 to another word, and had the
  * intended word in the top three 58 and 415 times.
+ *
+ * Re-pinned 2026-11-19 for the likely-slip rule (a slip onto an unvetted rare entry like "thos" is corrected), the
+ * short-word rule (a correction far more common than every completion stays eligible) and every common-enough
+ * correction being eligible, not only the most common. careful: 52 to 60 fixed, 38 to 32 left as typed, 11 to 9
+ * changed to another word, 72 to 79 in the top three. sloppy: 378 to 434 fixed, 323 to 245 left, 139 to 161
+ * changed to another word, 490 to 552 in the top three. Still no correctly typed word changed. Promoting every
+ * eligible correction ahead of the completions, not only the leading one, gave 5 more sloppy fixes but put
+ * "their" ahead of "there" while "ther" was being typed.
  */
 private val Baseline = mapOf(
     "careful" to AccuracyCounts(
         slipped = 101,
-        fixed = 52,
-        leftAlone = 38,
-        changedToOther = 11,
-        stripHits = 72,
+        fixed = 60,
+        leftAlone = 32,
+        changedToOther = 9,
+        stripHits = 79,
         clean = 2392,
         wronglyChanged = 0,
         cleanOfferedSwap = 29,
     ),
     "sloppy" to AccuracyCounts(
         slipped = 840,
-        fixed = 378,
-        leftAlone = 323,
-        changedToOther = 139,
-        stripHits = 490,
+        fixed = 434,
+        leftAlone = 245,
+        changedToOther = 161,
+        stripHits = 552,
         clean = 1653,
         wronglyChanged = 0,
-        cleanOfferedSwap = 22,
+        cleanOfferedSwap = 24,
     ),
 )
 
@@ -400,7 +438,9 @@ private class AutocorrectReplay(
             tier = OffensiveWordPolicy.tier(blockPossiblyOffensive = false, blockSlursOnly = false),
         )
         val typedKey = candidateSignalKeyOf(typed)
-        val typedWordKnown = typedKey != null && sources.frequency(english, typedKey) > 0.0
+        // NlpManager decodes a likely slip ("thos") as an unknown word.
+        val typedWordKnown = typedKey != null && sources.frequency(english, typedKey) > 0.0 &&
+            LatinDictionarySuggester.likelySlipFixes(typedKey, dictionary, emptyMap(), contextFit).isEmpty()
         val signals = CandidateSignalAssembler.assemble(
             primaryLocale = english,
             locales = listOf(english),

@@ -208,6 +208,14 @@ interface SuggestionProvider : NlpProvider {
     suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double
 
     /**
+     * Whether [word], though a dictionary word for [subtype], is more likely a typing slip for a far more common
+     * word ("thos" for "this"), given the words before it in [content]. The ranker then treats it like an unknown
+     * word, so space can correct it. False by default, and false whenever any of the subtype's languages has the
+     * word as a word the user would mean.
+     */
+    suspend fun isLikelySlip(subtype: Subtype, content: EditorContent, word: String): Boolean = false
+
+    /**
      * When initializing composing text given a new context, the suggestion engine determines the composing range.
      * The default behavior gets the last word according to the current subtype's primaryLocale.
      *

@@ -16,6 +16,12 @@ suggestions.
   Britain, Australia and the rest of the Commonwealth use that one. Canada does too, except for -ize words and
   fulfill, which it spells the US way. The English provider fixes them on space, and the dictionary scripts keep them out of `data.json`,
   `en_supplemental.json` and `../../dictionaries/en.txt` (see `../../dictionaries/README.md`).
+- `en_unvetted.txt` lists about 28,000 English dictionary words that no vetted word list backs, each one edit from a
+  common word. Most came into `data.json` from web text ("thos", "snd", "yoy"). Space corrects a rare one to a far
+  more common word one edit away, so a slip that spells one gets fixed, while rare real words ("snide", "plop") stay.
+  A word counts as vetted when SCOWL up to size 70 lists it in any spelling, or when `utils/english_modern_terms.txt`
+  or `utils/english_chat_terms.txt` has it. `utils/build_english_unvetted_words.py` regenerates it from `data.json`,
+  `en_supplemental.json` and SCOWL's `final/` directory; rerun it after either dictionary changes.
 - `{language}.fldic` files are FlorisBoard NLP v0~draft1 dictionaries. SwiftFloris reads only their `[words]` section
   and normalizes the absolute word scores into the existing 0..255 frequency range.
 
