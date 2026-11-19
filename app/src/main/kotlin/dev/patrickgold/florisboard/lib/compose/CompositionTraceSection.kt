@@ -21,6 +21,7 @@ import android.os.Trace
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import java.util.concurrent.atomic.AtomicInteger
 
 /** Where [CompositionTraceSection] sends its begin and end, so a test can count them. */
@@ -39,6 +40,9 @@ internal object AndroidAsyncTraceSink : AsyncTraceSink {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) Trace.endAsyncSection(name, cookie)
     }
 }
+
+/** The sink [rememberCompositionTraceSection] reports to. Tests provide a counting one around real composables. */
+internal val LocalAsyncTraceSink = staticCompositionLocalOf<AsyncTraceSink> { AndroidAsyncTraceSink }
 
 /**
  * One composition of the caller, timed as an async trace section. Compose allows no try/finally around composable
@@ -83,7 +87,7 @@ internal class CompositionTraceSection(
 @Composable
 internal fun rememberCompositionTraceSection(
     name: String,
-    sink: AsyncTraceSink = AndroidAsyncTraceSink,
+    sink: AsyncTraceSink = LocalAsyncTraceSink.current,
 ): CompositionTraceSection {
     return remember(Any()) { CompositionTraceSection(name, sink) }
 }

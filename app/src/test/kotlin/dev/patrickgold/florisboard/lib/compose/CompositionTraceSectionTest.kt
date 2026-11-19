@@ -42,21 +42,6 @@ class CompositionTraceSectionTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<RoborazziHostActivity>()
 
-    private class CountingSink : AsyncTraceSink {
-        val events = mutableListOf<String>()
-        val open = mutableSetOf<Int>()
-
-        override fun begin(name: String, cookie: Int) {
-            events += "begin $name"
-            open += cookie
-        }
-
-        override fun end(name: String, cookie: Int) {
-            events += "end $name"
-            open -= cookie
-        }
-    }
-
     @Composable
     private fun Child(word: String) {
         if (word == FailingWord) error("composable failed")
@@ -72,7 +57,7 @@ class CompositionTraceSectionTest {
 
     @Test
     fun everyCompositionEndsItsSection() {
-        val sink = CountingSink()
+        val sink = CountingTraceSink()
         var word by mutableStateOf("first")
         composeRule.setContent { TracedRow(sink, word) }
         composeRule.waitForIdle()
@@ -88,7 +73,7 @@ class CompositionTraceSectionTest {
 
     @Test
     fun aCompositionThatThrowsStillEndsItsSection() {
-        val sink = CountingSink()
+        val sink = CountingTraceSink()
         var word by mutableStateOf("ok")
         composeRule.setContent { TracedRow(sink, word) }
         composeRule.waitForIdle()
