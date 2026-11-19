@@ -128,6 +128,7 @@ import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.isActive
 import org.florisboard.lib.android.isOrientationLandscape
 import org.florisboard.lib.compose.DisposableLifecycleEffect
+import org.florisboard.lib.compose.rememberReducedMotion
 import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggIcon
@@ -170,19 +171,10 @@ fun TextKeyboardLayout(
     val glideEnabled = glideEnabledInternal && glideLanguageEnabled && evaluator.editorInfo.isRichInputEditor &&
         evaluator.state.keyVariation != KeyVariation.PASSWORD
     val glideShowTrailPref by prefs.glide.showTrail.collectAsState()
-    // ROADMAP §6 N8.4 — Respect Android's reduced-motion (Developer Options →
-    // Animator duration scale = 0). Read once on enter; cheap (single ContentProvider
-    // query) and stays correct because configuration changes recompose this layout.
-    val animatorDurationScale = remember(configuration) {
-        runCatching {
-            android.provider.Settings.Global.getFloat(
-                context.contentResolver,
-                android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
-                1f,
-            )
-        }.getOrDefault(1f)
-    }
-    val reducedMotion = animatorDurationScale == 0f
+    // Respect Android's Remove animations (animator duration scale 0) for key and glide motion. Observed, not
+    // read once: the setting lives in Settings.Global and changing it is no configuration change, so a value
+    // keyed on the configuration stayed stale until the keyboard was recreated.
+    val reducedMotion = rememberReducedMotion()
     val glideShowTrail = glideShowTrailPref && !reducedMotion
     val glideTrailTheme by prefs.glide.trailTheme.collectAsState()
     val glideTrailStyle = rememberSnyggThemeQuery(FlorisImeUi.GlideTrail.elementName)

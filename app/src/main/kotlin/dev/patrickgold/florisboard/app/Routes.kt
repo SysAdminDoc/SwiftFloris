@@ -38,7 +38,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
-import dev.patrickgold.florisboard.lib.compose.rememberReducedMotion
+import org.florisboard.lib.compose.rememberReducedMotion
 import dev.patrickgold.florisboard.app.devtools.registerDevtoolsRoutes
 import dev.patrickgold.florisboard.app.ext.ExtensionEditScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionExportScreen

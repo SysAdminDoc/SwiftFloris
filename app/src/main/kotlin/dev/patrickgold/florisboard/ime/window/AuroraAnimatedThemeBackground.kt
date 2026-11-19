@@ -35,7 +35,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import dev.patrickgold.florisboard.ime.theme.LocalActiveThemeName
-import dev.patrickgold.florisboard.lib.compose.rememberReducedMotion
+import org.florisboard.lib.compose.rememberReducedMotion
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import kotlin.math.PI
 import kotlin.math.sin

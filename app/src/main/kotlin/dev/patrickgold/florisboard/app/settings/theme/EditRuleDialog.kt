@@ -90,7 +90,7 @@ import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.NATIVE_NULLPTR
 import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.lib.compose.FlorisHyperlinkText
-import dev.patrickgold.florisboard.lib.compose.rememberReducedMotion
+import org.florisboard.lib.compose.rememberReducedMotion
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdown

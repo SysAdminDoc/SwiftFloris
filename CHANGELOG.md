@@ -18,6 +18,7 @@
 - Translate the names, tooltips and short key labels of the Translate, Add task, Insert event and typed-text quick actions. They were written into the app in English, so every language saw them and TalkBack read them in English. TalkBack now reads each action's full name, never the short "Task" or "Cal" on the key. Forward delete also gets a real tooltip instead of an error placeholder.
 - Say when a copy didn't work on the About, Privacy audit and Sync screens. Copying the audit log claimed success even when the clipboard refused it, copying the signing fingerprint said nothing when it failed, and a failed copy of the pairing payload could close the Sync screen. Each copy button now shows one message saying whether the text was copied.
 - Close the suggestion bar's benchmark timing even when drawing the bar fails. A failed redraw used to leave that timing open in the trace. Nothing changes while you type.
+- Follow Remove animations the moment you turn it on. Android keeps that switch somewhere that doesn't restart open screens, so with the app already open the settings pages kept sliding and the Aurora theme's bands kept moving until you left and came back. Both stop right away now, and start again when you turn it back off.
 
 ## v1.9.69 (2026-11-19)
 
