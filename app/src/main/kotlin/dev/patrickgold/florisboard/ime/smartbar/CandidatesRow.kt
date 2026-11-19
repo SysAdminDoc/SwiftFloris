@@ -17,7 +17,6 @@
 package dev.patrickgold.florisboard.ime.smartbar
 
 import android.os.SystemClock
-import android.os.Trace
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -76,6 +75,7 @@ import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.lib.compose.rememberCompositionTraceSection
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -102,18 +102,14 @@ internal const val CandidateTextShrinkToFitMinScale = 0.5f
 
 @Composable
 fun CandidatesRow(modifier: Modifier = Modifier) {
-    // ROADMAP §7 Next-12.1 — Macrobenchmark trace section. Compose forbids
-    // try/finally around composable invocations, so we use sequential
-    // Trace.beginSection / Trace.endSection calls flanking the body.
-    // `android.os.Trace` tolerates a missing endSection if recomposition
-    // throws — Perfetto just reports an unclosed section.
+    // Macrobenchmark's section for this body. It ends below, or when Compose abandons a composition that threw.
     val shouldLogBenchmark = BuildConfig.BUILD_TYPE == "benchmark"
     val recomposeStartedAt = if (shouldLogBenchmark) {
         SystemClock.elapsedRealtimeNanos()
     } else {
         0L
     }
-    Trace.beginSection("swiftfloris.smartbar.candidates.recompose")
+    val traceSection = rememberCompositionTraceSection(CandidatesRowTraceSection)
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
@@ -227,8 +223,11 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                 "candidateCount=${candidates.size} displayMode=$displayMode",
         )
     }
-    Trace.endSection()
+    traceSection.end()
 }
+
+/** The section KeyboardLatencyBenchmark reads with TraceSectionMetric. */
+internal const val CandidatesRowTraceSection = "swiftfloris.smartbar.candidates.recompose"
 
 @Composable
 internal fun ScrollableCandidatesPreviewSurface(modifier: Modifier = Modifier) {
