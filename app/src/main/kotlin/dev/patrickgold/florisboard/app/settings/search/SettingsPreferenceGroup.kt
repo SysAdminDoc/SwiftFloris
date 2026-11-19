@@ -85,13 +85,13 @@ fun <T : PreferenceModel> PreferenceUiScope<T>.PreferenceGroup(
                 .clip(shape)
                 .background(MaterialTheme.colorScheme.surfaceContainer)
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), shape),
-        ) {
+        ) card@{
             CompositionLocalProvider(
                 LocalIsPrefEnabled provides isEnabled,
                 LocalIsPrefVisible provides isVisible,
                 LocalIconSpaceReserved provides iconSpaceReserved,
             ) {
-                content(PreferenceUiScope(groupPrefs, this@Column))
+                content(PreferenceUiScope(groupPrefs, this@card))
             }
         }
     }
