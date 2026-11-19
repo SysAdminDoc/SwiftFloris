@@ -1640,9 +1640,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     return textEntry.type(action.text)
                 }
                 if (action.shouldFlushAutoCommitCandidate) {
-                    nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) }
+                    commitAutoCommitAndLearnBefore(action.text)
                 }
-                editorInstance.commitChar(action.text)
+                val committed = editorInstance.commitChar(action.text)
+                if (WordBoundaryLearnPolicy.endsSentence(action.text)) resetLearnChain()
+                committed
             }
             HardwareKeyboardKeyDownAction.HandleSpace -> {
                 if (textEntry.isActive) {
