@@ -13,6 +13,7 @@ package dev.patrickgold.florisboard.ime.nlp.latin
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
+import java.io.File
 
 /** A slip that lands on a rare dictionary entry ("thos" for "this") is corrected like an unknown word. */
 class LikelySlipTest : FunSpec({
@@ -79,5 +80,19 @@ class LikelySlipTest : FunSpec({
 
     test("the word list parser skips comments and blank lines and lowercases") {
         LatinDictionaryStore.parseWordList("# header\n\nThos\nsnd\n  \n") shouldBe setOf("thos", "snd")
+    }
+
+    test("the bundled list has the web-corpus slips but no real word, chat term or acronym") {
+        val file = listOf(File("src/main/assets"), File("app/src/main/assets"))
+            .map { it.resolve(LatinDictionaryStore.EnglishUnvettedWordsPath) }
+            .first { it.isFile }
+        val unvetted = LatinDictionaryStore.parseWordList(file.readText())
+
+        for (slip in listOf("thos", "snd", "rhe", "yoy", "lile", "thd")) {
+            (slip in unvetted) shouldBe true
+        }
+        for (word in listOf("snide", "plop", "wager", "dyeing", "kites", "tine", "mow", "idk", "lol", "atm", "usa")) {
+            (word in unvetted) shouldBe false
+        }
     }
 })

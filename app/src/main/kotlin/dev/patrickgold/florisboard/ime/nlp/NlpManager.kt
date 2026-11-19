@@ -379,7 +379,8 @@ class NlpManager(
                 candidates = userDictionarySuggestions + suggestions,
             )
             // A rare dictionary word one key off a far more common one ("thos") is decoded as unknown so
-            // space can correct it. Learning keeps the plain answer: the word is still in the dictionary.
+            // space can correct it, and learning treats it as unknown too: a known word is learned on its
+            // first use, and a learned word is never corrected again, so one uncorrected slip would stick.
             val typedWordLooksLikeSlip = typedWordKnown &&
                 suggestionProvider.isLikelySlip(subtype, content, currentWord) &&
                 activeLocales(subtype).none { locale ->
@@ -440,7 +441,7 @@ class NlpManager(
                     typedWordKnowledge.record(
                         word = currentWord,
                         languageTag = subtype.primaryLocale.languageTag(),
-                        known = typedWordKnown.takeIf { suggestionsEnabled },
+                        known = (typedWordKnown && !typedWordLooksLikeSlip).takeIf { suggestionsEnabled },
                     )
                     val merged = InternalSuggestionOrder.merge(
                         wordSuggestions = wordSuggestions,

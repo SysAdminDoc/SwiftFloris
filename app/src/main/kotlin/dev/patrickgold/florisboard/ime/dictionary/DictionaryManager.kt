@@ -140,6 +140,12 @@ internal fun repairLegacyLearnedLocaleRows(dao: UserDictionaryDao): LegacyLearne
 internal const val LEARNED_MISSPELLING_CLEANUP_FILE = "learned_misspelling_cleanup.txt"
 
 /**
+ * File in `filesDir` listing the unvetted words (`ime/dict/en_unvetted.txt`) already cleaned out of
+ * learned words, one per line. Same scheme as [LEARNED_MISSPELLING_CLEANUP_FILE].
+ */
+internal const val LEARNED_SLIP_CLEANUP_FILE = "learned_slip_cleanup.txt"
+
+/**
  * Misspellings from [table] that the learned-word cleanup has not handled yet, given the
  * contents of [LEARNED_MISSPELLING_CLEANUP_FILE] ([processedMarker], `null` when absent).
  * Each word is cleaned once, so a misspelling the user teaches the keyboard afterwards stays.
@@ -715,6 +721,12 @@ class DictionaryManager private constructor(context: Context) {
             }.onFailure { e ->
                 flogError(LogTopic.DICTIONARY) { "Learned misspelling cleanup failed: ${e.message}" }
             }
+            runCatching {
+                val dao = florisUserDictionaryDao() ?: return@launch
+                removeAutoLearnedSlipsOnce(dao)
+            }.onFailure { e ->
+                flogError(LogTopic.DICTIONARY) { "Learned slip cleanup failed: ${e.message}" }
+            }
         }
     }
 
@@ -744,6 +756,36 @@ class DictionaryManager private constructor(context: Context) {
         }
         if (!result.markerSaved) {
             flogWarning(LogTopic.DICTIONARY) { "Learned misspelling cleanup marker not saved; retrying next start" }
+        }
+    }
+
+    /**
+     * Drops auto-learned English words that no vetted word list backs (`ime/dict/en_unvetted.txt`,
+     * "thos", "snd") the same way [removeAutoLearnedMisspellingsOnce] drops misspellings. Any
+     * dictionary word used to be learned on its first use, so one slip that space left alone was
+     * learned, and a learned word is never corrected as a likely slip. Each listed word is cleaned
+     * once ([LEARNED_SLIP_CLEANUP_FILE]); undoing a correction afterwards teaches it again for good.
+     */
+    private fun removeAutoLearnedSlipsOnce(dao: UserDictionaryDao) {
+        val raw = applicationContext.assets.open(LatinDictionaryStore.EnglishUnvettedWordsPath)
+            .bufferedReader().use { it.readText() }
+        val bigrams by lazy { PersonalBigramStore.get(applicationContext) }
+        val trigrams by lazy { PersonalTrigramStore.get(applicationContext) }
+        val result = cleanUpLearnedMisspellingsOnce(
+            dao = dao,
+            table = LatinDictionaryStore.parseWordList(raw),
+            markerFile = File(applicationContext.filesDir, LEARNED_SLIP_CLEANUP_FILE),
+        ) { entry ->
+            val locale = FlorisLocale.fromTag(entry.locale ?: return@cleanUpLearnedMisspellingsOnce)
+            UserDictionaryOverlay.get().forget(entry.word, locale)
+            bigrams.forget(entry.word, locale)
+            trigrams.forget(entry.word, locale)
+        } ?: return
+        if (result.removed.isNotEmpty()) {
+            flogInfo(LogTopic.DICTIONARY) { "Removed ${result.removed.size} learned unvetted words" }
+        }
+        if (!result.markerSaved) {
+            flogWarning(LogTopic.DICTIONARY) { "Learned slip cleanup marker not saved; retrying next start" }
         }
     }
 
