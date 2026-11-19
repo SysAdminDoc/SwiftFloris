@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.68-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.69-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 <p align="center">
   <a href="https://ko-fi.com/X8K126YVER">
@@ -47,7 +47,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.68 | Privacy posture |
+| Area | What's in v1.9.69 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Typing safety** | All-offensive and slurs-only suggestion filters, plus a 50% to 100% autocorrect confidence threshold selected from the local replay scorecard | On-device |
@@ -181,7 +181,7 @@ Every published SwiftFloris APK is signed with this certificate:
 Read it from the published release and compare for yourself:
 
 ```powershell
-apksigner verify --print-certs .\SwiftFloris-v1.9.68-release.apk
+apksigner verify --print-certs .\SwiftFloris-v1.9.69-release.apk
 ```
 
 An APK reporting any other certificate did not come from this repository,
@@ -219,7 +219,7 @@ before publication.
 For an independent rebuild, use an exact tag and a clean checkout:
 
 ```bash
-git clone --branch v1.9.68 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
+git clone --branch v1.9.69 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
 cd SwiftFloris
 bash scripts/verify-reproducible-apk.sh
 ```
@@ -499,6 +499,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.69** (2026-11-19): The keyboard now learns the last word before a period or Enter, keeps new phrases, and suggests a phrase you've typed twice while you're still typing its last word. The words you use most rank first. Space fixes slips like "thos" for "this" that happened to match a rare dictionary entry. Settings open in place from one short list without the promotional copy, and long suggestions shrink to fit instead of trailing off.
 - **v1.9.68** (2026-11-16): English autocorrect now looks at the words before the one you're typing, and misspellings like "teh" and "thier" get fixed again. Fast typing from a physical keyboard, text expander or barcode scanner stays in order and is corrected in place, Chrome included. Emoji move to Unicode 18.0 with search in 49 languages. Setup asks for your keyboard language, resizing is smoother, and "Off for this app" really turns suggestions off now.
 - **v1.9.67** (2026-11-15): The keyboard can switch to the language a text field or app asks for, from the languages you've added. Backups are opened and checked after saving, before the app says they worked. Several settings that went back to their defaults on restart now stay the way you set them, clipboard image previews are back, and the emoji, sticker and clipboard search fields take typing again. Built with Kotlin 2.4.21, which fixes CVE-2026-53914.
 - **v1.9.66** (2026-08-29): New app icon with adaptive and themed layers generated from the August 2026 artwork.
@@ -730,7 +731,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.68** (2026-11-16). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.69** (2026-11-19). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 
