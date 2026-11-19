@@ -360,6 +360,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                         DisplayLanguageNamesIn.NATIVE_LOCALE -> primaryLocale.displayName(primaryLocale)
                     },
                     isError = showSelectAsError && primaryLocale == SelectLocale,
+                    errorMessage = stringRes(R.string.settings__localization__subtype_locale_error),
                     onClick = {
                         navController.navigate(Routes.Settings.SelectLocale)
                     },

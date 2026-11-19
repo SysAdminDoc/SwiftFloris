@@ -583,6 +583,7 @@
     <string name="enum__voice_model_preference__large_v3_turbo_int8__description" comment="Embedded voice model preference description">About 800 MB. Highest-quality target for flagship devices.</string>
     <string name="settings__localization__subtype_edit_title" comment="Title of subtype dialog when editing an existing subtype">Edit subtype</string>
     <string name="settings__localization__subtype_locale" comment="Label for locale dropdown in subtype dialog">Primary language</string>
+    <string name="settings__localization__subtype_locale_error" comment="Error read by screen readers on the Primary language field when saving without a language">Choose a primary language.</string>
     <string name="settings__localization__subtype_secondary_locales" comment="Label for secondary languages in subtype dialog">Secondary languages</string>
     <string name="settings__localization__subtype_secondary_locales_none" comment="Value shown when a subtype has no secondary languages">None</string>
     <string name="settings__localization__subtype_popup_mapping" comment="Label for popup mapping dropdown in subtype screen">Popup mapping</string>

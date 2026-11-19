@@ -100,6 +100,31 @@ class FlorisDropdownLikeButtonClickTest {
         composeRule.onAllNodesWithText("Polish").assertCountEquals(1)
     }
 
+    @Test
+    fun screenReadersHearTheErrorOnTheDropdown() {
+        composeRule.setContent {
+            Frame {
+                FlorisDropdownLikeButton(
+                    item = "- select -",
+                    isError = true,
+                    errorMessage = "Choose a primary language.",
+                    onClick = { clicks++ },
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("- select -")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Error, "Choose a primary language."))
+    }
+
+    @Test
+    fun aDropdownWithoutAnErrorReportsNone() {
+        showButton()
+
+        composeRule.onNodeWithText("Polish")
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Error))
+    }
+
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun aKeyboardReachesItInOneStepAndEnterOpensIt() {

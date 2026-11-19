@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.text
 import androidx.compose.ui.text.AnnotatedString
@@ -45,6 +46,7 @@ fun FlorisDropdownLikeButton(
     item: String,
     modifier: Modifier = Modifier,
     isError: Boolean = false,
+    errorMessage: String? = null,
     onClick: () -> Unit = { },
     appearance: JetPrefTextFieldAppearance = JetPrefDropdownMenuDefaults.filled(),
 ) {
@@ -80,7 +82,11 @@ fun FlorisDropdownLikeButton(
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .semantics { text = AnnotatedString(item) }
+                // The field's own semantics are cleared, so its error has to be repeated here for screen readers.
+                .semantics {
+                    text = AnnotatedString(item)
+                    if (isError) error(errorMessage.orEmpty())
+                }
                 // Shares the field's interaction source, so the field still shows its own focus and press look.
                 .clickable(
                     interactionSource = interactionSource,
