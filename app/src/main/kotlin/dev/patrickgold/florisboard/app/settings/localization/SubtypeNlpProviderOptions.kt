@@ -48,13 +48,14 @@ internal data class SubtypeNlpProviderOptions(
         /**
          * Options for a saved suggestion and spelling pair. The editor shows one engine for both, so when either
          * half can't be picked here that half is the one shown, as unavailable. Otherwise a pair whose spelling
-         * engine went missing would look like a working suggestion engine.
+         * engine went missing would look like a working suggestion engine. A half that was never picked shows the
+         * placeholder, which the editor marks as an error, since saving refuses the pair anyway.
          */
         fun forSavedProviders(suggestionId: String, spellingId: String): SubtypeNlpProviderOptions {
             val selectableIds = NlpProviderCatalog.selectable.map { it.id }
             val shownId = listOf(suggestionId, spellingId).firstOrNull { id ->
                 id != SelectNlpProviderId && id !in selectableIds
-            } ?: suggestionId
+            } ?: SelectNlpProviderId.takeIf { it == suggestionId || it == spellingId } ?: suggestionId
             return forSavedProvider(shownId)
         }
 

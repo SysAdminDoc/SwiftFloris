@@ -82,15 +82,7 @@ fun SelectLocaleScreen() = FlorisScreen {
             }.lowercase()
         }
     }
-    val searchIndex = remember(systemLocales) {
-        LocaleSearchIndex(
-            items = systemLocales,
-            names = { locale ->
-                listOf(locale.displayName(), locale.displayName(locale), locale.displayName(FlorisLocale.ENGLISH))
-            },
-            tags = { locale -> listOf(locale.languageTag(), locale.localeTag()) },
-        )
-    }
+    val searchIndex = remember(systemLocales) { localeSearchIndex(systemLocales) }
 
     val filteredSystemLocales = remember(searchIndex, searchTermValue.text) {
         searchIndex.filter(searchTermValue.text)

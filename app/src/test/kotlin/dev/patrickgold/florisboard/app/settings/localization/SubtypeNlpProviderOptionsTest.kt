@@ -81,6 +81,15 @@ class SubtypeNlpProviderOptionsTest : FunSpec({
             .metadata.shouldNotBeNull().id shouldBe AdvancedSpellingProvider.ProviderId
     }
 
+    test("a pair whose spelling engine was never picked shows the placeholder, not the suggestion engine") {
+        val options = SubtypeNlpProviderOptions.forSavedProviders(
+            suggestionId = LatinLanguageProvider.ProviderId,
+            spellingId = SelectNlpProviderId,
+        )
+
+        options.selected shouldBe SubtypeNlpProviderOption.Placeholder
+    }
+
     test("a matching pair of selectable engines shows that engine") {
         val options = SubtypeNlpProviderOptions.forSavedProviders(
             suggestionId = LatinLanguageProvider.ProviderId,

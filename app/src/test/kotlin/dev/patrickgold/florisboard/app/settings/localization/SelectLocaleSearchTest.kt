@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
@@ -35,11 +36,13 @@ import dev.patrickgold.florisboard.app.AppTheme
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.lib.FlorisLocale
+import dev.patrickgold.florisboard.lib.util.foldForSearch
 import dev.patrickgold.florisboard.screenshot.RoborazziHostActivity
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.junit.Rule
 import org.junit.Test
@@ -57,14 +60,7 @@ class SelectLocaleSearchTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<RoborazziHostActivity>()
 
-    private fun index(): LocaleSearchIndex<FlorisLocale> {
-        val locales = FlorisLocale.extendedAvailableLocales(composeRule.activity)
-        return LocaleSearchIndex(
-            items = locales,
-            names = { listOf(it.displayName(), it.displayName(it), it.displayName(FlorisLocale.ENGLISH)) },
-            tags = { listOf(it.languageTag(), it.localeTag()) },
-        )
-    }
+    private fun index() = localeSearchIndex(FlorisLocale.extendedAvailableLocales(composeRule.activity))
 
     private fun tags(locales: List<FlorisLocale>) = locales.map { it.languageTag() }
 
@@ -81,6 +77,19 @@ class SelectLocaleSearchTest {
         val plainSpanish = tags(index.filter("espanol"))
         plainSpanish shouldContain "es"
         tags(index.filter("español")) shouldContainExactly plainSpanish
+    }
+
+    @Test
+    fun lettersWithNothingToStripFoldToWhatPeopleType() {
+        foldForSearch("Włoski") shouldBe "wloski"
+        foldForSearch("FØROYSKT") shouldBe "foroyskt"
+        foldForSearch("Straße") shouldBe "strasse"
+        foldForSearch("İzmir") shouldBe "izmir"
+
+        val index = index()
+        val faroese = tags(index.filter("foroyskt"))
+        faroese shouldContain "fo"
+        tags(index.filter("føroyskt")) shouldContainExactly faroese
     }
 
     @Test
@@ -104,6 +113,11 @@ class SelectLocaleSearchTest {
         composeRule.onNode(hasSetTextAction()).performTextInput("francais")
         composeRule.mainClock.advanceTimeBy(LocaleSearchSettleMillis / 5)
         announced() shouldBe emptyList()
+        // The list itself follows the folded search right away: French is in it and German isn't.
+        val french = FlorisLocale.from("fr")
+        val german = FlorisLocale.from("de")
+        rows(french.displayName(), french.displayName(french)) shouldNotBe 0
+        rows(german.displayName(), german.displayName(german)) shouldBe 0
 
         composeRule.mainClock.advanceTimeBy(LocaleSearchSettleMillis)
         announced() shouldBe listOf(
@@ -123,6 +137,11 @@ class SelectLocaleSearchTest {
                 .replace("{search_term}", "zzqx"),
         )
     }
+
+    private fun rows(vararg names: String): Int = composeRule.onAllNodes(
+        names.map { hasText(it) }.reduce { a, b -> a or b },
+        useUnmergedTree = true,
+    ).fetchSemanticsNodes().size
 
     private fun announced(): List<String> {
         composeRule.mainClock.advanceTimeByFrame()

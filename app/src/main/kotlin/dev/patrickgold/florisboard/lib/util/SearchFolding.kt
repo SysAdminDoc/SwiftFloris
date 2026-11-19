@@ -21,14 +21,28 @@ import java.util.Locale
 
 private val CombiningMarkRegex = Regex("\\p{Mn}+")
 
+// Letters with no decomposed form, so stripping marks never reaches them. Without these "wloski" misses
+// "włoski" and "foroyskt" misses "føroyskt". Keys are lowercase because the case fold runs first.
+private val UndecomposedLetters = mapOf(
+    'ł' to "l", 'ŀ' to "l", 'ø' to "o", 'đ' to "d", 'ð' to "d", 'ħ' to "h", 'ı' to "i", 'ŧ' to "t",
+    'ß' to "ss", 'æ' to "ae", 'œ' to "oe", 'þ' to "th",
+)
+
 /**
- * Folds [text] for matching what someone typed: accents and other combining marks go, and so does case, so
- * "Français", "francais" and "FRANCAIS" all fold to "francais". Settings search and the language list both match
- * through this, so they agree on what counts as the same word. Case folds with the root locale, so the result
- * doesn't change with the phone's language (a Turkish default would otherwise turn "I" into a dotless "ı").
+ * Folds [text] for matching what someone typed. Accents and other combining marks go, letters with nothing to
+ * strip become the plain letters people type instead ("włoski" folds to "wloski", "Straße" to "strasse"), and
+ * case folds with the root locale, so "Français", "francais" and "FRANCAIS" all fold to "francais" whatever the
+ * phone's language. Settings search and the language list both match through this, so they agree on what counts
+ * as the same word.
  */
 fun foldForSearch(text: String): String {
-    return Normalizer.normalize(text, Normalizer.Form.NFD)
+    val stripped = Normalizer.normalize(text, Normalizer.Form.NFD)
         .replace(CombiningMarkRegex, "")
         .lowercase(Locale.ROOT)
+    if (stripped.none { it in UndecomposedLetters }) return stripped
+    return buildString(stripped.length + 2) {
+        for (char in stripped) {
+            append(UndecomposedLetters[char] ?: char.toString())
+        }
+    }
 }

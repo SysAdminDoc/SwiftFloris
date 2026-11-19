@@ -119,7 +119,17 @@ class FlorisDropdownLikeButtonClickTest {
 
     @Test
     fun aDropdownWithoutAnErrorReportsNone() {
-        showButton()
+        // The subtype editor always hands over its message, so only isError may decide.
+        composeRule.setContent {
+            Frame {
+                FlorisDropdownLikeButton(
+                    item = "Polish",
+                    isError = false,
+                    errorMessage = "Choose a primary language.",
+                    onClick = { clicks++ },
+                )
+            }
+        }
 
         composeRule.onNodeWithText("Polish")
             .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Error))

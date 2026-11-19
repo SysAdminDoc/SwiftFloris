@@ -16,10 +16,23 @@
 
 package dev.patrickgold.florisboard.app.settings.localization
 
+import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.util.foldForSearch
 
 /** How long the language search waits after the last keystroke before it announces the result count. */
 internal const val LocaleSearchSettleMillis = 500L
+
+/**
+ * The language list's index over [locales]: each name in the phone's language, in its own and in English, and
+ * both tag forms.
+ */
+internal fun localeSearchIndex(locales: List<FlorisLocale>) = LocaleSearchIndex(
+    items = locales,
+    names = { locale ->
+        listOf(locale.displayName(), locale.displayName(locale), locale.displayName(FlorisLocale.ENGLISH))
+    },
+    tags = { locale -> listOf(locale.languageTag(), locale.localeTag()) },
+)
 
 /**
  * The language list's search. [names] match anywhere and [tags] match from the start, both after
