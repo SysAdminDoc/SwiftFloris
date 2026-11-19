@@ -59,6 +59,9 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         // Default user ID used for all subtypes, unless otherwise specified.
         // See `ime/core/Subtype.kt` Line 210 and 211 for the default usage
         const val ProviderId = "org.florisboard.nlp.providers.latin"
+
+        /** Every remembered continuation is read, then filtered by the typed prefix (the stores keep 32 / 24). */
+        private const val PersonalContinuationLookupCount = 32
     }
 
     private val appContext by context.appContext()
@@ -190,7 +193,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         val locales = subtype.locales()
         val multilingual = prefs.correction.multilingualSuggestions.get() && locales.size > 1
         return if (multilingual) {
-            suggestMultilingual(currentWord, content, locales, maxCandidateCount)
+            suggestMultilingual(currentWord, content, locales, maxCandidateCount, isPrivateSession)
         } else {
             val languageCode = LatinDictionaryStore.normalizeLanguageCode(subtype.primaryLocale.language)
             // Lazy hydrate so a process restart picks up the user's vocabulary
@@ -208,6 +211,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 userOverlay = overlay,
                 contextFit = contextFit(languageCode, content, currentWord),
                 region = subtype.primaryLocale.country,
+                personalContinuations = personalContinuations(subtype.primaryLocale, content, currentWord, isPrivateSession),
             ).map { candidate ->
                 WordSuggestionCandidate(
                     text = candidate.text,
@@ -234,11 +238,35 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         return { word -> model.contextProbability(previous.prev2, prev1, word) }
     }
 
+    /**
+     * Words the user has typed after the one or two words before [currentWord] in [locale], best first, for
+     * [LatinDictionarySuggester.suggest] to complete from. Empty in a private session, with next-word prediction
+     * off (it also turns off learning them), or at the start of a sentence.
+     */
+    private suspend fun personalContinuations(
+        locale: dev.patrickgold.florisboard.lib.FlorisLocale,
+        content: EditorContent,
+        currentWord: String,
+        isPrivateSession: Boolean,
+    ): List<String> {
+        if (isPrivateSession) return emptyList()
+        val prefs by FlorisPreferenceStore
+        if (!prefs.suggestion.nextWordPrediction.get()) return emptyList()
+        val previous = TypingContextExtractor.previousWordsBeforeCurrentWord(content.textBeforeSelection, currentWord)
+        val prev1 = previous.prev1 ?: return emptyList()
+        val trigrams = previous.prev2?.let { prev2 ->
+            PersonalTrigramStore.get(appContext).predict(prev2, prev1, locale, PersonalContinuationLookupCount)
+        }.orEmpty()
+        val bigrams = PersonalBigramStore.get(appContext).predict(prev1, locale, PersonalContinuationLookupCount)
+        return (trigrams + bigrams).distinct()
+    }
+
     private suspend fun suggestMultilingual(
         rawWord: String,
         content: EditorContent,
         locales: List<dev.patrickgold.florisboard.lib.FlorisLocale>,
         maxCandidateCount: Int,
+        isPrivateSession: Boolean,
     ): List<SuggestionCandidate> {
         val normalized = LatinDictionarySuggester.normalizeWord(rawWord) ?: return emptyList()
         // Per-locale: language code, dictionary recognised the typed word, candidate list.
@@ -262,6 +290,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 userOverlay = overlay,
                 contextFit = contextFit(langCode, content, rawWord),
                 region = locale.country,
+                personalContinuations = personalContinuations(locale, content, rawWord, isPrivateSession),
             )
             PerLocale(
                 recognised = dict.contains(normalized) || overlay.containsKey(normalized),
@@ -1016,6 +1045,9 @@ internal data class LatinSuggestion(
 
 internal object LatinDictionarySuggester {
     private const val MinCompletionLength = 2
+
+    /** Above the best dictionary completion (0.2 + 0.6 for a top-frequency word). */
+    private const val PersonalCompletionConfidence = 0.9
     private const val MinCorrectionLength = 3
     private const val MinCorrectionOverCompletionLength = 4
     private const val MaxTwoEditWordLength = 8
@@ -1069,6 +1101,11 @@ internal object LatinDictionarySuggester {
      * [contextFit] tells how well a word fits the words typed before it, 0.0 to 1.0, or null when that can't be
      * told. With it a dictionary word that fits badly, like "form" in "a letter form my mother", gets one-edit
      * words that fit better as candidates. They're never eligible for auto-commit.
+     *
+     * [personalContinuations] are words the user has typed after the previous one or two words, best first
+     * (see `PersonalBigramStore.predict`). Those that complete [rawWord] lead the completions, so after
+     * "see you" typing "to" offers "tomorrow" when that's what the user writes there, even though a dozen
+     * dictionary words starting with "to" are more common. One typed letter is enough for these.
      */
     fun suggest(
         rawWord: String,
@@ -1078,6 +1115,7 @@ internal object LatinDictionarySuggester {
         userOverlay: Map<String, Int> = emptyMap(),
         contextFit: ((String) -> Double?)? = null,
         region: String = "",
+        personalContinuations: List<String> = emptyList(),
     ): List<LatinSuggestion> {
         if (maxCandidateCount <= 0 || !dictionary.isLoaded) return emptyList()
         val normalizedWord = normalizeWord(rawWord) ?: return emptyList()
@@ -1106,7 +1144,10 @@ internal object LatinDictionarySuggester {
         ) {
             return singleLetterProperNounCompletions(normalizedWord, rawWord, dictionary, maxCandidateCount)
         }
-        if (normalizedWord.length < MinCompletionLength) return emptyList()
+        val personalCompletions = personalCompletions(normalizedWord, personalContinuations, maxCandidateCount)
+        if (normalizedWord.length < MinCompletionLength) {
+            return personalCompletions.map { it.withTypedCase(rawWord) }
+        }
 
         val completionCandidates = completions(normalizedWord, dictionary, maxCandidateCount, userOverlay)
         // ROADMAP §7 Next-3 — when the user has typed [normalizedWord] before
@@ -1139,8 +1180,10 @@ internal object LatinDictionarySuggester {
         // keyboard this word; we don't want a SCOWL edit-distance neighbour
         // (e.g. "food" for "foob…") jumping ahead of "foobar" just because
         // the SCOWL word is more common in the general corpus.
-        val hasOverlayCompletion = userOverlay.isNotEmpty() &&
-            completionCandidates.any { userOverlay.containsKey(it.text.lowercase()) }
+        val hasOverlayCompletion = personalCompletions.isNotEmpty() || (
+            userOverlay.isNotEmpty() &&
+                completionCandidates.any { userOverlay.containsKey(it.text.lowercase()) }
+            )
         val primaryCorrections = if (hasOverlayCompletion) {
             emptyList()
         } else {
@@ -1169,6 +1212,9 @@ internal object LatinDictionarySuggester {
             realWordCorrections.forEach { candidate ->
                 if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
             }
+            personalCompletions.forEach { candidate ->
+                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
+            }
             completionCandidates.forEach { candidate ->
                 if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
             }
@@ -1176,6 +1222,32 @@ internal object LatinDictionarySuggester {
                 if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
             }
         }.take(maxCandidateCount)
+    }
+
+    /**
+     * The [continuations] that complete [prefix], in their order, as candidates that rank above dictionary
+     * completions. Never eligible for auto-commit: the user is still typing the word.
+     */
+    private fun personalCompletions(
+        prefix: String,
+        continuations: List<String>,
+        maxCandidateCount: Int,
+    ): List<LatinSuggestion> {
+        if (continuations.isEmpty()) return emptyList()
+        return continuations
+            .asSequence()
+            .map { it.lowercase() }
+            .filter { it.length > prefix.length && it.startsWith(prefix) }
+            .distinct()
+            .take(maxCandidateCount)
+            .mapIndexed { index, word ->
+                LatinSuggestion(
+                    text = word,
+                    confidence = (PersonalCompletionConfidence - 0.02 * index).coerceAtLeast(0.5),
+                    isEligibleForAutoCommit = false,
+                )
+            }
+            .toList()
     }
 
     /**
