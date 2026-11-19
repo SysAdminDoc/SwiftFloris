@@ -17,7 +17,6 @@
 package dev.patrickgold.florisboard.screenshot
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,7 +45,6 @@ import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.RoborazziRule
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
-import dev.patrickgold.florisboard.ime.text.keyboard.HoneycombKeyboardRow
 import org.junit.Rule
 import org.junit.Test
 import org.junit.jupiter.api.DisplayName
@@ -72,13 +70,6 @@ class RoborazziPendingKeyboardSurfacesCaptureTest {
             outputDirectoryPath = "build/outputs/roborazzi",
         ),
     )
-
-    @Test
-    fun honeycombKeyboardSurface() {
-        captureKeyboardSurface("honeycomb_keyboard_surface.png") {
-            HoneycombKeyboardPreview()
-        }
-    }
 
     @Test
     fun glideTrailThemesSurface() {
@@ -118,40 +109,6 @@ private fun KeyboardScreenshotFrame(content: @Composable () -> Unit) {
             ) {
                 content()
             }
-        }
-    }
-}
-
-@Composable
-private fun HoneycombKeyboardPreview() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Text(
-            text = "Honeycomb keyboard surface",
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(252.dp)
-                .background(Color(0xFF161A22)),
-            contentAlignment = Alignment.TopCenter,
-        ) {
-            HoneycombKeyboardRow(
-                rowLabels = listOf(
-                    listOf("Q", "W", "E", "R", "T", "Y"),
-                    listOf("A", "S", "D", "F", "G"),
-                    listOf("Z", "X", "C", "V", "B", "N"),
-                    listOf("123", "space", ".", "go"),
-                ),
-                onKeyTap = { _, _, _ -> },
-                modifier = Modifier
-                    .padding(top = 18.dp)
-                    .size(width = 320.dp, height = 218.dp),
-                keyRadiusDp = 24.dp,
-            )
         }
     }
 }

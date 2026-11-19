@@ -8,6 +8,7 @@
 - Put 👍 first when you type ":good". Every emoji that lists "good" as a keyword scored the same, and ties kept the emoji panel's order, so the strip showed 🫡 😪 😴. Emoji that tie now go by how often people use them (Unicode's own usage counts), so ":good" gives 👍 👏 😴, in your skin tone where there is one.
 - Open the language list in the keyboard language editor on a normal tap. The "Primary language" field only opened when your finger stayed down long enough, so quick taps often did nothing, and TalkBack's double-tap and Switch Access couldn't open it at all. Screen readers now hear one dropdown with the language in it.
 - Even out the spacing on the settings home screen. The search box, the setup card and the Active badge used a few odd sizes of their own, so they now follow the same spacing steps as every other settings page.
+- Remove two unused honeycomb key widgets with hard-coded dark colors. The Honeycomb layout you can pick for a language never used them, so it looks and works the same.
 
 ## v1.9.69 (2026-11-19)
 

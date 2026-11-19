@@ -25,8 +25,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * ROADMAP §8 L9.2 — pure-JVM parser that converts the honeycomb
- * layout JSON shape into a `List<List<String>>` of row labels the
- * [HoneycombKeyboardRow] renderer can consume directly.
+ * layout JSON shape into a `List<List<String>>` of row labels.
  *
  * The layout JSON format mirrors the existing FlorisBoard character
  * layouts (`qwerty.json`, `colemak.json`, etc.): an outer array of
