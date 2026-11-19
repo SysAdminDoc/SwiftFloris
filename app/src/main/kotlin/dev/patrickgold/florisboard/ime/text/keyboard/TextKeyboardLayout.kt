@@ -493,12 +493,17 @@ private fun TextKeyButton(
         },
         label = "TextKeyButton.pressScale",
     )
-    val visualBounds = key.visibleBounds
     val semanticsBounds = keyAccessibilityBounds(key)
+    // The layout pass rewrites every key's bounds in place, and each pass recomposes this key with a new
+    // desiredKey, so take the positions as values here. An offset lambda reading the bounds object itself never
+    // changes, so a key that moves without changing size (the comma once the emoji key is back beside it) kept
+    // its old spot until the keyboard was built again.
+    val semanticsTopLeft = semanticsBounds.topLeft.toIntOffset()
+    val visualTopLeft = key.visibleBounds.topLeft.toIntOffset()
     Box(
         modifier = Modifier
             .requiredSize(semanticsBounds.size.toDpSize())
-            .absoluteOffset { semanticsBounds.topLeft.toIntOffset() }
+            .absoluteOffset { semanticsTopLeft }
             .semantics {
                 contentDescription = keyDescription
                 role = Role.Button
@@ -513,7 +518,7 @@ private fun TextKeyButton(
     )
     val keyModifier = Modifier
         .requiredSize(size)
-        .absoluteOffset { visualBounds.topLeft.toIntOffset() }
+        .absoluteOffset { visualTopLeft }
         .graphicsLayer {
             scaleX = pressScale
             scaleY = pressScale
@@ -601,10 +606,11 @@ private fun TextKeyButton(
         }
     }
     if (debugShowTouchBoundaries) {
+        val touchTopLeft = key.touchBounds.topLeft.toIntOffset()
         Box(
             modifier = Modifier
                 .requiredSize(key.touchBounds.size.toDpSize())
-                .absoluteOffset { key.touchBounds.topLeft.toIntOffset() }
+                .absoluteOffset { touchTopLeft }
                 .border(Dp.Hairline, Color.Red),
         )
     }
