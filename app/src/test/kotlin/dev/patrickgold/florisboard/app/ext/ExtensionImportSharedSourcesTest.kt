@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -127,6 +128,31 @@ class ExtensionImportSharedSourcesTest {
 
         awaitAnnounced(R.string.ext__import__none_ready_title)
         assertActionOn(R.string.ext__import__none_ready_title)
+        assertNoEmptyState()
+    }
+
+    @Test
+    fun aScreenThatComesBackAfterTheAppWasEndedCopiesTheSharedFileAgain() {
+        source.mode = SharedImportSource.Mode.Malformed
+        val restorer = StateRestorationTester(composeRule)
+        // Only the first screen is handed the share. The one that comes back has nothing but what it saved.
+        var shared: List<String>? = listOf(uri.toString())
+        restorer.setContent {
+            Frame {
+                ExtensionImportScreen(ExtensionImportScreenType.EXT_ANY, initUuid = null, sharedSources = shared)
+            }
+        }
+        awaitAnnounced(R.string.ext__import__none_ready_title)
+        val queriesBefore = source.queries.get()
+
+        // A new process starts with no import workspaces in memory.
+        val cacheManager by composeRule.activity.cacheManager()
+        cacheManager.importer.dir.listFiles().orEmpty().forEach { cacheManager.importer.removeByUuid(it.name) }
+        shared = null
+        restorer.emulateSavedInstanceStateRestore()
+
+        composeRule.waitUntil(timeoutMillis = 10_000) { source.queries.get() > queriesBefore }
+        awaitAnnounced(R.string.ext__import__none_ready_title)
         assertNoEmptyState()
     }
 
