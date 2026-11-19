@@ -409,30 +409,8 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
     }
 
-    private fun previousWordOf(textBeforeCursor: String, depth: Int = 1): String? {
-        if (textBeforeCursor.isBlank() || depth < 1) return null
-        var working = textBeforeCursor
-        var lastFound: String? = null
-        for (n in 1..depth) {
-            if (working.isBlank()) return null
-            val trimmed = working.trimEnd()
-            if (trimmed.isEmpty()) return null
-            var end = trimmed.length
-            while (end > 0 && !trimmed[end - 1].isLetter() && trimmed[end - 1] != '\'' && trimmed[end - 1] != '-') end--
-            if (end == 0) return null
-            var start = end
-            while (start > 0) {
-                val ch = trimmed[start - 1]
-                if (!ch.isLetter() && ch != '\'' && ch != '-') break
-                start--
-            }
-            if (start == end) return null
-            lastFound = trimmed.substring(start, end)
-            if (n == depth) return lastFound
-            working = trimmed.substring(0, start)
-        }
-        return lastFound
-    }
+    private fun previousWordOf(textBeforeCursor: String, depth: Int = 1): String? =
+        PreviousWords.inSentence(textBeforeCursor, depth)
 
     override suspend fun notifySuggestionAccepted(subtype: Subtype, candidate: SuggestionCandidate) {
         // We can use flogDebug, flogInfo, flogWarning and flogError for debug logging, which is a wrapper for Logcat

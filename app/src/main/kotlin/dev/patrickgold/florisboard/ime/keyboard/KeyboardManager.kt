@@ -998,6 +998,15 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * Handles a [KeyCode.ENTER] event.
      */
     private fun handleEnter() {
+        // Enter ends the word under the cursor like space does, so the last word of a message
+        // or line is learned too.
+        val typedWordBeforeEnter = editorInstance.activeContent.currentWordText
+        SpacebarLearnPolicy.typedWordToLearn(typedWordBeforeEnter, candidateCommitted = false)?.let { word ->
+            learnTypedWordIfAllowed(
+                word,
+                nlpManager.typedWordKnownState(word, subtypeManager.activeSubtype.primaryLocale),
+            )
+        }
         if (editorInstance.tryPerformEnterCommitRaw()) {
             return
         }
@@ -1005,6 +1014,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             null -> editorInstance.performEnter()
             else -> editorInstance.performEnterAction(action)
         }
+        // A new line or a sent message starts a new sentence.
+        resetLearnChain()
     }
 
     /** The action Enter runs in the current field, or null when it types a newline. */
@@ -1457,9 +1468,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                         KeyType.CHARACTER, KeyType.NUMERIC ->{
                             val text = data.asString(isForDisplay = false)
                             if (shouldFlushAutoCommitBeforeCommit(data, text)) {
-                                nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) }
+                                commitAutoCommitAndLearnBefore(text)
                             }
                             editorInstance.commitChar(text)
+                            if (WordBoundaryLearnPolicy.endsSentence(text)) resetLearnChain()
 
                             // Matrix #32 — quote / speech-mark auto-close. Insert the matching closer and move
                             // the cursor between the two so the user can keep typing inside the quoted region.
@@ -1513,6 +1525,26 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 }
             }
         }
+    }
+
+    /**
+     * Commits the pending autocorrection before the non-letter [text] is typed. When [text] ends
+     * the word (see [WordBoundaryLearnPolicy]) and nothing was autocorrected, the word as typed is
+     * learned, the same way the space key learns it.
+     */
+    private fun commitAutoCommitAndLearnBefore(text: String) {
+        if (!WordBoundaryLearnPolicy.endsWord(text)) {
+            nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) }
+            return
+        }
+        val typedWordBeforeCommit = editorInstance.activeContent.currentWordText
+        val typedWordKnown = nlpManager.typedWordKnownState(
+            typedWordBeforeCommit,
+            subtypeManager.activeSubtype.primaryLocale,
+        )
+        val candidateCommitted = nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) } ?: false
+        SpacebarLearnPolicy.typedWordToLearn(typedWordBeforeCommit, candidateCommitted)
+            ?.let { learnTypedWordIfAllowed(it, typedWordKnown) }
     }
 
     private fun shouldFlushAutoCommitBeforeCommit(data: KeyData, text: String): Boolean {
