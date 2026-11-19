@@ -301,6 +301,8 @@ Invoke-EvidenceCommand "targetsdk37-shadow" $python @("scripts/verify-targetsdk3
 Invoke-EvidenceCommand "gradle-local-gates" (Join-Path $RepoRoot "gradlew.bat") ($gradleReleaseEvidenceArgs + @(
     ":app:verifyNoInternetPermission",
     ":app:testDebugUnitTest",
+    # The release-flag screenshot lane: release-only resources and flags get no visual check otherwise.
+    ":app:verifyRoborazziRelease",
     ":app:lintDebug",
     ":app:assembleRelease",
     ":app:verifyReleaseDevtoolsIsolation",

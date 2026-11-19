@@ -113,21 +113,21 @@ class RoborazziPendingSettingsScreensCaptureTest {
 
     @Test
     fun homeScreenOverview() {
-        captureSettingsScreen("home_screen_overview.png") {
+        captureSettingsScreen("home_screen_overview.png", showsAppName = true) {
             HomeScreen()
         }
     }
 
     @Test
     fun homeScreenOverviewAmoledDark() {
-        captureSettingsScreen("home_screen_overview_amoled_dark.png", theme = AppTheme.AMOLED_DARK) {
+        captureSettingsScreen("home_screen_overview_amoled_dark.png", theme = AppTheme.AMOLED_DARK, showsAppName = true) {
             HomeScreen()
         }
     }
 
     @Test
     fun setupScreen() {
-        captureSettingsScreen("setup_screen.png", theme = AppTheme.DARK) {
+        captureSettingsScreen("setup_screen.png", theme = AppTheme.DARK, showsAppName = true) {
             SetupScreen()
         }
     }
@@ -251,6 +251,7 @@ class RoborazziPendingSettingsScreensCaptureTest {
     private fun captureSettingsScreen(
         fileName: String,
         theme: AppTheme = AppTheme.LIGHT,
+        showsAppName: Boolean = false,
         content: @Composable () -> Unit,
     ) {
         composeRule.setContent {
@@ -260,8 +261,11 @@ class RoborazziPendingSettingsScreensCaptureTest {
         if (fileName == "typing_stats_screen.png") {
             waitForTypingStats()
         }
+        // Debug builds are named "SwiftFloris Debug", so a screen that shows the app name keeps a
+        // release baseline of its own for the release lane.
+        val dir = if (showsAppName && !dev.patrickgold.florisboard.BuildConfig.DEBUG) "$BASELINE_DIR/release_build" else BASELINE_DIR
         composeRule.onRoot().captureRoboImage(
-            filePath = "$BASELINE_DIR/$fileName",
+            filePath = "$dir/$fileName",
             roborazziOptions = ROBORAZZI_OPTIONS,
         )
     }

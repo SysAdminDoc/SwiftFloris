@@ -22,6 +22,7 @@
 - Mirror the settings page transitions in right-to-left languages. In Arabic, Hebrew, Persian or Urdu the next page still slid in from the right and the page you left still shrank toward the right edge, the way it does in English. Both now run the other way.
 - Keep the preview Obtainium link from offering the stable release. Its file filter also matched every regular release APK, so with no preview out it would have handed a preview subscription the stable build. It now only takes files named like `SwiftFloris-v1.9.70-beta.apk`, which no regular release uses.
 - Build the app without Kotlin's experimental local type aliases. One shorthand name in the keyboard's screen-size code needed them, and they made the compiler mark every class as a pre-release build. Nothing changes in how the keyboard sizes itself.
+- Check the release build's screenshots before every release again. That check couldn't even compile, since one shared test used a class only debug builds have, so text and settings that only release builds carry never got a visual check. It builds again, keeps its own reference pictures for the screens that show the app's name, and the release checklist now runs it.
 
 ## v1.9.69 (2026-11-19)
 

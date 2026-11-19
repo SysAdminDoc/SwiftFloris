@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.app.settings.search
 
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.devtools.devtoolsSearchRoute
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
@@ -30,12 +31,21 @@ class SettingsSearchIndexTest : FunSpec({
         SettingsSearchIndex.search("   ", ::resolve).shouldBeEmpty()
     }
 
-    test("catalog has at least one entry for every destination") {
-        val missing = SettingsSearchDestination.entries
+    test("catalog has at least one entry for every destination this build can open") {
+        // Release builds ship no developer tools page, so they have nothing to index for it.
+        val openable = SettingsSearchDestination.entries
+            .filterNot { it == SettingsSearchDestination.DEVTOOLS && devtoolsSearchRoute() == null }
+        val missing = openable
             .filterNot { destination -> SettingsSearchIndex.entries.any { it.destination == destination } }
             .toSet()
 
         missing.shouldBeEmpty()
+    }
+
+    test("a build without the developer tools page lists none of it") {
+        if (devtoolsSearchRoute() == null) {
+            SettingsSearchIndex.entries.filter { it.destination == SettingsSearchDestination.DEVTOOLS }.shouldBeEmpty()
+        }
     }
 
     test("title matches rank ahead of broader screen keyword matches") {
