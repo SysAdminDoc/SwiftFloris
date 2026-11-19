@@ -45,6 +45,7 @@ import dev.patrickgold.florisboard.app.ext.ExtensionExportScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionHomeScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionImportScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionImportScreenType
+import dev.patrickgold.florisboard.app.ext.ExtensionImportSharedSourcesKey
 import dev.patrickgold.florisboard.app.ext.ExtensionListScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionListScreenType
 import dev.patrickgold.florisboard.app.ext.ExtensionViewScreen
@@ -430,7 +431,8 @@ object Routes {
             composableWithDeepLink(Ext.Import::class) { navBackStack ->
                 val payload = navBackStack.toRoute<Ext.Import>()
                 val uuid = payload.uuid
-                ExtensionImportScreen(payload.type, uuid)
+                val sharedSources = navBackStack.savedStateHandle.get<List<String>>(ExtensionImportSharedSourcesKey)
+                ExtensionImportScreen(payload.type, uuid, sharedSources)
             }
             composableWithDeepLink(Ext.View::class) { navBackStack ->
                 val payload = navBackStack.toRoute<Ext.View>()

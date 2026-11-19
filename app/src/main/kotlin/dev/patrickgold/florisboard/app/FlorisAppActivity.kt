@@ -49,9 +49,9 @@ import androidx.navigation.compose.rememberNavController
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.ext.ExtensionImportScreenType
+import dev.patrickgold.florisboard.app.ext.ExtensionImportSharedSourcesKey
 import dev.patrickgold.florisboard.app.setup.NotificationPermissionState
 import dev.patrickgold.florisboard.appContext
-import dev.patrickgold.florisboard.cacheManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.LocalPreviewFieldController
 import dev.patrickgold.florisboard.lib.compose.PreviewKeyboardField
@@ -62,7 +62,6 @@ import dev.patrickgold.florisboard.lib.util.AppVersionUtils
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.android.hideAppIcon
@@ -93,7 +92,6 @@ const val SAVED_KEY_IME_VISIBLE = "swiftfloris.app.ime_visible"
 class FlorisAppActivity : ComponentActivity() {
     private val prefs by FlorisPreferenceStore
     private val appContext by appContext()
-    private val cacheManager by cacheManager()
     private var appTheme by mutableStateOf(AppTheme.AUTO)
     private var showAppIcon = true
     private var resourcesContext by mutableStateOf(this as Context)
@@ -301,22 +299,17 @@ class FlorisAppActivity : ComponentActivity() {
             ) {
                 navController.handleDeepLink(intent)
             } else {
+                // The import screen copies the shared files itself, so a share it can't read gets
+                // the same error card and Retry as a file picked there. It saves the URIs, so a
+                // recreated screen copies them again.
                 val uris = intent.importUris()
-                // A newer request or the activity going away cancels this, and the copy then
-                // deletes what it made. The request is still waiting, so the recreated
-                // activity copies it again.
-                val workspace = if (uris.isNotEmpty()) {
-                    try {
-                        cacheManager.importFromUris(uris)
-                    } catch (error: CancellationException) {
-                        throw error
-                    } catch (error: Exception) {
-                        null
-                    }
-                } else {
-                    null
+                navController.navigate(Routes.Ext.Import(ExtensionImportScreenType.EXT_ANY, null))
+                if (uris.isNotEmpty()) {
+                    navController.currentBackStackEntry?.savedStateHandle?.set(
+                        ExtensionImportSharedSourcesKey,
+                        uris.mapTo(ArrayList(), Uri::toString),
+                    )
                 }
-                navController.navigate(Routes.Ext.Import(ExtensionImportScreenType.EXT_ANY, workspace?.uuid))
             }
             externalIntents.markHandled(intent)
             intentToBeHandled = externalIntents.pending

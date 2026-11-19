@@ -11,6 +11,7 @@
 - Remove two unused honeycomb key widgets with hard-coded dark colors. The Honeycomb layout you can pick for a language never used them, so it looks and works the same.
 - Say what each suggestion engine does in the keyboard language editor. The engine names were English words written into the screen, so they never got translated. They're translatable now, and a line under the list says whether the engine you picked handles word suggestions, spell checking or both. A language saved with an engine this version can't use says "Unavailable" instead of looking like nothing was picked.
 - Stop unpacking a backup, theme or extension file once it unpacks past 250 MB in total. Files left out for being too big didn't count toward that limit, so a crafted file could keep the keyboard unpacking far more than that. A failed unpack also removes everything it had already written instead of leaving half a copy behind.
+- Say why a shared extension file can't be opened. Sharing a theme or extension to the app from another app opened the import screen on "No files selected" whenever the file couldn't be read, was too big or the other app wouldn't hand it over. The import screen now shows what went wrong, with Retry to read it again.
 - Close the suggestion bar's benchmark timing even when drawing the bar fails. A failed redraw used to leave that timing open in the trace. Nothing changes while you type.
 
 ## v1.9.69 (2026-11-19)

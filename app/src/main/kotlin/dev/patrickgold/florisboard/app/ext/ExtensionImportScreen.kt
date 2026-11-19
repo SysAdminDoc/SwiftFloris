@@ -114,8 +114,18 @@ enum class ExtensionImportScreenType(
     );
 }
 
+/**
+ * Where the activity puts the URIs of files shared to the app, on the import screen's back stack entry. The screen
+ * copies them itself, so a share that can't be read shows the same error and retry as a file picked here.
+ */
+const val ExtensionImportSharedSourcesKey = "ExtensionImportScreen.sharedSources"
+
 @Composable
-fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = FlorisScreen {
+fun ExtensionImportScreen(
+    type: ExtensionImportScreenType,
+    initUuid: String?,
+    sharedSources: List<String>? = null,
+) = FlorisScreen {
     title = stringRes(type.titleResId)
 
     val navController = LocalNavController.current
@@ -166,13 +176,16 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
     // Where the files came from. It's saved with the screen, so a screen that comes back after
     // Android ended the app, or while the copy was still running, copies them again.
     var importSources by rememberSaveable(initUuid) {
-        mutableStateOf(importResult?.getOrNull()?.sources?.toSaveable())
+        mutableStateOf(importResult?.getOrNull()?.sources?.toSaveable() ?: sharedSources?.takeIf { it.isNotEmpty() })
     }
 
     fun setImportResult(result: Result<CacheManager.ImporterWorkspace>?) {
         importResult = result
         importWorkspaceUuid = result?.getOrNull()?.uuid
-        importSources = result?.getOrNull()?.sources?.toSaveable()
+        // A failed copy keeps the files it tried, so Retry can read them again.
+        if (result?.isFailure != true) {
+            importSources = result?.getOrNull()?.sources?.toSaveable()
+        }
     }
 
     fun closeImportResult() {
@@ -426,15 +439,24 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                 }
             }
             result.isFailure -> {
+                val canAct = initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
+                val retrySources = importSources?.takeIf { it.isNotEmpty() }
+                val retryPreparation: () -> Unit = {
+                    retrySources?.let { sources -> scope.launch { prepareFiles(sources.map(Uri::parse)) } }
+                }
                 FlorisErrorCard(
                     modifier = Modifier.defaultFlorisOutlinedBox(),
                     text = stringRes(R.string.ext__import__error_title),
                     secondaryText = stringRes(R.string.ext__import__error_message),
-                    actionLabel = stringRes(R.string.action__select_files).takeIf {
-                        initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
+                    actionLabel = when {
+                        !canAct -> null
+                        retrySources != null -> stringRes(R.string.action__retry)
+                        else -> stringRes(R.string.action__select_files)
                     },
-                    onClick = selectFiles.takeIf {
-                        initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
+                    onClick = when {
+                        !canAct -> null
+                        retrySources != null -> retryPreparation
+                        else -> selectFiles
                     },
                 )
                 FlorisOutlinedBox(
