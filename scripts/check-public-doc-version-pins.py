@@ -480,9 +480,11 @@ def main() -> int:
         "additionalSettings": {
             **obtainium_common["additionalSettings"],
             "includePrereleases": True,
-            # Broader than the stable filter on purpose: no prerelease has ever
-            # been cut, so the beta asset's exact name is not established yet.
-            "apkFilterRegEx": r"SwiftFloris-.*\.apk",
+            # Preview assets are SwiftFloris-v<version>-beta.apk. Obtainium only
+            # allows prereleases here, it doesn't require them, so a filter that
+            # also matched -release assets handed this .beta subscription the
+            # stable package whenever no preview was out.
+            "apkFilterRegEx": r"SwiftFloris-.*-beta\.apk",
         },
     }))
 

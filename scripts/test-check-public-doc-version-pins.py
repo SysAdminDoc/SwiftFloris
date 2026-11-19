@@ -159,7 +159,7 @@ def write_fixture(root: Path) -> None:
                 "additionalSettings": json.dumps({
                     **obtainium_settings,
                     "includePrereleases": True,
-                    "apkFilterRegEx": r"SwiftFloris-.*\.apk",
+                    "apkFilterRegEx": r"SwiftFloris-.*-beta\.apk",
                 }, separators=(",", ":")),
             },
             indent=2,

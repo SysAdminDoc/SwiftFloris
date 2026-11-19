@@ -20,6 +20,7 @@
 - Close the suggestion bar's benchmark timing even when drawing the bar fails. A failed redraw used to leave that timing open in the trace. Nothing changes while you type.
 - Follow Remove animations the moment you turn it on. Android keeps that switch somewhere that doesn't restart open screens, so with the app already open the settings pages kept sliding and the Aurora theme's bands kept moving until you left and came back. Both stop right away now, and start again when you turn it back off.
 - Mirror the settings page transitions in right-to-left languages. In Arabic, Hebrew, Persian or Urdu the next page still slid in from the right and the page you left still shrank toward the right edge, the way it does in English. Both now run the other way.
+- Keep the preview Obtainium link from offering the stable release. Its file filter also matched every regular release APK, so with no preview out it would have handed a preview subscription the stable build. It now only takes files named like `SwiftFloris-v1.9.70-beta.apk`, which no regular release uses.
 
 ## v1.9.69 (2026-11-19)
 
