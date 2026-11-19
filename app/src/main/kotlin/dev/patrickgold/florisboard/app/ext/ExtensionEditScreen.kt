@@ -144,13 +144,12 @@ fun ExtensionEditScreen(id: String, createSerialType: String?) {
         val workspace = container.getWorkspaceByUuid(uuid)
         return workspace ?: container.new(uuid).also { newWorkspace ->
             try {
-                val sourceRef = ext.sourceRef
                 if (createSerialType == null) {
-                    checkNotNull(sourceRef) { "Extension source ref must not be null" }
-                    ZipUtils.unzip(context, sourceRef, newWorkspace.extDir).getOrThrow()
+                    unpackExtensionSource(context, ext.sourceRef, newWorkspace.extDir)
                 }
                 newWorkspace.ext = ext
                 newWorkspace.editor = ext.edit() as? T
+                    ?: throw ExtensionPreparationException(ExtensionPreparationFailure.Unsupported)
             } catch (error: Throwable) {
                 newWorkspace.close()
                 throw error
@@ -174,24 +173,17 @@ fun ExtensionEditScreen(id: String, createSerialType: String?) {
     }
     if (ext != null) {
         val uuid = rememberSaveable { UUID.randomUUID().toString() }
-        val cacheWorkspace = remember {
-            runCatching {
+        val navController = LocalNavController.current
+        PreparedExtensionWorkspace(
+            prepare = {
                 when (ext) {
-                    is ThemeExtension -> {
-                        getOrCreateWorkspace(uuid, cacheManager.themeExtEditor, ext)
-                    }
-                    else -> null
+                    is ThemeExtension -> getOrCreateWorkspace(uuid, cacheManager.themeExtEditor, ext)
+                    else -> throw ExtensionPreparationException(ExtensionPreparationFailure.Unsupported)
                 }
-            }
-        }
-        cacheWorkspace.onSuccess { workspace ->
-            if (workspace?.editor != null) {
-                ExtensionEditScreenSheetSwitcher(workspace, isCreateExt = createSerialType != null)
-            } else {
-                ExtensionNotFoundScreen(id = id)
-            }
-        }.onFailure { error ->
-            Text(text = remember(error) { error.stackTraceToString() })
+            },
+            onBack = { navController.popBackStack() },
+        ) { workspace ->
+            ExtensionEditScreenSheetSwitcher(workspace, isCreateExt = createSerialType != null)
         }
     } else {
         ExtensionNotFoundScreen(id)

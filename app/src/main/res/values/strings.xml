@@ -2192,6 +2192,11 @@
     <string name="ext__component__not_configured">Not configured</string>
     <string name="ext__error__not_found_title">Extension not found</string>
     <string name="ext__error__not_found_description">No extension with ID "{id}" could be found.</string>
+    <string name="ext__editor__preparation_failed_title" comment="Title and error card heading when an installed extension can't be opened in the editor">Couldn\'t open this extension</string>
+    <string name="ext__editor__preparation_failed_unreadable" comment="Explains an extension editor failure where the extension's file is missing or can't be read">SwiftFloris can\'t read this extension\'s file. It may have been moved or deleted. Try again, or reinstall the extension.</string>
+    <string name="ext__editor__preparation_failed_damaged" comment="Explains an extension editor failure where the extension's file is corrupt or not an extension archive">This extension\'s file is damaged or isn\'t an extension SwiftFloris can open. Reinstalling it may fix this.</string>
+    <string name="ext__editor__preparation_failed_unsupported" comment="Explains an extension editor failure where this kind of extension can't be edited">This kind of extension can\'t be edited here.</string>
+    <string name="ext__editor__preparation_failed_other" comment="Explains an extension editor failure with no more specific reason">Something went wrong while opening this extension for editing. Try again, or go back.</string>
     <string name="ext__editor__default_theme_title" comment="Default title of a newly created local theme extension; user-editable afterwards">My themes</string>
     <string name="ext__editor__title_create_any">Create extension</string>
     <string name="ext__editor__title_create_keyboard">Create keyboard extension</string>

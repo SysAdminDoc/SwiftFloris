@@ -13,6 +13,7 @@
 - Stop unpacking a backup, theme or extension file once it unpacks past 250 MB in total. Files left out for being too big didn't count toward that limit, so a crafted file could keep the keyboard unpacking far more than that. A failed unpack also removes everything it had already written instead of leaving half a copy behind.
 - Say why a shared extension file can't be opened. Sharing a theme or extension to the app from another app opened the import screen on "No files selected" whenever the file couldn't be read, was too big or the other app wouldn't hand it over. The import screen now shows what went wrong, with Retry to read it again.
 - Ask for the passphrase again after a wrong one, without picking the file again. Restoring an encrypted backup or importing an encrypted dictionary used to throw the file away on a typo, so you had to find it in the file picker all over. The passphrase box now stays on the same file, says what went wrong right under the field and puts the cursor back in it, and TalkBack reads the error out. Cancel still clears the copy.
+- Explain why a theme can't be opened for editing instead of printing a stack trace. If its file went missing, got damaged or can't be edited, the editor used to fill the screen with the raw error, file paths included. It now says which of those happened in plain words, with Retry and Back.
 - Close the suggestion bar's benchmark timing even when drawing the bar fails. A failed redraw used to leave that timing open in the trace. Nothing changes while you type.
 
 ## v1.9.69 (2026-11-19)
