@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -186,7 +187,9 @@ fun QuickActionButton(
                             elementName = "$elementName-text",
                             attributes = attributes,
                             selector = selector,
-                            text = action.data.firstOrNull().toString().ifBlank { "?" },
+                            // The key's own description already names it in full, so screen readers skip this.
+                            modifier = Modifier.semantics { hideFromAccessibility() },
+                            text = insertTextKeyLabel(action.data),
                         )
                     }
 
@@ -195,6 +198,8 @@ fun QuickActionButton(
                             elementName = "$elementName-text",
                             attributes = attributes,
                             selector = selector,
+                            // The key's own description already names it in full, so screen readers skip this.
+                            modifier = Modifier.semantics { hideFromAccessibility() },
                             // Single-glyph label so the button fits a
                             // standard quick-action slot. The full
                             // tooltip surfaces on long-press.
@@ -207,7 +212,8 @@ fun QuickActionButton(
                             elementName = "$elementName-text",
                             attributes = attributes,
                             selector = selector,
-                            // A short label to fit the key. Screen readers get the full name above.
+                            // The key's own description already names it in full, so screen readers skip this.
+                            modifier = Modifier.semantics { hideFromAccessibility() },
                             text = stringRes(R.string.quick_action__insert_task__compact),
                         )
                     }
@@ -217,6 +223,8 @@ fun QuickActionButton(
                             elementName = "$elementName-text",
                             attributes = attributes,
                             selector = selector,
+                            // The key's own description already names it in full, so screen readers skip this.
+                            modifier = Modifier.semantics { hideFromAccessibility() },
                             text = stringRes(R.string.quick_action__insert_calendar_event__compact),
                         )
                     }
@@ -234,4 +242,13 @@ fun QuickActionButton(
             }
         }
     }
+}
+
+/**
+ * What a typed-text key shows: the first character of [text], kept whole when it takes two chars (an emoji, say),
+ * or "?" when the text is empty or starts with a space, where there's nothing to show.
+ */
+internal fun insertTextKeyLabel(text: String): String {
+    if (text.isEmpty() || text[0].isWhitespace()) return "?"
+    return text.substring(0, Character.charCount(text.codePointAt(0)))
 }

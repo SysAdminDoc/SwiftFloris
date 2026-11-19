@@ -28,6 +28,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -196,6 +197,62 @@ class QuickActionTextTest {
         composeRule.waitForIdle()
 
         composeRule.onAllNodes(hasText(spec.tooltip), useUnmergedTree = true).fetchSemanticsNodes().size shouldNotBe 0
+    }
+
+    @Test
+    fun screenReadersHearTheFullNameOnceNotTheShortLabel() {
+        val keys = listOf(
+            QuickAction.InsertTask,
+            QuickAction.InsertCalendarEvent,
+            QuickAction.TranslateSelection,
+            QuickAction.InsertText(data = "hi"),
+        )
+        val names = mutableMapOf<QuickAction, String>()
+        composeRule.setContent {
+            Frame {
+                Column {
+                    for (action in keys) {
+                        names[action] = action.computeDisplayName(DefaultComputingEvaluator)
+                        QuickActionButton(
+                            action = action,
+                            evaluator = DefaultComputingEvaluator,
+                            modifier = Modifier.size(48.dp),
+                            type = QuickActionBarType.INTERACTIVE_BUTTON,
+                        )
+                    }
+                }
+            }
+        }
+        composeRule.waitForIdle()
+
+        val shortLabels = listOf(
+            expected.getValue(QuickAction.InsertTask).compact!!,
+            expected.getValue(QuickAction.InsertCalendarEvent).compact!!,
+            String(Character.toChars(0x1F310)),
+            "h",
+        )
+        for (label in shortLabels) {
+            withClue("the short label $label is drawn but never read out on its own") {
+                val drawn = composeRule.onAllNodes(hasText(label), useUnmergedTree = true).fetchSemanticsNodes()
+                drawn.size shouldNotBe 0
+                drawn.all { SemanticsProperties.HideFromAccessibility in it.config } shouldBe true
+            }
+        }
+        for (action in keys) {
+            withClue("$action") {
+                composeRule.onAllNodes(hasContentDescription(names.getValue(action)))
+                    .fetchSemanticsNodes().size shouldBe 1
+            }
+        }
+    }
+
+    @Test
+    fun aTypedTextKeyShowsItsFirstCharacter() {
+        val grinning = String(Character.toChars(0x1F600))
+        insertTextKeyLabel("hi") shouldBe "h"
+        insertTextKeyLabel(grinning + "x") shouldBe grinning
+        insertTextKeyLabel("") shouldBe "?"
+        insertTextKeyLabel(" hi") shouldBe "?"
     }
 
     @Composable
