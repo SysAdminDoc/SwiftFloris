@@ -35,6 +35,19 @@ class UserDictionaryOverlayTest : FunSpec({
         overlay.frequencyFor("hello", en) shouldBe UserDictionaryOverlay.INITIAL_FREQUENCY
     }
 
+    test("a word used more often outranks one used twice, up to the cap on the 11th use") {
+        val overlay = UserDictionaryOverlay.get()
+        repeat(2) { overlay.learn("zorbify", en) }
+        repeat(6) { overlay.learn("zorbit", en) }
+        repeat(11) { overlay.learn("zorbex", en) }
+        repeat(30) { overlay.learn("zorbal", en) }
+
+        (overlay.frequencyFor("zorbit", en) > overlay.frequencyFor("zorbify", en)) shouldBe true
+        (overlay.frequencyFor("zorbex", en) > overlay.frequencyFor("zorbit", en)) shouldBe true
+        overlay.frequencyFor("zorbex", en) shouldBe 255
+        overlay.frequencyFor("zorbal", en) shouldBe 255
+    }
+
     test("learn() called repeatedly bumps frequency by INCREMENT each time (capped at MAX)") {
         val overlay = UserDictionaryOverlay.get()
         overlay.learn("foo", en)
@@ -154,7 +167,8 @@ class UserDictionaryOverlayTest : FunSpec({
 
         val snapshot = overlay.snapshotFor(en)
         (snapshot.size <= UserDictionaryOverlay.MAX_ENTRIES_PER_LOCALE) shouldBe true
-        overlay.frequencyFor("keeper", en) shouldBe UserDictionaryOverlay.MAX_FREQUENCY
+        overlay.frequencyFor("keeper", en) shouldBe
+            UserDictionaryOverlay.INITIAL_FREQUENCY + UserDictionaryOverlay.INCREMENT
     }
 
     test("clearLocale wipes one locale and leaves others untouched") {

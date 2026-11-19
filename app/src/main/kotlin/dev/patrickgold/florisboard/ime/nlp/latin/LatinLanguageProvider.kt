@@ -464,9 +464,19 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         return dictionary(subtype).glideWords
     }
 
+    /**
+     * The word's weight in [subtype]'s language: the bundled frequency, or the learned weight when
+     * the user's own use puts it higher. The ranker scores every candidate with this, so a word
+     * only the user has taught the keyboard ("wegovy", a name) scored 0 there and lost to
+     * dictionary words even after its completion made the list.
+     */
     override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double {
         val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: word.lowercase()
-        return dictionary(subtype).frequencyFor(normalizedWord)
+        val bundled = dictionary(subtype).frequencyFor(normalizedWord)
+        val learned = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
+            .frequencyFor(normalizedWord, subtype.primaryLocale)
+            .coerceIn(0, 255) / 255.0
+        return maxOf(bundled, learned)
     }
 
     override suspend fun destroy() {

@@ -56,18 +56,20 @@ internal const val DICTIONARY_ROOM_SYNC_TIMEOUT_MS = 150L
  * Frequency starting point assigned to a freshly-learned word.
  *
  * SwiftKey-style "instant remember" — set high enough that a single
- * commit makes the word the top suggestion for its prefix and removes
- * the spell-check underline. 245 / 255 ≈ 0.96 weight; the second
- * commit hits the cap and the word is fully remembered. Kept in
+ * commit makes the word a top suggestion for its prefix and removes
+ * the spell-check underline. 245 / 255 ≈ 0.96 weight. Kept in
  * sync with [UserDictionaryOverlay.INITIAL_FREQUENCY] so disk +
  * in-memory agree on the per-word weight.
  */
 private const val LEARN_INITIAL_FREQUENCY = 245
-/** Frequency increment applied each time an existing learned word is reinforced. */
-private const val LEARN_INCREMENT = 5
-/** Cap learned-word frequency at the top tier so a much-typed word ties with
- *  SCOWL's most common words. */
-private const val LEARN_MAX_FREQUENCY = 250
+/**
+ * Frequency increment applied each time an existing learned word is reinforced. One step per use,
+ * so each of a word's first 11 uses ranks it above the learned words typed less often. It was +5
+ * up to 250: the second use hit the cap and every learned word tied from then on.
+ */
+private const val LEARN_INCREMENT = 1
+/** Cap learned-word frequency at the top of the scale, reached on the 11th use. */
+private const val LEARN_MAX_FREQUENCY = 255
 /** How long a change to the words waiting to be learned sits before it's written, so a burst of
  *  sightings costs one write. Hiding the keyboard writes it at once. */
 private const val PENDING_LEARNED_WORDS_SAVE_DELAY_MS = 3_000L

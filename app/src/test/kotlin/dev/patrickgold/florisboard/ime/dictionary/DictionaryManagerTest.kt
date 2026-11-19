@@ -137,7 +137,7 @@ class DictionaryManagerTest : FunSpec({
         pendingLearnedMisspellingCleanup(table, "teh\r\n untill \n") shouldBe setOf("thier")
     }
 
-    test("isAutoLearnedMisspelling covers 240 to 250 and hyphenated English tags") {
+    test("isAutoLearnedMisspelling covers 240 to 255 and hyphenated English tags") {
         val misspellings = setOf("teh")
         fun row(freq: Int, locale: String = "en_US") =
             UserDictionaryEntry(id = 0, word = "teh", freq = freq, locale = locale, shortcut = null)
@@ -146,8 +146,9 @@ class DictionaryManagerTest : FunSpec({
         isAutoLearnedMisspelling(row(240), misspellings) shouldBe true
         isAutoLearnedMisspelling(row(239), misspellings) shouldBe false
         isAutoLearnedMisspelling(row(250), misspellings) shouldBe true
-        // Learning caps at 250, so anything above was set by hand or an import.
-        isAutoLearnedMisspelling(row(251), misspellings) shouldBe false
+        // Learning adds one per use up to 255, so the top of the scale is learned too.
+        isAutoLearnedMisspelling(row(251), misspellings) shouldBe true
+        isAutoLearnedMisspelling(row(255), misspellings) shouldBe true
         isAutoLearnedMisspelling(row(245, locale = "en-GB"), misspellings) shouldBe true
     }
 

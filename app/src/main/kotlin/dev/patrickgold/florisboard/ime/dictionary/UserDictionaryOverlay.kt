@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference
  * an in-memory `Map<localeTag, ConcurrentHashMap<word, freq>>` that
  * the ranker consults alongside the SCOWL snapshot. The overlay
  * frequency lives on the same `0..255` scale as SCOWL (initial 245
- * on first sight, +5 per re-use, capped at 250, matching
+ * on first sight, +1 per re-use, capped at 255, matching
  * `LEARN_INITIAL_FREQUENCY` / `LEARN_INCREMENT` /
  * `LEARN_MAX_FREQUENCY` in `DictionaryManager`).
  *
@@ -198,17 +198,19 @@ class UserDictionaryOverlay private constructor() {
          * SwiftKey-style "instant remember" — a word the user typed even
          * once lands near the top of the frequency scale so it surfaces
          * in the suggestion strip the very next time its prefix is
-         * typed (245 / 255 ≈ 0.96 weight). The **second** commit hits
-         * the cap and the word is fully remembered (no further ranking
-         * change from reuse).
+         * typed (245 / 255 ≈ 0.96 weight). Each later use adds one
+         * step up to the cap on the 11th, so among learned words the
+         * ones typed more often rank first.
          */
         const val INITIAL_FREQUENCY: Int = 245
-        const val INCREMENT: Int = 5
-        const val MAX_FREQUENCY: Int = 250
+        const val INCREMENT: Int = 1
+        const val MAX_FREQUENCY: Int = 255
         const val MIN_LENGTH: Int = 3
         const val MAX_LENGTH: Int = 32
-        const val MAX_ENTRIES_PER_LOCALE: Int = 4096
-        private const val TRIM_TARGET_ENTRIES_PER_LOCALE: Int = 3584
+
+        /** LatinIME keeps 10,000 user-history words. Under 4096, words typed once fell out early. */
+        const val MAX_ENTRIES_PER_LOCALE: Int = 10_000
+        private const val TRIM_TARGET_ENTRIES_PER_LOCALE: Int = 9_000
 
         private val instance = AtomicReference(UserDictionaryOverlay())
 
