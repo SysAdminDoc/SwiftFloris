@@ -52,8 +52,8 @@ import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
-import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.systemService
 import org.florisboard.lib.compose.FlorisErrorCard
@@ -213,7 +213,7 @@ fun PhysicalKeyboardScreen() = FlorisScreen {
                 onClick = { importLayoutLauncher.launch(arrayOf("*/*")) },
             )
             if (importedLayouts.isEmpty()) {
-                JetPrefListItem(
+                SettingsListItem(
                     text = stringRes(R.string.physical_keyboard__custom_layouts__empty),
                     secondaryText = stringRes(R.string.physical_keyboard__custom_layouts__empty_summary),
                 )
@@ -309,7 +309,7 @@ private fun ActionListItem(
     onClick: () -> Unit,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    JetPrefListItem(
+    SettingsListItem(
         modifier = Modifier
             .alpha(if (enabled) 1f else 0.56f)
             .rippleClickable(enabled = enabled, role = Role.Button, onClick = onClick),

@@ -85,7 +85,7 @@ import dev.patrickgold.florisboard.app.settings.search.ListPreference
 import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.FlorisErrorCard
@@ -351,7 +351,7 @@ fun VoiceInputScreen() = FlorisScreen {
                 title = stringRes(R.string.settings__voice_input__command_mode_route),
                 selection = commandModeEngineSelection,
             )
-            JetPrefListItem(
+            SettingsListItem(
                 text = stringRes(R.string.settings__voice_input__embedded_model_selection),
                 secondaryText = stringRes(
                     R.string.settings__voice_input__embedded_model_selection_summary,
@@ -360,7 +360,7 @@ fun VoiceInputScreen() = FlorisScreen {
                     "ram" to voiceRamSummary(ramProfile),
                 ),
             )
-            JetPrefListItem(
+            SettingsListItem(
                 text = stringRes(R.string.settings__voice_input__embedded_model_recommendation),
                 secondaryText = stringRes(
                     R.string.settings__voice_input__embedded_model_recommendation_summary,
@@ -389,7 +389,7 @@ fun VoiceInputScreen() = FlorisScreen {
             VoiceModelCatalog.entries
                 .groupBy { it.languageName }
                 .forEach { (languageName, models) ->
-                    JetPrefListItem(
+                    SettingsListItem(
                         text = languageName,
                         secondaryText = stringRes(
                             R.string.settings__voice_input__local_model_language_summary,
@@ -484,14 +484,14 @@ fun VoiceInputScreen() = FlorisScreen {
                 },
             )
             if (customCommands.commands.isEmpty()) {
-                JetPrefListItem(
+                SettingsListItem(
                     text = stringRes(R.string.settings__voice_input__custom_commands_empty_title),
                     secondaryText = stringRes(R.string.settings__voice_input__custom_commands_empty_summary),
                 )
             }
             for (command in customCommands.commands) {
                 val actionLabel = stringRes(command.action.labelRes())
-                JetPrefListItem(
+                SettingsListItem(
                     modifier = Modifier.rippleClickable {
                         commandDialogState = VoiceCommandDialogState(command = command, isNew = false)
                     },
@@ -530,7 +530,7 @@ fun VoiceInputScreen() = FlorisScreen {
                 showIcon = false,
             )
             for (language in SupportedFutoVoiceLanguages) {
-                JetPrefListItem(
+                SettingsListItem(
                     text = stringRes(language),
                     secondaryText = stringRes(R.string.settings__voice_input__supported_language_summary),
                 )
@@ -661,7 +661,7 @@ private fun VoiceCommandEditDialog(
                     VoiceCommandAction.entries
                         .filter { it != VoiceCommandAction.REMOVE_ITEM_FROM_LIST }
                         .forEach { candidate ->
-                            JetPrefListItem(
+                            SettingsListItem(
                                 modifier = Modifier.rippleClickable { action = candidate },
                                 icon = {
                                     RadioButton(
@@ -695,7 +695,7 @@ private fun VoiceModelRow(
             "size" to voiceModelDiskUsage(it.diskBytes),
         )
     } ?: stringRes(R.string.settings__voice_input__local_model_not_installed)
-    JetPrefListItem(
+    SettingsListItem(
         text = model.displayName,
         secondaryText = listOf(
             voiceModelEngineLabel(model.engine),
@@ -755,7 +755,7 @@ private fun VoiceRecognitionEngineRouteRow(
     title: String,
     selection: VoiceRecognitionEngineSelection,
 ) {
-    JetPrefListItem(
+    SettingsListItem(
         text = title,
         secondaryText = stringRes(
             R.string.settings__voice_input__recognition_engine_route_summary,

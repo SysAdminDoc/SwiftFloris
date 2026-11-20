@@ -83,7 +83,7 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdown
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdownMenuDefaults
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisDropdownLikeButton
 import org.florisboard.lib.compose.FlorisSpacing
@@ -301,7 +301,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                         }
                         if (suggestedPresets.isNotEmpty()) {
                             for (suggestedPreset in suggestedPresets) {
-                                JetPrefListItem(
+                                SettingsListItem(
                                     modifier = Modifier.clickable(role = Role.Button) {
                                         subtypeEditor.applySubtype(suggestedPreset.toSubtype())
                                     },
@@ -322,7 +322,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                                 overflow = TextOverflow.Ellipsis,
                             )
                             for (bilingualPreset in bilingualSubtypePresets) {
-                                JetPrefListItem(
+                                SettingsListItem(
                                     modifier = Modifier.clickable(role = Role.Button) {
                                         subtypeEditor.applySubtype(bilingualPreset.toSubtype())
                                     },
@@ -526,7 +526,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                         state = lazyListState,
                     ) {
                         items(allSubtypePresets) { subtypePreset ->
-                            JetPrefListItem(
+                            SettingsListItem(
                                 modifier = Modifier.clickable(role = Role.Button) {
                                     subtypeEditor.applySubtype(subtypePreset.toSubtype())
                                     showSubtypePresetsDialog = false

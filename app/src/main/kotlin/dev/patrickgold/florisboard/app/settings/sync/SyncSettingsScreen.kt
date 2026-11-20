@@ -96,7 +96,7 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -834,7 +834,7 @@ private fun SyncChannelPreference(
     summary: String,
     onClick: () -> Unit,
 ) {
-    JetPrefListItem(
+    SettingsListItem(
         // One activation target with a RadioButton role (mirrors
         // BackupScreen.RadioListItem): the whole row is the radio control, and
         // the inner RadioButton is non-interactive (onClick = null) so screen

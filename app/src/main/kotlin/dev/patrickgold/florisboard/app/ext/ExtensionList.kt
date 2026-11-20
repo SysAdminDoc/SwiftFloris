@@ -25,7 +25,7 @@ import androidx.compose.ui.semantics.Role
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.lib.ext.Extension
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 
 @Composable
 fun <T : Extension> ExtensionList(
@@ -39,7 +39,7 @@ fun <T : Extension> ExtensionList(
         modifier = modifier.fillMaxWidth(),
     ) {
         for (ext in extList) {
-            JetPrefListItem(
+            SettingsListItem(
                 icon = { },
                 modifier = Modifier
                     .clickable(role = Role.Button) {

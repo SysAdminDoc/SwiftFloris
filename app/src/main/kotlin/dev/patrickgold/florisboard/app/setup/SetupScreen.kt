@@ -82,7 +82,7 @@ import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.PreferenceUiScope
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.NonCancellable
@@ -568,7 +568,7 @@ private fun LanguagePickerDialog(
                     items(shownPresets) { preset ->
                         val layout = layouts[LayoutType.CHARACTERS]?.get(preset.preferred.characters)?.label
                             ?: preset.preferred.characters.componentId
-                        JetPrefListItem(
+                        SettingsListItem(
                             modifier = Modifier.clickable(role = Role.Button) { onChoose(preset) },
                             text = preset.displayName(displayLanguageNamesIn),
                             secondaryText = if (preset.secondaryLocales.isEmpty()) {

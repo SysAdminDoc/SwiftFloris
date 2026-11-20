@@ -26,6 +26,7 @@
 - Measure what the English next-word model costs on a real phone. On a Galaxy S22 Ultra, loading the 5.9 MB file adds 5.6 to 5.9 MB of file and code pages, which aren't app memory, and 0.2 to 0.3 MB to the Java and native heaps. It loads in about 6 ms and each lookup takes a few microseconds. The numbers are checked in with the other benchmark results.
 - Show the emoji key again as soon as you switch the utility key back to emojis. Going from Switch language to Switch to emojis left an empty gap beside the comma until the app restarted, because a key that only moved over kept being drawn in its old spot.
 - Keep fast typing on a hardware keyboard in order right after you tap in the text. With a layout imported for that keyboard, a space in a quick burst (a text expander or a macro, say) could land one letter early and turn "river violet" into "rive rviolet".
+- Let settings titles and summaries wrap when your phone uses large text. Above 130 percent text size, rows showed "Display language na..." and cut every summary at two lines, so you couldn't tell what a switch did. They now show in full. At normal sizes they look the same as before.
 
 ## v1.9.69 (2026-11-19)
 

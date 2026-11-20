@@ -43,7 +43,7 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.themeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisOutlinedBox
@@ -140,7 +140,7 @@ fun ThemeManagerScreen(action: ThemeManagerScreenAction?) = FlorisScreen {
                     subtitle = extensionId,
                 ) {
                     for (config in configs) key(extensionId, config.id) {
-                        JetPrefListItem(
+                        SettingsListItem(
                             modifier = Modifier.rippleClickable {
                                 setTheme(extensionId, config.id)
                             },

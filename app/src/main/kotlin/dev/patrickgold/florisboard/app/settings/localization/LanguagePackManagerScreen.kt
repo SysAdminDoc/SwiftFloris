@@ -42,6 +42,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -55,7 +56,8 @@ import dev.patrickgold.florisboard.lib.ext.Extension
 import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.florisboard.app.settings.search.Preference
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsRowWrapFontScale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -175,6 +177,7 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                 message = stringRes(R.string.settings__localization__language_pack_empty_message),
             )
         }
+        val wrapComponentRows = LocalDensity.current.fontScale > SettingsRowWrapFontScale
         for (entry in languagePackCatalog) key(entry.extensionId) {
             // The catalog is derived from a remembered snapshot while this
             // lookup reads live manager state, so a delete that lands between
@@ -193,12 +196,18 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                 ) {
                     Column(
                         // Allowing horizontal scroll to fit translations in descriptions.
-                        Modifier
-                            .horizontalScroll(rememberScrollState())
-                            .width(intrinsicSize = IntrinsicSize.Max),
+                        // At large text sizes the rows wrap at the card width instead,
+                        // since a one-line row that big runs off the card.
+                        if (wrapComponentRows) {
+                            Modifier.fillMaxWidth()
+                        } else {
+                            Modifier
+                                .horizontalScroll(rememberScrollState())
+                                .width(intrinsicSize = IntrinsicSize.Max)
+                        },
                     ) {
                         for (component in entry.components) key(entry.extensionId, component.id) {
-                            JetPrefListItem(
+                            SettingsListItem(
                                 modifier = Modifier.rippleClickable {
                                     navController.navigate(Routes.Ext.View(entry.extensionId))
                                 },

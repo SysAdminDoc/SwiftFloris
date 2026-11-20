@@ -38,7 +38,7 @@ import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -131,7 +131,7 @@ fun LearnedEntriesScreen() = FlorisScreen {
                         if (current.words.isNotEmpty()) item {
                             PreferenceGroup(title = stringRes(R.string.settings__learned_entries__words_title)) {
                                 current.words.forEach { entry ->
-                                    JetPrefListItem(
+                                    SettingsListItem(
                                         modifier = Modifier.rippleClickable {
                                             pendingRemoval = LearnedEntryRow.Word(entry)
                                         },
@@ -150,7 +150,7 @@ fun LearnedEntriesScreen() = FlorisScreen {
                         if (current.bigrams.isNotEmpty()) item {
                             PreferenceGroup(title = stringRes(R.string.settings__learned_entries__bigrams_title)) {
                                 current.bigrams.forEach { entry ->
-                                    JetPrefListItem(
+                                    SettingsListItem(
                                         modifier = Modifier.rippleClickable {
                                             pendingRemoval = LearnedEntryRow.Bigram(entry)
                                         },
@@ -167,7 +167,7 @@ fun LearnedEntriesScreen() = FlorisScreen {
                         if (current.trigrams.isNotEmpty()) item {
                             PreferenceGroup(title = stringRes(R.string.settings__learned_entries__trigrams_title)) {
                                 current.trigrams.forEach { entry ->
-                                    JetPrefListItem(
+                                    SettingsListItem(
                                         modifier = Modifier.rippleClickable {
                                             pendingRemoval = LearnedEntryRow.Trigram(entry)
                                         },

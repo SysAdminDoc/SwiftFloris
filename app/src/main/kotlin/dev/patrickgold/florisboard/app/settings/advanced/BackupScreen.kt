@@ -60,7 +60,7 @@ import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.io.FileRegistry
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import java.text.NumberFormat
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineStart
@@ -1053,7 +1053,7 @@ internal fun CheckboxListItem(
     isSecondaryListItem: Boolean = false,
     enabled: Boolean = true,
 ) {
-    JetPrefListItem(
+    SettingsListItem(
         modifier = Modifier
             .alpha(if (enabled) 1f else 0.56f)
             .rippleClickable(enabled = enabled, role = Role.Checkbox, onClick = onClick),
@@ -1083,7 +1083,7 @@ internal fun TriStateCheckboxListItem(
     isSecondaryListItem: Boolean = false,
     enabled: Boolean = true,
 ) {
-    JetPrefListItem(
+    SettingsListItem(
         modifier = Modifier
             .alpha(if (enabled) 1f else 0.56f)
             .rippleClickable(enabled = enabled, role = Role.Checkbox, onClick = onClick),
@@ -1112,7 +1112,7 @@ internal fun RadioListItem(
     secondaryText: String? = null,
     enabled: Boolean = true,
 ) {
-    JetPrefListItem(
+    SettingsListItem(
         modifier = Modifier
             .alpha(if (enabled) 1f else 0.56f)
             .rippleClickable(enabled = enabled, role = Role.RadioButton, onClick = onClick)

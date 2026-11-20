@@ -55,7 +55,7 @@ import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import kotlinx.coroutines.delay
 import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.pluralsRes
@@ -146,7 +146,7 @@ fun SelectLocaleScreen() = FlorisScreen {
                 state = state,
             ) {
                 items(filteredSystemLocales) { systemLocale ->
-                    JetPrefListItem(
+                    SettingsListItem(
                         modifier = Modifier.clickable(role = Role.Button) {
                             navController.previousBackStackEntry
                                 ?.savedStateHandle

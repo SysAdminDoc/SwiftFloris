@@ -48,7 +48,7 @@ import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -177,7 +177,7 @@ fun SnippetSettingsScreen() = FlorisScreen {
                 )
             }
             for (fileState in fileStates) {
-                JetPrefListItem(
+                SettingsListItem(
                     text = fileState.filename,
                     secondaryText = pluralsRes(
                         R.plurals.settings__snippet__file_triggers,
@@ -214,7 +214,7 @@ fun SnippetSettingsScreen() = FlorisScreen {
                     } else {
                         match.replace
                     }
-                    JetPrefListItem(
+                    SettingsListItem(
                         text = match.trigger,
                         secondaryText = stringRes(R.string.settings__snippet__trigger_arrow) + " " + preview,
                     )

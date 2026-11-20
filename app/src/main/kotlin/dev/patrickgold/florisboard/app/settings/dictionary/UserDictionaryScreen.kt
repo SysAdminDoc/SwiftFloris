@@ -79,7 +79,7 @@ import dev.patrickgold.florisboard.lib.rememberValidationResult
 import dev.patrickgold.florisboard.lib.util.launchActivity
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -942,7 +942,7 @@ fun UserDictionaryScreen(
             }
             if (currentLocale == null) {
                 items(languageList) { language ->
-                    JetPrefListItem(
+                    SettingsListItem(
                         modifier = Modifier.rippleClickable {
                             if (canLeaveDictionaryScreen) {
                                 scope.launch {
@@ -985,7 +985,7 @@ fun UserDictionaryScreen(
                     }
                 }
                 items(wordList) { wordEntry ->
-                    JetPrefListItem(
+                    SettingsListItem(
                         modifier = Modifier.rippleClickable {
                             if (entryActionsEnabled) {
                                 userDictionaryEntryForDialog = wordEntry

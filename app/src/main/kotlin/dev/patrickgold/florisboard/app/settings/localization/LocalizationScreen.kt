@@ -55,7 +55,7 @@ import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import kotlinx.serialization.json.Json
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
@@ -165,7 +165,7 @@ fun LocalizationScreen() = FlorisScreen {
                             "component_id" to subtype.currencySet.toString(),
                         )),
                     )
-                    JetPrefListItem(
+                    SettingsListItem(
                         modifier = Modifier.clickable(role = Role.Button) {
                             navController.navigate(
                                 Routes.Settings.SubtypeEdit(subtype.id)

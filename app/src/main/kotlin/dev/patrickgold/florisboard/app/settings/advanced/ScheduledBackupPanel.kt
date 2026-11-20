@@ -43,7 +43,7 @@ import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
@@ -128,7 +128,7 @@ internal fun ScheduledBackupPanel(context: Context) {
             text = stringRes(R.string.scheduled_backup__enabled_title),
             secondaryText = stringRes(R.string.scheduled_backup__enabled_summary),
         )
-        JetPrefListItem(
+        SettingsListItem(
             modifier = Modifier.rippleClickable(
                 role = Role.Button,
                 onClick = { folderLauncher.launch(null) },
@@ -143,7 +143,7 @@ internal fun ScheduledBackupPanel(context: Context) {
                 )
             },
         )
-        JetPrefListItem(
+        SettingsListItem(
             modifier = Modifier.rippleClickable(
                 role = Role.Button,
                 onClick = { showPassphraseDialog = true },

@@ -86,7 +86,7 @@ import dev.patrickgold.jetpref.material.ui.ExperimentalJetPrefMaterial3Ui
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefColorPicker
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdown
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import dev.patrickgold.jetpref.material.ui.rememberJetPrefColorPickerState
 import java.io.File
@@ -694,7 +694,7 @@ private fun PropertyValueEditor(
                             ),
                         )
                         files.forEach { file ->
-                            JetPrefListItem(
+                            SettingsListItem(
                                 modifier = Modifier.clickable(role = Role.Button) {
                                     val relPath = file.path.removePrefix(workspace.extDir.path)
                                     inputStr = "flex:" + Uri.encode(relPath, "/")

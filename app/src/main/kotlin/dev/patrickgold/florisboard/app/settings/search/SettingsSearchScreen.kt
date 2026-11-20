@@ -65,7 +65,6 @@ import dev.patrickgold.florisboard.app.ext.ExtensionListScreenType
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.florisScrollbar
@@ -240,7 +239,7 @@ fun SettingsSearchScreen() = FlorisScreen {
                             "setting_summary" to summary,
                         )
                     }
-                    JetPrefListItem(
+                    SettingsListItem(
                         modifier = Modifier
                             .clickable(role = Role.Button) {
                                 SettingsSearchHighlightStore.mark(entry, searchQuery, resolveString)

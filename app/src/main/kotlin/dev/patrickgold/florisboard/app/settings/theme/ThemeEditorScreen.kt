@@ -94,7 +94,7 @@ import dev.patrickgold.florisboard.themeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdown
-import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import dev.patrickgold.florisboard.app.settings.search.SettingsListItem
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -419,7 +419,7 @@ fun ThemeEditorScreen(
                             }
                             for ((propertyName, propertyValue) in propertySet.properties) {
                                 if (true /*propertySpec != null && propertySpec.level <= snyggLevel*/ || isVariablesRule) {
-                                    JetPrefListItem(
+                                    SettingsListItem(
                                         modifier = Modifier.rippleClickable {
                                             snyggPropertySetForEditing = propertySet
                                             snyggPropertyToEdit = PropertyInfo(rule, propertyName, propertyValue)
@@ -709,7 +709,7 @@ private fun ComponentMetaEditorDialog(
                 )
                 Validation(showValidationErrors, authorsValidation)
             }
-            JetPrefListItem(
+            SettingsListItem(
                 modifier = Modifier.toggleable(isNightTheme) { isNightTheme = it },
                 text = stringRes(R.string.settings__theme_editor__component_meta_is_night_theme),
                 trailing = {
