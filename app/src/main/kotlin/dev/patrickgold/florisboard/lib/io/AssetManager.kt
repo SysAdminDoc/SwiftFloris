@@ -79,7 +79,7 @@ fun FlorisRef.hasAsset(context: Context): Boolean {
         isAssets -> {
             try {
                 val file = File(relativePath)
-                val list = context.assets.list(file.parent ?: "")
+                val list = AssetListingCache.list(context, file.parent ?: "")
                 list?.contains(file.name) == true
             } catch (e: Exception) {
                 false
@@ -103,8 +103,8 @@ private fun FlorisRef.list(appContext: Context, files: Boolean, dirs: Boolean) =
     when {
         !files && !dirs -> listOf()
         isAssets -> {
-            appContext.assets.list(relativePath)?.mapNotNull { fileName ->
-                val subList = appContext.assets.list("${relativePath}/$fileName") ?: return@mapNotNull null
+            AssetListingCache.list(appContext, relativePath)?.mapNotNull { fileName ->
+                val subList = AssetListingCache.list(appContext, "${relativePath}/$fileName") ?: return@mapNotNull null
                 when {
                     files && dirs || files && subList.isEmpty() || dirs && subList.isNotEmpty() -> {
                         subRef(fileName)
