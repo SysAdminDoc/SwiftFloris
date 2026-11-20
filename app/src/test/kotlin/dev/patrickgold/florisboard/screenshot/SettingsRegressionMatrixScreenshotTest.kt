@@ -52,6 +52,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.unit.Constraints
@@ -72,6 +73,7 @@ import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.settings.HomeScreen
 import dev.patrickgold.florisboard.app.settings.SettingsHomeListTag
 import dev.patrickgold.florisboard.app.settings.settingsHomeRowTag
+import dev.patrickgold.florisboard.app.settings.gestures.GesturesScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
 import dev.patrickgold.florisboard.app.settings.localization.LocalizationScreen
@@ -561,6 +563,87 @@ class RoborazziLocalizationSettingsCaptureTest {
               ]
             }
         """.trimIndent()
+    }
+}
+
+/**
+ * Slider rows at 200 percent text, on the Gestures screen's space bar sliders, whose titles are too
+ * long for one line at that size. JetPref used to draw these rows itself and cut every title to one
+ * line, so the test scrolls to them, checks each title fits whole and captures the view.
+ */
+@RunWith(AndroidJUnit4::class)
+@Config(qualifiers = "w360dp-h1600dp-hdpi", sdk = [35])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@DisplayName("Roborazzi capture: slider rows at 200 percent text")
+class RoborazziSliderRowsCaptureTest {
+    @get:Rule
+    val composeRule = createAndroidComposeRule<RoborazziHostActivity>()
+
+    @get:Rule
+    val roborazziRule = RoborazziRule(
+        options = RoborazziRule.Options(
+            outputDirectoryPath = "build/outputs/roborazzi",
+        ),
+    )
+
+    @Before
+    fun setUp() {
+        val app = composeRule.activity.application as FlorisApplication
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            app.preferenceStoreLoaded.value
+        }
+    }
+
+    @Test
+    fun gesturesSlidersFontScale200() {
+        composeRule.setContent {
+            SettingsRegressionFrame(height = 1600.dp, fontScale = 2f) {
+                GesturesScreen()
+            }
+        }
+        composeRule.waitForIdle()
+        val sliderTitles = listOf(
+            R.string.pref__gestures__space_bar_touchpad_ratio__label,
+            R.string.pref__gestures__space_bar_swipe_sensitivity__label,
+        ).map { composeRule.activity.getString(it) }
+        // Scrolling to the row after the sliders brings it to the bottom edge with both above it.
+        val afterSliders = composeRule.activity.getString(R.string.pref__gestures__space_bar_swipe_up__label)
+        composeRule.onNodeWithText(afterSliders, useUnmergedTree = true).performScrollTo()
+        composeRule.waitForIdle()
+
+        sliderTitles.forEach { title ->
+            val node = composeRule.onNodeWithText(title, useUnmergedTree = true).fetchSemanticsNode()
+            val layouts = mutableListOf<TextLayoutResult>()
+            node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+            val layout = layouts.single()
+            val input = layout.layoutInput
+            // Laid out again in the box the row gave it, with the row's own line limit and
+            // overflow, as the home screen check does.
+            val inBox = TextMeasurer(input.fontFamilyResolver, input.density, input.layoutDirection, cacheSize = 0)
+                .measure(
+                    text = input.text,
+                    style = input.style,
+                    overflow = input.overflow,
+                    softWrap = input.softWrap,
+                    maxLines = input.maxLines,
+                    constraints = Constraints(maxWidth = layout.size.width),
+                )
+            assertFalse(
+                "\"$title\" is cut off: box ${layout.size}, needs ${inBox.multiParagraph.height} in ${inBox.lineCount} lines",
+                inBox.hasVisualOverflow || inBox.size.height > layout.size.height,
+            )
+            assertFalse(
+                "\"$title\" ends in an ellipsis",
+                (0 until inBox.lineCount).any { inBox.isLineEllipsized(it) },
+            )
+        }
+
+        composeRule.onRoot().captureRoboImage(
+            filePath = "src/test/snapshots/settings_regression_matrix/gestures_sliders_font_scale_200.png",
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.01f),
+            ),
+        )
     }
 }
 

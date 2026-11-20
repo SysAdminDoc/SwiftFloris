@@ -45,7 +45,7 @@ import dev.patrickgold.florisboard.themeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.florisboard.app.settings.search.ColorPickerPreference
 import dev.patrickgold.florisboard.app.settings.search.ListPreference
-import dev.patrickgold.jetpref.datastore.ui.LocalTimePickerPreference
+import dev.patrickgold.florisboard.app.settings.search.LocalTimePickerPreference
 import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
 import dev.patrickgold.florisboard.app.settings.search.SwitchPreference

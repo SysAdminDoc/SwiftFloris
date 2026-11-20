@@ -31,9 +31,9 @@ import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionArrangeme
 import dev.patrickgold.florisboard.lib.compose.FlorisConfirmDeleteDialog
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
-import dev.patrickgold.jetpref.datastore.ui.Preference
+import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.florisboard.app.settings.search.PreferenceGroup
-import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
+import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
