@@ -78,6 +78,7 @@ class SubtypeManagerLocaleHintsTest {
         savePref { prefs.localization.subtypes.set(SubtypeJsonConfig.encodeToString(listOf(english, german))) }
         savePref { prefs.localization.activeSubtypeId.set(english.id) }
         manager = SubtypeManager(context, managerScope, saves)
+        useAsTheAppsSubtypeManager(manager)
         waitFor {
             manager.subtypes.size == 2 && manager.activeSubtype.id == english.id &&
                 prefs.localization.activeSubtypeId.get() == english.id
@@ -484,6 +485,19 @@ class SubtypeManagerLocaleHintsTest {
         waitFor { manager.subtypes.isEmpty() && prefs.localization.activeSubtypeId.get() == Subtype.DEFAULT.id }
         settle()
         savePref { prefs.localization.activeSubtypeId.set(english.id) }
+    }
+
+    /**
+     * The app makes its own SubtypeManager the first time anything asks for one, and addAndActivateSubtype
+     * creates the app's KeyboardManager, which asks. Two managers on one store act on each other's held saves
+     * (the app's one could put English back after this test's Italian landed), and a real app has only one,
+     * so the app gets this test's manager instead.
+     */
+    private fun useAsTheAppsSubtypeManager(manager: SubtypeManager) {
+        val app = context as FlorisApplication
+        check(!app.subtypeManager.isInitialized()) { "The app made its own SubtypeManager before the test gave it one" }
+        FlorisApplication::class.java.getDeclaredField("subtypeManager").apply { isAccessible = true }
+            .set(app, lazyOf(manager))
     }
 
     /** Lets a save the manager may have launched in the background land before reading it. */
