@@ -25,6 +25,7 @@
 - Check the release build's screenshots before every release again. That check couldn't even compile, since one shared test used a class only debug builds have, so text and settings that only release builds carry never got a visual check. It builds again, keeps its own reference pictures for the screens that show the app's name, and the release checklist now runs it.
 - Measure what the English next-word model costs on a real phone. On a Galaxy S22 Ultra, loading it maps 5.6 to 5.9 MB of the 5.9 MB file as file pages, which aren't app memory, and adds 0.2 to 0.3 MB of app memory. It loads in about 6 ms and each lookup takes a few microseconds. The numbers are checked in with the other benchmark results.
 - Show the emoji key again as soon as you switch the utility key back to emojis. Going from Switch language to Switch to emojis left an empty gap beside the comma until the app restarted, because a key that only moved over kept being drawn in its old spot.
+- Keep fast typing on a hardware keyboard in order right after you tap in the text. With a layout imported for that keyboard, a space in a quick burst (a text expander or a macro, say) could land one letter early and turn "river violet" into "rive rviolet".
 
 ## v1.9.69 (2026-11-19)
 

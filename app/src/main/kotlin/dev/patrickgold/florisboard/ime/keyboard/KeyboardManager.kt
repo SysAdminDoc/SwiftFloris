@@ -1639,6 +1639,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 if (textEntry.isActive) {
                     return textEntry.type(action.text)
                 }
+                // A burst right after a tap gets here before the tap's content is published.
+                editorInstance.settlePendingContent()
                 if (action.shouldFlushAutoCommitCandidate) {
                     commitAutoCommitAndLearnBefore(action.text)
                 }
@@ -1650,6 +1652,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 if (textEntry.isActive) {
                     textEntry.type(" ")
                 } else {
+                    editorInstance.settlePendingContent()
                     handleHardwareKeyboardSpace()
                     // The app may be holding this burst's next keys. It runs the space and any
                     // correction first.
@@ -1661,6 +1664,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 if (textEntry.isActive) {
                     finishTextEntry(submitted = true)
                 } else {
+                    editorInstance.settlePendingContent()
                     handleEnter()
                     if (event != null) editorInstance.awaitAppEdits()
                 }

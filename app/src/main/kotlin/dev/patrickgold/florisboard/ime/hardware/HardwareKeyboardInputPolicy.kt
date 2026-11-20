@@ -32,8 +32,9 @@ internal object HardwareKeyboardInputPolicy {
      * the app handles key events waiting in its queue first, so letters typed after Enter landed
      * before the newline ("hedgehogriv" then "er" on the next line). An Enter that runs the
      * field's action stays with the keyboard, since an app reads a raw Enter as IME_NULL there.
-     * So does every Enter when [hasImportedLayout] says the keyboard types this device's letters
-     * itself: those go over the input connection too, and a raw Enter could pass the last of them.
+     * So does every Enter and every space when [hasImportedLayout] says the keyboard types this
+     * device's letters itself: those go over the input connection too, and a raw key could pass the
+     * last of them.
      */
     fun keyDownAction(
         keyCode: Int,
@@ -45,8 +46,10 @@ internal object HardwareKeyboardInputPolicy {
         hasCommandModifier: Boolean = false,
     ): HardwareKeyboardKeyDownAction {
         // Only the space key itself: the app types its own char for the key, so a key a layout
-        // maps to a space would come out as that char instead.
-        if (isEditorBehindApp && !hasCommandModifier && keyCode == KeyEvent.KEYCODE_SPACE &&
+        // maps to a space would come out as that char instead. Never with an imported layout: the
+        // keyboard types that device's letters over the input connection, which the app reads
+        // after its waiting key events, so a raw space would land in front of them.
+        if (isEditorBehindApp && !hasImportedLayout && !hasCommandModifier && keyCode == KeyEvent.KEYCODE_SPACE &&
             (mappedKey == null || mappedKey.text == " ")
         ) {
             return HardwareKeyboardKeyDownAction.PassThrough

@@ -157,11 +157,24 @@ class HardwareKeyboardInputPolicyTest : FunSpec({
             mappedKey = null,
             isEditorBehindApp = true,
         ) shouldBe HardwareKeyboardKeyDownAction.PassThrough
+    }
+
+    test("a space stays with the keyboard while behind when an imported layout types the letters") {
+        // The layout's letters go over the input connection, which the app reads after the key
+        // events waiting in its queue, so a raw space would land in front of them.
         HardwareKeyboardInputPolicy.keyDownAction(
             keyCode = KeyEvent.KEYCODE_SPACE,
             mappedKey = mapped(" "),
             isEditorBehindApp = true,
-        ) shouldBe HardwareKeyboardKeyDownAction.PassThrough
+            hasImportedLayout = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleSpace
+        // A layout that leaves the space key unmapped still types the letters before it.
+        HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = KeyEvent.KEYCODE_SPACE,
+            mappedKey = null,
+            isEditorBehindApp = true,
+            hasImportedLayout = true,
+        ) shouldBe HardwareKeyboardKeyDownAction.HandleSpace
     }
 
     test("only the space key goes to the app when the keyboard's text is behind") {

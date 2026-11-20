@@ -125,6 +125,8 @@ abstract class AbstractEditorInstance(context: Context) {
     private val nlpManager by context.nlpManager()
     private val scope = MainScope()
     private var pendingContentGenerationJob: Job? = null
+    /** What [pendingContentGenerationJob] will run, so [settlePendingContent] can run it now instead. */
+    private var pendingContentGeneration: PendingContentGeneration? = null
     private var contentGenerationSerial: Long = 0L
     protected val breakIterators = BreakIteratorGroup()
 
@@ -428,6 +430,7 @@ abstract class AbstractEditorInstance(context: Context) {
         publish: (EditorContent) -> Unit,
     ) {
         val serial = startContentGeneration()
+        pendingContentGeneration = PendingContentGeneration(inputConnection, generate, publish)
         pendingContentGenerationJob = scope.launch {
             try {
                 if (!isCurrentContentGeneration(serial, inputConnection)) {
@@ -441,9 +444,25 @@ abstract class AbstractEditorInstance(context: Context) {
             } finally {
                 if (contentGenerationSerial == serial) {
                     pendingContentGenerationJob = null
+                    pendingContentGeneration = null
                 }
             }
         }
+    }
+
+    /**
+     * Publishes the content a cursor report is still generating right away, rather than when the
+     * main thread gets to it. A hardware key the keyboard types itself can come in between: the
+     * keys of a burst wait in line before the report's content does. An edit built on the content
+     * from before a tap then predicts the wrong text, every report after it reads as a jump, and
+     * the keyboard's copy stays wrong for the rest of the burst ("taht" typed right after a tap
+     * was never corrected). Generating content is CPU-only, the way every edit already runs it.
+     */
+    fun settlePendingContent() {
+        val pending = pendingContentGeneration ?: return
+        cancelPendingContentGeneration()
+        if (currentInputConnection() !== pending.inputConnection) return
+        pending.publish(runBlocking { pending.generate() })
     }
 
     private fun startContentGeneration(): Long {
@@ -455,6 +474,7 @@ abstract class AbstractEditorInstance(context: Context) {
     private fun cancelPendingContentGeneration() {
         pendingContentGenerationJob?.cancel()
         pendingContentGenerationJob = null
+        pendingContentGeneration = null
         contentGenerationSerial += 1
     }
 
@@ -1063,6 +1083,12 @@ abstract class AbstractEditorInstance(context: Context) {
             }
         }
     }
+
+    private class PendingContentGeneration(
+        val inputConnection: InputConnection,
+        val generate: suspend () -> EditorContent,
+        val publish: (EditorContent) -> Unit,
+    )
 
     /**
      * An edit the keyboard made itself, leaving [content], after the app had been passed

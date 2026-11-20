@@ -318,6 +318,52 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun aKeyTypedBeforeATapsContentIsPublishedBuildsOnTheTapsText() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "", textAfterSelection = "go ")
+
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 0), isRestart = false)
+        scheduler.runCurrent()
+        // A tap puts the cursor after "go ", and a hardware burst's first key is handled before the
+        // main thread gets to the content that report started.
+        connection.textBeforeSelection = "go "
+        connection.textAfterSelection = ""
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(0),
+            newSelection = EditorRange.cursor(3),
+            composing = EditorRange.Unspecified,
+        )
+        editor.settlePendingContent()
+        assertFalse(editor.isContentBehindEditor())
+        editor.commitChar("r")
+
+        assertEquals("go r", editor.activeContent.textBeforeSelection)
+        assertEquals(EditorRange.cursor(4), editor.activeContent.selection)
+        // The report's own refresh was settled, so it never runs later over the keyboard's edit.
+        val composingCallsBefore = connection.composingCalls.size
+        scheduler.runCurrent()
+        assertEquals("go r", editor.activeContent.textBeforeSelection)
+        assertEquals(composingCallsBefore, connection.composingCalls.size)
+    }
+
+    @Test
+    fun contentStartedForAnotherFieldIsNotSettledIntoThisOne() {
+        val editor = TestEditorInstance(context)
+        val first = LifecycleRecordingInputConnection(textBeforeSelection = "old")
+        val second = LifecycleRecordingInputConnection(textBeforeSelection = "new")
+
+        editor.inputConnection = first.connection
+        editor.handleStartInputView(editorInfo(selection = 3), isRestart = false)
+        editor.inputConnection = second.connection
+        editor.settlePendingContent()
+
+        assertEquals(EditorContent.Unspecified, editor.activeContent)
+        assertTrue(first.composingCalls.isEmpty())
+        assertTrue(second.composingCalls.isEmpty())
+    }
+
+    @Test
     fun repeatedSelectionReportDoesNotBreakAdjacency() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hello")
