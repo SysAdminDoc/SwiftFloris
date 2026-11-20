@@ -123,6 +123,7 @@ fun AboutScreen() = FlorisScreen {
         // commit hash, install source, device and Android version the issue templates ask for were
         // assembled inside the crash dialog and nowhere else. A user reporting a bug that does not
         // crash had to find all of it by hand. This copies the same block and opens the tracker.
+        val reportCopyFailed = stringRes(R.string.about__report_problem__copy_failed)
         Preference(
             icon = Icons.Outlined.BugReport,
             title = stringRes(R.string.about__report_problem__title),
@@ -141,7 +142,7 @@ fun AboutScreen() = FlorisScreen {
                     context = context,
                     text = report,
                     copied = R.string.about__report_problem__copied,
-                    failed = { context.getString(R.string.about__report_problem__copy_failed) },
+                    failed = { reportCopyFailed },
                     duration = Toast.LENGTH_LONG,
                 ) { clipboardManager.addNewPlaintext(it) }
                 runCatching {
@@ -162,6 +163,7 @@ fun AboutScreen() = FlorisScreen {
             signingFingerprint = withContext(Dispatchers.IO) { SigningFingerprint.sha256(context) }
             signingFingerprintReady = true
         }
+        val fingerprintCopyFailed = stringRes(R.string.about__signing_fingerprint__copy_failed)
         Preference(
             icon = Icons.Outlined.VerifiedUser,
             title = stringRes(R.string.about__signing_fingerprint__title),
@@ -176,7 +178,7 @@ fun AboutScreen() = FlorisScreen {
                     context = context,
                     text = fp,
                     copied = R.string.about__signing_fingerprint__copied,
-                    failed = { context.getString(R.string.about__signing_fingerprint__copy_failed) },
+                    failed = { fingerprintCopyFailed },
                 ) { clipboardManager.addNewPlaintext(it) }
             },
         )

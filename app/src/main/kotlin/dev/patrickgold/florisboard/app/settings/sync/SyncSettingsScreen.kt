@@ -884,13 +884,14 @@ internal fun SyncQrPayloadCard(rawPayload: String) {
             minLines = 3,
             maxLines = 5,
         )
+        val payloadCopyFailed = stringRes(R.string.settings__sync__pairing_payload_copy_failed)
         TextButton(
             onClick = {
                 copyWithFeedback(
                     context = context,
                     text = rawPayload,
                     copied = R.string.settings__sync__pairing_payload_copied,
-                    failed = { context.getString(R.string.settings__sync__pairing_payload_copy_failed) },
+                    failed = { payloadCopyFailed },
                 ) { clipboardManager.addNewPlaintext(it) }
             },
         ) {

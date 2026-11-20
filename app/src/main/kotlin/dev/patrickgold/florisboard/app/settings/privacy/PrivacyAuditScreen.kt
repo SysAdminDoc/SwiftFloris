@@ -188,6 +188,7 @@ fun PrivacyAuditScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.settings__privacy_audit__group_actions)) {
+            val exportFailed = stringRes(R.string.settings__privacy_audit__export_failed)
             Preference(
                 icon = Icons.Default.ContentCopy,
                 title = stringRes(R.string.settings__privacy_audit__export),
@@ -198,7 +199,7 @@ fun PrivacyAuditScreen() = FlorisScreen {
                         context = context,
                         text = AddonAuditExport.toJsonString(records = records),
                         copied = R.string.settings__privacy_audit__export_toast,
-                        failed = { context.getString(R.string.settings__privacy_audit__export_failed) },
+                        failed = { exportFailed },
                         duration = Toast.LENGTH_LONG,
                     ) { clipboardManager.addNewPlaintext(it) }
                 },
