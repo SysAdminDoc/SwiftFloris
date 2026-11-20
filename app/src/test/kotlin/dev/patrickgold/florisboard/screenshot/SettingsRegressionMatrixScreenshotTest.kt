@@ -68,12 +68,14 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import dev.patrickgold.florisboard.FlorisApplication
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.AppTheme
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.settings.HomeScreen
 import dev.patrickgold.florisboard.app.settings.SettingsHomeListTag
 import dev.patrickgold.florisboard.app.settings.settingsHomeRowTag
 import dev.patrickgold.florisboard.app.settings.gestures.GesturesScreen
+import dev.patrickgold.florisboard.app.settings.keyboard.KeyboardScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
 import dev.patrickgold.florisboard.app.settings.localization.LocalizationScreen
@@ -644,6 +646,52 @@ class RoborazziSliderRowsCaptureTest {
                 compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.01f),
             ),
         )
+    }
+
+    @Test
+    fun twoValueSliderRowsShowBothValues() {
+        composeRule.setContent {
+            SettingsRegressionFrame(height = 1600.dp) {
+                KeyboardScreen()
+            }
+        }
+        composeRule.waitForIdle()
+        val prefs by FlorisPreferenceStore
+        val title = composeRule.activity.getString(R.string.pref__keyboard__font_size_multiplier__label)
+        val portrait = prefs.keyboard.fontSizeMultiplierPortrait.get()
+        val landscape = prefs.keyboard.fontSizeMultiplierLandscape.get()
+        composeRule.onNode(hasText(title) and hasClickAction())
+            .assert(hasText("$portrait% / $landscape%"))
+    }
+
+    @Test
+    fun sliderRowsGiveTheirTextTheWholeRowAtNormalSize() {
+        composeRule.setContent {
+            SettingsRegressionFrame(height = 1600.dp) {
+                GesturesScreen()
+            }
+        }
+        composeRule.waitForIdle()
+        val sliderTitle = composeRule.activity.getString(R.string.pref__gestures__space_bar_swipe_sensitivity__label)
+        val listTitle = composeRule.activity.getString(R.string.pref__gestures__space_bar_swipe_up__label)
+        composeRule.onNodeWithText(listTitle, useUnmergedTree = true).performScrollTo()
+        composeRule.waitForIdle()
+
+        // A list row keeps a trailing slot for its optional switch, empty here, and Material 3
+        // pads that slot. JetPref drew slider rows with no slot, so their text gets that space.
+        val sliderWidth = titleMaxWidth(sliderTitle)
+        val listWidth = titleMaxWidth(listTitle)
+        assertTrue(
+            "slider title gets $sliderWidth px, the list row's title $listWidth px",
+            sliderWidth > listWidth,
+        )
+    }
+
+    private fun titleMaxWidth(title: String): Int {
+        val node = composeRule.onNodeWithText(title, useUnmergedTree = true).fetchSemanticsNode()
+        val layouts = mutableListOf<TextLayoutResult>()
+        node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+        return layouts.single().layoutInput.constraints.maxWidth
     }
 }
 

@@ -145,7 +145,9 @@ fun Preference(
     iconSpaceReserved: Boolean = LocalIconSpaceReserved.current,
     title: String,
     summary: String? = null,
-    trailing: @Composable () -> Unit = {},
+    // Null leaves the row without a trailing slot, which Material 3 pads by 16 dp even when
+    // it's empty. JetPref drew its slider and time rows that way.
+    trailing: (@Composable () -> Unit)? = {},
     enabledIf: @Composable PreferenceDataEvaluatorScope.() -> Boolean = { true },
     visibleIf: @Composable PreferenceDataEvaluatorScope.() -> Boolean = { true },
     onClick: (() -> Unit)? = null,

@@ -190,7 +190,7 @@ fun DialogSliderPreference(
     primaryLabel: String,
     secondaryLabel: String,
     valueLabel: @Composable (Int) -> String = { it.toString() },
-    summary: @Composable (Int, Int) -> String = { _, _ -> "" },
+    summary: @Composable (Int, Int) -> String = { p, s -> "${valueLabel(p)} / ${valueLabel(s)}" },
     min: Int,
     max: Int,
     stepIncrement: Int,
@@ -200,6 +200,8 @@ fun DialogSliderPreference(
     enabledIf: SettingsPrefEvaluator = { true },
     visibleIf: SettingsPrefEvaluator = { true },
 ) {
+    require(stepIncrement > 0) { "Step increment must be greater than 0!" }
+    require(max > min) { "Maximum value ($max) must be greater than minimum value ($min)!" }
     val scope = rememberCoroutineScope()
     val primaryPrefValue by primaryPref.collectAsState()
     val secondaryPrefValue by secondaryPref.collectAsState()
@@ -220,6 +222,7 @@ fun DialogSliderPreference(
         iconSpaceReserved = iconSpaceReserved,
         title = title,
         summary = summary(primaryPrefValue, secondaryPrefValue),
+        trailing = null,
         enabledIf = enabledIf,
         visibleIf = visibleIf,
         onClick = {
@@ -332,6 +335,7 @@ private fun <V> SingleSliderPreference(
         iconSpaceReserved = iconSpaceReserved,
         title = title,
         summary = summary(prefValue),
+        trailing = null,
         enabledIf = enabledIf,
         visibleIf = visibleIf,
         onClick = {
@@ -603,6 +607,7 @@ fun LocalTimePickerPreference(
         iconSpaceReserved = iconSpaceReserved,
         title = title,
         summary = prefValue.stringRepresentation(is24hour),
+        trailing = null,
         enabledIf = enabledIf,
         visibleIf = visibleIf,
         onClick = {
