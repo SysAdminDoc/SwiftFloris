@@ -163,6 +163,26 @@ class UtilityKeyRelayoutTest {
                 "Key ${textKey.computedData.code} is shown ${shownOffset}px from 123, the layout put it ${expectedOffset}px"
             }
         }
+        assertKeysDrawnWhereLaidOut(keyboard, anchorKey, anchorShown)
+    }
+
+    /**
+     * The key people see is a separate box from the accessibility one, and it clears its semantics, so it's a node
+     * with no properties at all. Each visible bottom-row key needs one of those at its laid-out visible bounds.
+     */
+    private fun assertKeysDrawnWhereLaidOut(keyboard: TextKeyboard, anchorKey: TextKey, anchorShown: Rect) {
+        val drawn = composeRule.onAllNodes(SemanticsMatcher("has no semantics") { it.config.none() }, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .map { it.boundsInRoot }
+        for (textKey in keyboard.arrangement.last().filter { it.isVisible }) {
+            val left = anchorShown.left + textKey.visibleBounds.left - anchorKey.touchBounds.left
+            val top = anchorShown.top + textKey.visibleBounds.top - anchorKey.touchBounds.top
+            val width = textKey.visibleBounds.width
+            check(drawn.any { abs(it.left - left) <= 1.5f && abs(it.top - top) <= 1.5f && abs(it.width - width) <= 1.5f }) {
+                "Key ${textKey.computedData.code} isn't drawn at ($left, $top), ${width}px wide, where the layout put it. " +
+                    "Drawn: $drawn"
+            }
+        }
     }
 
     private fun shows(keyboard: TextKeyboard, code: Int): Boolean =
