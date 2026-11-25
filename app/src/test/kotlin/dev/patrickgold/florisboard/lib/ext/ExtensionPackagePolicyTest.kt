@@ -16,10 +16,13 @@
 
 package dev.patrickgold.florisboard.lib.ext
 
+import dev.patrickgold.florisboard.ime.keyboard.CurrencySet
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardExtension
 import dev.patrickgold.florisboard.ime.keyboard.LayoutArrangementComponent
+import dev.patrickgold.florisboard.ime.nlp.LanguagePackComponent
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackKind
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.ThemeExtension
 import dev.patrickgold.florisboard.ime.theme.ThemeExtensionComponentImpl
 import dev.patrickgold.florisboard.lib.io.ZipUtils
@@ -188,6 +191,121 @@ class ExtensionPackagePolicyTest : FunSpec({
             rejectedReason {
                 ExtensionPackagePolicy.validateArchive(mismatched, archive)
             } shouldBe ExtensionQuarantineReason.INVALID_METADATA
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("a written theme archive is accepted as matching its own manifest") {
+        val root = Files.createTempDirectory("extension-policy").toFile()
+        try {
+            val staging = root.subDir("staging").also { it.mkdirs() }
+            val archive = root.subFile("theme.flex")
+            val expected = ThemeExtension(
+                meta = meta(),
+                themes = listOf(theme("safe")),
+            )
+            val manifest: Extension = expected
+            staging.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
+                .writeJson(manifest, ExtensionJsonConfig)
+            staging.subFile("stylesheets/safe.json").also { stylesheetFile ->
+                stylesheetFile.parentFile?.mkdirs()
+                stylesheetFile.writeText("{}")
+            }
+
+            ZipUtils.zip(staging, archive) { stagedArchive ->
+                ExtensionPackagePolicy.validateArchive(expected, stagedArchive)
+            }
+            ExtensionPackagePolicy.readValidatedArchive(
+                archiveFile = archive,
+                serializer = ThemeExtension.serializer(),
+            ).themes.map { it.id } shouldBe listOf("safe")
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("a written language pack archive is accepted as matching its own manifest") {
+        val root = Files.createTempDirectory("extension-policy").toFile()
+        try {
+            val staging = root.subDir("staging").also { it.mkdirs() }
+            val archive = root.subFile("languagepack.flex")
+            val expected = LanguagePackExtension(
+                meta = meta(),
+                items = listOf(
+                    LanguagePackComponent(id = "en", label = "English", authors = listOf("SwiftFloris")),
+                ),
+                kind = LanguagePackKind.GENERIC,
+            )
+            val manifest: Extension = expected
+            staging.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
+                .writeJson(manifest, ExtensionJsonConfig)
+
+            ZipUtils.zip(staging, archive) { stagedArchive ->
+                ExtensionPackagePolicy.validateArchive(expected, stagedArchive)
+            }
+            ExtensionPackagePolicy.readValidatedArchive(
+                archiveFile = archive,
+                serializer = LanguagePackExtension.serializer(),
+            ).items.map { it.id } shouldBe listOf("en")
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("a written keyboard archive with plain component classes is accepted") {
+        val root = Files.createTempDirectory("extension-policy").toFile()
+        try {
+            val staging = root.subDir("staging").also { it.mkdirs() }
+            val archive = root.subFile("keyboard.flex")
+            val expected = KeyboardExtension(
+                meta = meta(),
+                currencySets = listOf(
+                    CurrencySet(
+                        id = "dollar",
+                        label = "Dollar",
+                        slots = listOf(TextKeyData(code = 36, label = "$")),
+                    ),
+                ),
+            )
+            val manifest: Extension = expected
+            staging.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
+                .writeJson(manifest, ExtensionJsonConfig)
+
+            ZipUtils.zip(staging, archive) { stagedArchive ->
+                ExtensionPackagePolicy.validateArchive(expected, stagedArchive)
+            }
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("a theme archive whose manifest differs from the expected one is still rejected") {
+        val root = Files.createTempDirectory("extension-policy").toFile()
+        try {
+            val staging = root.subDir("staging").also { it.mkdirs() }
+            val archive = root.subFile("theme.flex")
+            val written = ThemeExtension(
+                meta = meta(),
+                themes = listOf(theme("safe")),
+            )
+            val manifest: Extension = written
+            staging.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
+                .writeJson(manifest, ExtensionJsonConfig)
+            staging.subFile("stylesheets/safe.json").also { stylesheetFile ->
+                stylesheetFile.parentFile?.mkdirs()
+                stylesheetFile.writeText("{}")
+            }
+
+            val expected = ThemeExtension(
+                meta = meta(),
+                themes = listOf(theme("safe"), theme("extra")),
+            )
+            ZipUtils.zip(staging, archive) { stagedArchive ->
+                rejectedReason {
+                    ExtensionPackagePolicy.validateArchive(expected, stagedArchive)
+                } shouldBe ExtensionQuarantineReason.INVALID_METADATA
+            }
         } finally {
             root.deleteRecursively()
         }
