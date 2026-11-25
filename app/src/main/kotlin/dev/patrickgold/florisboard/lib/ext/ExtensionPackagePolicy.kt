@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.lib.io.ZipUtils
 import dev.patrickgold.florisboard.lib.io.loadJsonAsset
 import java.io.File
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.encodeToJsonElement
 import org.florisboard.lib.kotlin.io.FsDir
 import org.florisboard.lib.kotlin.io.FsFile
 import org.florisboard.lib.kotlin.io.subFile
@@ -106,15 +107,34 @@ internal object ExtensionPackagePolicy {
         expected: Extension,
         archiveFile: FsFile,
     ) {
-        val actual = when (expected) {
-            is KeyboardExtension -> readValidatedArchive(archiveFile, KeyboardExtension.serializer())
-            is ThemeExtension -> readValidatedArchive(archiveFile, ThemeExtension.serializer())
-            is LanguagePackExtension -> readValidatedArchive(archiveFile, LanguagePackExtension.serializer())
+        val matches = when (expected) {
+            is KeyboardExtension -> manifestsMatch(expected, archiveFile, KeyboardExtension.serializer())
+            is ThemeExtension -> manifestsMatch(expected, archiveFile, ThemeExtension.serializer())
+            is LanguagePackExtension -> manifestsMatch(expected, archiveFile, LanguagePackExtension.serializer())
             else -> reject(ExtensionQuarantineReason.MANIFEST_MALFORMED)
         }
-        if (actual != expected) {
+        if (!matches) {
             reject(ExtensionQuarantineReason.INVALID_METADATA)
         }
+    }
+
+    /**
+     * Compares the manifest this caller meant to write with the one read back from the archive.
+     *
+     * The comparison is done on the serialized form because `==` is identity equality for the
+     * extension models that are not data classes (`ThemeExtension`, `LanguagePackExtension`) and
+     * for plain component classes they contain (`CurrencySet`, `WithRules`). Going through the
+     * serializer keeps the check structural for every extension type and does not depend on each
+     * model class implementing equals().
+     */
+    private fun <T : Extension> manifestsMatch(
+        expected: T,
+        archiveFile: FsFile,
+        serializer: KSerializer<T>,
+    ): Boolean {
+        val actual = readValidatedArchive(archiveFile, serializer)
+        return ExtensionJsonConfig.encodeToJsonElement(serializer, actual) ==
+            ExtensionJsonConfig.encodeToJsonElement(serializer, expected)
     }
 
     fun <T : Extension> readValidatedArchive(
