@@ -29,6 +29,7 @@ import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.nlp.ImmediateAutocorrect
 import dev.patrickgold.florisboard.ime.nlp.ImmediateAutocorrectCorrection
+import dev.patrickgold.florisboard.ime.nlp.LanguageCaseMapping
 import dev.patrickgold.florisboard.ime.nlp.NextWordSuggestionContext
 import dev.patrickgold.florisboard.ime.nlp.SpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.SpellingResult
@@ -92,7 +93,8 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         isPrivateSession: Boolean,
     ): SpellingResult {
         val languageCode = LatinDictionaryStore.normalizeLanguageCode(subtype.primaryLocale.language)
-        val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: return SpellingResult.unspecified()
+        val normalizedWord = LatinDictionarySuggester.normalizeWord(word, languageCode)
+            ?: return SpellingResult.unspecified()
         val dictionary = dictionary(subtype)
         LatinDictionarySuggester.englishContractionCorrection(
             rawWord = word,
@@ -292,8 +294,10 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 region = locale.country,
                 personalContinuations = personalContinuations(locale, content, rawWord, isPrivateSession),
             )
+            val normalizedForLocale = LatinDictionarySuggester.normalizeWord(rawWord, langCode) ?: normalized
             PerLocale(
-                recognised = dict.contains(normalized) || overlay.containsKey(normalized),
+                recognised = dict.contains(normalizedForLocale) ||
+                    overlay.containsKey(normalizedForLocale),
                 candidates = cands,
             )
         }
@@ -413,7 +417,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
         return merged.sortedByDescending { (_, confidence) -> confidence }.map { (word, confidence) ->
             WordSuggestionCandidate(
-                text = applySentenceCase(word, before),
+                text = applySentenceCase(word, before, subtype.primaryLocale.language),
                 confidence = confidence,
                 isEligibleForAutoCommit = false,
                 isEligibleForUserRemoval = nextWordContext != null,
@@ -423,7 +427,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
     }
 
-    private fun applySentenceCase(word: String, textBeforeCursor: String): String {
+    private fun applySentenceCase(word: String, textBeforeCursor: String, languageCode: String): String {
         if (word.isEmpty()) return word
         if (word.equals("i", ignoreCase = true)) return "I"
         if (word.startsWith("i'", ignoreCase = true)) {
@@ -432,7 +436,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         val isSentenceStart = textBeforeCursor.isBlank() ||
             textBeforeCursor.trimEnd().lastOrNull()?.let { it == '.' || it == '!' || it == '?' || it == '\n' } == true
         return if (isSentenceStart) {
-            word.replaceFirstChar { it.uppercaseChar() }
+            LanguageCaseMapping.capitalizeFirst(word, languageCode)
         } else {
             word
         }
@@ -500,7 +504,9 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
      * dictionary words even after its completion made the list.
      */
     override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double {
-        val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: word.lowercase()
+        val languageCode = LatinDictionaryStore.normalizeLanguageCode(subtype.primaryLocale.language)
+        val normalizedWord = LatinDictionarySuggester.normalizeWord(word, languageCode)
+            ?: LanguageCaseMapping.lowercase(word, languageCode)
         val bundled = dictionary(subtype).frequencyFor(normalizedWord)
         val learned = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
             .frequencyFor(normalizedWord, subtype.primaryLocale)
@@ -514,10 +520,13 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
      * a slip for "come".
      */
     override suspend fun isLikelySlip(subtype: Subtype, content: EditorContent, word: String): Boolean {
-        val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: return false
         var slipSomewhere = false
         for (locale in subtype.locales().distinctBy { it.languageTag() }) {
             val languageCode = LatinDictionaryStore.normalizeLanguageCode(locale.language)
+            // Normalized per locale: Turkish folds "İstanbul" to "istanbul" while the
+            // invariant mapping would produce "i̇stanbul" and match no dictionary at all.
+            val normalizedWord = LatinDictionarySuggester.normalizeWord(word, languageCode)
+                ?: return false
             val dictionary = dictionaryStore.dictionaryForLanguage(languageCode)
             val overlay = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get().viewFor(locale)
             if (overlay.containsKey(normalizedWord)) return false
@@ -1187,7 +1196,7 @@ internal object LatinDictionarySuggester {
         personalContinuations: List<String> = emptyList(),
     ): List<LatinSuggestion> {
         if (maxCandidateCount <= 0 || !dictionary.isLoaded) return emptyList()
-        val normalizedWord = normalizeWord(rawWord) ?: return emptyList()
+        val normalizedWord = normalizeWord(rawWord, languageCode) ?: return emptyList()
         englishContractionCorrection(
             rawWord = rawWord,
             dictionary = dictionary,
@@ -1211,11 +1220,17 @@ internal object LatinDictionarySuggester {
             rawWord.isNotEmpty() &&
             rawWord.first().isUpperCase()
         ) {
-            return singleLetterProperNounCompletions(normalizedWord, rawWord, dictionary, maxCandidateCount)
+            return singleLetterProperNounCompletions(
+                normalizedWord = normalizedWord,
+                rawWord = rawWord,
+                dictionary = dictionary,
+                maxCandidateCount = maxCandidateCount,
+                languageCode = languageCode,
+            )
         }
         val personalCompletions = personalCompletions(normalizedWord, personalContinuations, maxCandidateCount)
         if (normalizedWord.length < MinCompletionLength) {
-            return personalCompletions.map { it.withTypedCase(rawWord) }
+            return personalCompletions.map { it.withTypedCase(rawWord, languageCode) }
         }
 
         val completionCandidates = completions(normalizedWord, dictionary, maxCandidateCount, userOverlay)
@@ -1293,19 +1308,19 @@ internal object LatinDictionarySuggester {
         val seen = mutableSetOf<String>()
         return buildList {
             primaryCorrections.forEach { candidate ->
-                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
+                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord, languageCode))
             }
             realWordCorrections.forEach { candidate ->
-                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
+                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord, languageCode))
             }
             personalCompletions.forEach { candidate ->
-                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
+                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord, languageCode))
             }
             completionCandidates.forEach { candidate ->
-                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
+                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord, languageCode))
             }
             secondaryCorrections.forEach { candidate ->
-                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
+                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord, languageCode))
             }
         }.keepingEligible(maxCandidateCount)
     }
@@ -1400,6 +1415,7 @@ internal object LatinDictionarySuggester {
         rawWord: String,
         dictionary: LatinDictionarySnapshot,
         maxCandidateCount: Int,
+        languageCode: String?,
     ): List<LatinSuggestion> {
         if (normalizedWord.length != 1) return emptyList()
         val prefix = normalizedWord.first()
@@ -1417,7 +1433,7 @@ internal object LatinDictionarySuggester {
                 text = word,
                 confidence = correctionConfidence(dictionary.frequencyFor(word), distance = 1) - 0.10,
                 isEligibleForAutoCommit = false,
-            ).withTypedCase(rawWord)
+            ).withTypedCase(rawWord, languageCode)
         }
         return result
     }
@@ -1598,11 +1614,19 @@ internal object LatinDictionarySuggester {
         return maxOf(scowl, overlay)
     }
 
-    fun normalizeWord(rawWord: String): String? {
+    /**
+     * Trim and lowercase a typed word into the form the dictionary stores.
+     *
+     * [languageCode] selects the case mapping. Pass the subtype's language so
+     * Turkish folds `I`→`ı` and `İ`→`i`; pass nothing (the default) from asset
+     * loading, where no language is known and the invariant mapping has to keep
+     * matching what this function produces at query time for other languages.
+     */
+    fun normalizeWord(rawWord: String, languageCode: String? = null): String? {
         val trimmedWord = rawWord.trim().trim { char -> !char.isLetter() && char != '\'' }
         if (trimmedWord.isEmpty() || trimmedWord.none { it.isLetter() }) return null
         if (trimmedWord.any { !it.isLetter() && it != '\'' }) return null
-        return trimmedWord.lowercase()
+        return LanguageCaseMapping.lowercase(trimmedWord, languageCode)
     }
 
     fun englishContractionCorrection(
@@ -1830,8 +1854,8 @@ internal object LatinDictionarySuggester {
         return (0.35 + frequency * 0.55 + editDistanceBonus).coerceIn(0.0, 1.0)
     }
 
-    private fun LatinSuggestion.withTypedCase(rawWord: String): LatinSuggestion {
-        return copy(text = applyTypedCase(text, rawWord))
+    private fun LatinSuggestion.withTypedCase(rawWord: String, languageCode: String?): LatinSuggestion {
+        return copy(text = applyTypedCase(text, rawWord, languageCode))
     }
 
     /**
@@ -1848,11 +1872,13 @@ internal object LatinDictionarySuggester {
      *
      * Covered by LatinDictionarySuggesterTest.
      */
-    private fun applyTypedCase(candidate: String, rawWord: String): String {
+    private fun applyTypedCase(candidate: String, rawWord: String, languageCode: String?): String {
         val letters = rawWord.filter { it.isLetter() }
         return when {
-            letters.length > 1 && letters.all { it.isUpperCase() } -> candidate.uppercase()
-            letters.firstOrNull()?.isUpperCase() == true -> candidate.replaceFirstChar { it.titlecase() }
+            letters.length > 1 && letters.all { it.isUpperCase() } ->
+                LanguageCaseMapping.uppercase(candidate, languageCode)
+            letters.firstOrNull()?.isUpperCase() == true ->
+                LanguageCaseMapping.capitalizeFirst(candidate, languageCode)
             else -> candidate
         }
     }
